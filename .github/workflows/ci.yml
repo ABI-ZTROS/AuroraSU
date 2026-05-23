@@ -1,0 +1,167 @@
+name: AuroraSU CI
+
+on:
+  push:
+    branches: [ master, main, develop ]
+  pull_request:
+    branches: [ master, main ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # Kernel Module Build
+  build-kernel:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [arm64, x86_64]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential gcc-aarch64-linux-gnu
+        sudo apt-get install -y linux-headers-$(uname -r)
+    
+    - name: Build kernel module (${{ matrix.target }})
+      run: |
+        cd kernel
+        if [ "${{ matrix.target }}" = "arm64" ]; then
+          export CROSS_COMPILE=aarch64-linux-gnu-
+          export ARCH=arm64
+        fi
+        make -C /lib/modules/$(uname -r)/build M=$(pwd) modules
+      continue-on-error: true
+
+  # Rust Daemon Build
+  build-aurorad:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: 
+          - aarch64-linux-android
+          - x86_64-linux-android
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-action@stable
+    
+    - name: Install Android NDK
+      uses: nttld/setup-ndk@v1
+      with:
+        ndk-version: r26b
+    
+    - name: Add Rust target
+      run: rustup target add ${{ matrix.target }}
+    
+    - name: Build aurorad (${{ matrix.target }})
+      run: |
+        cd userspace/aurorad
+        cargo build --release --target ${{ matrix.target }}
+      continue-on-error: true
+
+  # Android Manager Build
+  build-manager:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+    
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+    
+    - name: Grant execute permission for gradlew
+      run: chmod +x manager/gradlew
+      continue-on-error: true
+    
+    - name: Build with Gradle
+      run: |
+        cd manager
+        ./gradlew build
+      continue-on-error: true
+    
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: aurora-manager-apk
+        path: manager/app/build/outputs/apk/**/*.apk
+      continue-on-error: true
+
+  # Code Quality Checks
+  quality-checks:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Check C code formatting
+      run: |
+        sudo apt-get install -y clang-format
+        find kernel -name "*.c" -o -name "*.h" | xargs clang-format --dry-run --Werror
+      continue-on-error: true
+    
+    - name: Install Rust
+      uses: dtolnay/rust-action@stable
+    
+    - name: Check Rust formatting
+      run: |
+        cd userspace/aurorad
+        cargo fmt -- --check
+      continue-on-error: true
+    
+    - name: Run Rust Clippy
+      run: |
+        cd userspace/aurorad
+        cargo clippy -- -D warnings
+      continue-on-error: true
+
+  # Documentation Build
+  build-docs:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Generate documentation
+      run: |
+        echo "Documentation build placeholder"
+        # Add documentation generation steps here
+    
+    - name: Upload documentation
+      uses: actions/upload-artifact@v4
+      with:
+        name: documentation
+        path: docs/
+
+  # Release Build (only on tags)
+  release:
+    needs: [build-kernel, build-aurorad, build-manager]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          **/*.ko
+          **/aurorad
+          **/*.apk
+        draft: true
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      continue-on-error: true
