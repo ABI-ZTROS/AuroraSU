@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Base AuroraSU Theme -->
+    <style name="Theme.AuroraSU" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Primary Colors -->
+        <item name="colorPrimary">@color/aurora_primary</item>
+        <item name="colorOnPrimary">@color/aurora_on_primary</item>
+        <item name="colorPrimaryContainer">@color/aurora_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/aurora_on_primary_container</item>
+        
+        <!-- Secondary Colors -->
+        <item name="colorSecondary">@color/aurora_secondary</item>
+        <item name="colorOnSecondary">@color/aurora_on_secondary</item>
+        <item name="colorSecondaryContainer">@color/aurora_secondary_container</item>
+        <item name="colorOnSecondaryContainer">@color/aurora_on_secondary_container</item>
+        
+        <!-- Tertiary Colors -->
+        <item name="colorTertiary">@color/aurora_tertiary</item>
+        <item name="colorOnTertiary">@color/aurora_on_tertiary</item>
+        <item name="colorTertiaryContainer">@color/aurora_tertiary_container</item>
+        <item name="colorOnTertiaryContainer">@color/aurora_on_tertiary_container</item>
+        
+        <!-- Error Colors -->
+        <item name="colorError">@color/status_error</item>
+        <item name="colorOnError">@android:color/white</item>
+        <item name="colorErrorContainer">@color/status_error_container</item>
+        <item name="colorOnErrorContainer">@color/status_error</item>
+        
+        <!-- Surface Colors -->
+        <item name="android:colorBackground">@android:color/system_background_light</item>
+        <item name="colorSurface">@android:color/system_surface_light</item>
+        <item name="colorSurfaceVariant">@android:color/system_surface_variant_light</item>
+        <item name="colorOnSurface">@android:color/system_on_surface_light</item>
+        <item name="colorOnSurfaceVariant">@android:color/system_on_surface_variant_light</item>
+        
+        <!-- Outline -->
+        <item name="colorOutline">@android:color/system_outline_light</item>
+        <item name="colorOutlineVariant">@android:color/system_outline_variant_light</item>
+        
+        <!-- Status Bar -->
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+        
+        <!-- Typography -->
+        <item name="textAppearanceDisplayLarge">@style/TextAppearance.AuroraSU.DisplayLarge</item>
+        <item name="textAppearanceDisplayMedium">@style/TextAppearance.AuroraSU.DisplayMedium</item>
+        <item name="textAppearanceDisplaySmall">@style/TextAppearance.AuroraSU.DisplaySmall</item>
+        <item name="textAppearanceHeadlineLarge">@style/TextAppearance.AuroraSU.HeadlineLarge</item>
+        <item name="textAppearanceHeadlineMedium">@style/TextAppearance.AuroraSU.HeadlineMedium</item>
+        <item name="textAppearanceHeadlineSmall">@style/TextAppearance.AuroraSU.HeadlineSmall</item>
+        <item name="textAppearanceTitleLarge">@style/TextAppearance.AuroraSU.TitleLarge</item>
+        <item name="textAppearanceTitleMedium">@style/TextAppearance.AuroraSU.TitleMedium</item>
+        <item name="textAppearanceTitleSmall">@style/TextAppearance.AuroraSU.TitleSmall</item>
+        <item name="textAppearanceBodyLarge">@style/TextAppearance.AuroraSU.BodyLarge</item>
+        <item name="textAppearanceBodyMedium">@style/TextAppearance.AuroraSU.BodyMedium</item>
+        <item name="textAppearanceBodySmall">@style/TextAppearance.AuroraSU.BodySmall</item>
+        <item name="textAppearanceLabelLarge">@style/TextAppearance.AuroraSU.LabelLarge</item>
+        <item name="textAppearanceLabelMedium">@style/TextAppearance.AuroraSU.LabelMedium</item>
+        <item name="textAppearanceLabelSmall">@style/TextAppearance.AuroraSU.LabelSmall</item>
+        
+        <!-- Shape Appearance -->
+        <item name="shapeAppearanceSmallComponent">@style/ShapeAppearance.AuroraSU.SmallComponent</item>
+        <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.AuroraSU.MediumComponent</item>
+        <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.AuroraSU.LargeComponent</item>
+        
+        <!-- Animation -->
+        <item name="android:windowActivityTransitions">true</item>
+        <item name="android:windowContentTransitions">true</item>
+    </style>
+    
+    <!-- Splash Screen Theme -->
+    <style name="Theme.AuroraSU.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/aurora_primary_container</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash</item>
+        <item name="windowSplashScreenAnimationDuration">300</item>
+        <item name="postSplashScreenTheme">@style/Theme.AuroraSU</item>
+    </style>
+    
+    <!-- Typography Styles -->
+    <style name="TextAppearance.AuroraSU.DisplayLarge" parent="TextAppearance.Material3.DisplayLarge">
+        <item name="fontFamily">@font/aurora_font</item>
+    </style>
+    
+    <style name="TextAppearance.AuroraSU.DisplayMedium" parent="TextAppearance.Material3.DisplayMedium">
+        <item name="fontFamily">@font/aurora_font</item>
+    </style>
+    
+    <style name="TextAppearance.AuroraSU.DisplaySmall" parent="TextAppearance.Material3.DisplaySmall">
+        <item name="fontFamily">@font/aurora_font</item>
+    </style>
+    
+    <style name="TextAppearance.AuroraSU.HeadlineLarge" parent="TextAppearance.Material3.HeadlineLarge">
+        <item name="fontFamily">@font/aurora_font</item>
+    </style>
+    
+    <style name="TextAppearance.AuroraSU.HeadlineMedium" parent="TextAppearance.Material3.HeadlineMedium">
+        <item name="fontFamily">@font/aurora_font</item>
+    </style>
+    
+    <style name="TextAppearance.AuroraSU.HeadlineSmall" parent="TextAppearance.Material3.HeadlineSmall">
+        <item name="fontFamily">@font/aurora_font</item>
+    </style>
+    
+    <style name="TextAppearance.AuroraSU.TitleLarge" parent="TextAppearance.Material3.TitleLarge">
+        <item name="fontFamily">@font/aurora_font</item>
+    </style>
+    
+    <style name="TextAppearance.AuroraSU.TitleMedium" parent="TextAppearance.Material3.TitleMedium">
+        <item name="fontFamily">@font/aurora_font_medium</item>
+    </style>
+    
+    <style name="TextAppearance.AuroraSU.TitleSmall" parent="TextAppearance.Material3.TitleSmall">
+        <item name="fontFamily">@font/aurora_font_medium</item>
+    </style>
+    
+    <style name="TextAppearance.AuroraSU.BodyLarge" parent="TextAppearance.Material3.BodyLarge">
+        <item name="fontFamily">@font/aurora_font</item>
+    </style>
+    
+    <style name="TextAppearance.AuroraSU.BodyMedium" parent="TextAppearance.Material3.BodyMedium">
+        <item name="fontFamily">@font/aurora_font</item>
+    </style>
+    
+    <style name="TextAppearance.AuroraSU.BodySmall" parent="TextAppearance.Material3.BodySmall">
+        <item name="fontFamily">@font/aurora_font</item>
+    </style>
+    
+    <style name="TextAppearance.AuroraSU.LabelLarge" parent="TextAppearance.Material3.LabelLarge">
+        <item name="fontFamily">@font/aurora_font_medium</item>
+    </style>
+    
+    <style name="TextAppearance.AuroraSU.LabelMedium" parent="TextAppearance.Material3.LabelMedium">
+        <item name="fontFamily">@font/aurora_font_medium</item>
+    </style>
+    
+    <style name="TextAppearance.AuroraSU.LabelSmall" parent="TextAppearance.Material3.LabelSmall">
+        <item name="fontFamily">@font/aurora_font_medium</item>
+    </style>
+    
+    <!-- Shape Appearances -->
+    <style name="ShapeAppearance.AuroraSU.SmallComponent" parent="ShapeAppearance.Material3.SmallComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">8dp</item>
+    </style>
+    
+    <style name="ShapeAppearance.AuroraSU.MediumComponent" parent="ShapeAppearance.Material3.MediumComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">12dp</item>
+    </style>
+    
+    <style name="ShapeAppearance.AuroraSU.LargeComponent" parent="ShapeAppearance.Material3.LargeComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">16dp</item>
+    </style>
+    
+    <!-- Bottom Navigation Active Indicator -->
+    <style name="App.BottomNav.ActiveIndicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
+        <item name="android:color">@color/aurora_secondary_container</item>
+    </style>
+</resources>
