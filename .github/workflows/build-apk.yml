@@ -43,6 +43,21 @@ jobs:
       with:
         gradle-home-cache-cleanup: true
 
+    - name: Generate signing keystore
+      id: create_keystore
+      run: |
+        KEYSTORE_PATH=$RUNNER_TEMP/aurora.keystore
+        keytool -genkey -v \
+          -keystore "$KEYSTORE_PATH" \
+          -keyalg RSA -keysize 2048 -validity 10000 \
+          -alias aurora \
+          -dname "CN=AuroraSU, OU=Aurora, O=AuroraSU Team, L=Beijing, ST=Beijing, C=CN" \
+          -storepass aurorasu -keypass aurorasu
+        echo "keystore_path=$KEYSTORE_PATH" >> $GITHUB_OUTPUT
+        echo "keystore_password=aurorasu" >> $GITHUB_OUTPUT
+        echo "key_alias=aurora" >> $GITHUB_OUTPUT
+        echo "key_password=aurorasu" >> $GITHUB_OUTPUT
+
     - name: Grant execute permission for gradlew
       run: chmod +x manager/gradlew
 
@@ -51,7 +66,7 @@ jobs:
         cd manager
         ./gradlew assembleRelease
       env:
-        KEYSTORE_PATH: ${{ steps.create_keystore.outputs.keystore_path }}
+        KEYSTORE_FILE: ${{ steps.create_keystore.outputs.keystore_path }}
         KEYSTORE_PASSWORD: ${{ steps.create_keystore.outputs.keystore_password }}
         KEY_ALIAS: ${{ steps.create_keystore.outputs.key_alias }}
         KEY_PASSWORD: ${{ steps.create_keystore.outputs.key_password }}
@@ -117,7 +132,6 @@ jobs:
 
   build-kernel:
     runs-on: ubuntu-latest
-    needs: []
     continue-on-error: true
 
     steps:
@@ -134,18 +148,16 @@ jobs:
         export CROSS_COMPILE=aarch64-linux-gnu-
         export ARCH=arm64
         make -C /lib/modules/$(uname -r)/build M=$(pwd) modules 2>&1 || true
-      continue-on-error: true
 
   build-aurorad:
     runs-on: ubuntu-latest
-    needs: []
     continue-on-error: true
 
     steps:
     - uses: actions/checkout@v4
 
     - name: Install Rust
-      uses: dtolnay/rust-action@stable
+      uses: dtolnay/rust-toolchain@stable
 
     - name: Install Android NDK
       uses: nttld/setup-ndk@v1
@@ -159,4 +171,3 @@ jobs:
       run: |
         cd userspace/ksud
         cargo build --release --target aarch64-linux-android 2>&1 || true
-      continue-on-error: true
