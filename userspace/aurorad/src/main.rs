@@ -16,15 +16,14 @@ mod cli;
 
 use std::fs;
 use std::os::unix::net::UnixListener;
+use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
-use std::process::Command;
-use std::sync::Arc;
 use std::thread;
 
 use anyhow::{Result, Context};
 use clap::Parser;
 use log::{info, error, warn, debug};
-use nix::unistd::{Uid, Gid};
+use nix::unistd::Uid;
 
 use aurora_uapi::AuroraDriver;
 use module::ModuleManager;
