@@ -5,6 +5,7 @@
 *.ap_
 *.jar
 !manager/app/libs/*.jar
+!manager/gradle/wrapper/gradle-wrapper.jar
 
 # Gradle
 .gradle/
