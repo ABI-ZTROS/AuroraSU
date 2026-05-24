@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">AuroraSU</string>
+    <string name="app_name_debug">AuroraSU Debug</string>
+    
+    <!-- 主页 -->
+    <string name="home">首页</string>
+    <string name="superuser">超级用户</string>
+    <string name="modules">模块</string>
+    <string name="settings">设置</string>
+    
+    <!-- 状态 -->
+    <string name="status_working">运行正常</string>
+    <string name="status_not_active">未激活</string>
+    <string name="status_check_failed">检测失败</string>
+    <string name="system_health">系统健康度</string>
+    <string name="uptime">运行时间</string>
+    
+    <!-- 统计 -->
+    <string name="modules_loaded">已加载模块</string>
+    <string name="apps_granted">已授权应用</string>
+    <string name="requests_denied">已拒绝请求</string>
+    <string name="today_calls">今日调用</string>
+    
+    <!-- 安全 -->
+    <string name="security">安全监控</string>
+    <string name="selinux_status">SELinux 状态</string>
+    <string name="kernel_version">内核版本</string>
+    <string name="security_patch">安全补丁</string>
+    <string name="root_hide">Root 隐藏</string>
+    
+    <!-- 系统信息 -->
+    <string name="system_info">系统信息</string>
+    <string name="android_version">Android 版本</string>
+    <string name="api_level">API 级别</string>
+    <string name="architecture">架构</string>
+    <string name="device">设备</string>
+    
+    <!-- 模块活动 -->
+    <string name="module_activity">模块活动</string>
+    <string name="system_modules">系统模块</string>
+    <string name="user_modules">用户模块</string>
+    <string name="update_pending">待更新</string>
+    <string name="no_activity">暂无模块活动记录</string>
+    
+    <!-- 快捷操作 -->
+    <string name="quick_actions">快捷操作</string>
+    <string name="module_manager">模块管理</string>
+    <string name="superuser_manager">超级用户</string>
+    <string name="logs">日志</string>
+    
+    <!-- 提示 -->
+    <string name="coming_soon">功能开发中...</string>
+    <string name="enabled">已启用</string>
+    <string name="disabled">已禁用</string>
+    <string name="unknown">未知</string>
+    
+    <!-- 关于 -->
+    <string name="about">关于</string>
+    <string name="version">版本</string>
+    <string name="build_date">构建日期</string>
+    <string name="made_with_love">Made with ❤️ by AuroraSU Team</string>
+</resources>

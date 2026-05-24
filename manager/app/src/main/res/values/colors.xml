@@ -1,54 +1,63 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- AuroraSU Brand Colors -->
-    <color name="aurora_primary">#6750A4</color>
-    <color name="aurora_on_primary">#FFFFFF</color>
-    <color name="aurora_primary_container">#EADDFF</color>
-    <color name="aurora_on_primary_container">#21005D</color>
+    <!-- Aurora Primary Colors -->
+    <color name="aurora_primary">#7C4DFF</color>
+    <color name="aurora_primary_dark">#5E35B1</color>
+    <color name="aurora_accent">#B388FF</color>
+    <color name="aurora_gradient_start">#667EEA</color>
+    <color name="aurora_gradient_end">#764BA2</color>
     
-    <color name="aurora_secondary">#625B71</color>
-    <color name="aurora_on_secondary">#FFFFFF</color>
-    <color name="aurora_secondary_container">#E8DEF8</color>
-    <color name="aurora_on_secondary_container">#1D192B</color>
+    <!-- Legacy colors -->
+    <color name="colorPrimary">#7C4DFF</color>
+    <color name="colorPrimaryDark">#5E35B1</color>
+    <color name="colorAccent">#B388FF</color>
     
-    <color name="aurora_tertiary">#7D5260</color>
-    <color name="aurora_on_tertiary">#FFFFFF</color>
-    <color name="aurora_tertiary_container">#FFD8E4</color>
-    <color name="aurora_on_tertiary_container">#31111D</color>
-    
-    <!-- Status Colors -->
+    <!-- Status colors -->
     <color name="status_working">#4CAF50</color>
-    <color name="status_working_container">#E8F5E9</color>
-    
     <color name="status_warning">#FF9800</color>
-    <color name="status_warning_container">#FFF3E0</color>
-    
     <color name="status_error">#F44336</color>
-    <color name="status_error_container">#FFEBEE</color>
-    
     <color name="status_info">#2196F3</color>
-    <color name="status_info_container">#E3F2FD</color>
+    <color name="status_unknown">#9E9E9E</color>
     
-    <!-- Hook Mode Colors -->
-    <color name="hook_kprobe">#9C27B0</color>
-    <color name="hook_manual">#FF5722</color>
-    <color name="hook_hybrid">#00BCD4</color>
+    <!-- Dashboard specific colors -->
+    <color name="dashboard_bg">#F8F9FA</color>
+    <color name="dashboard_card_bg">#FFFFFF</color>
+    <color name="dashboard_card_dark">#1E1E1E</color>
+    <color name="dashboard_text_primary">#212121</color>
+    <color name="dashboard_text_secondary">#757575</color>
+    <color name="dashboard_text_light">#9E9E9E</color>
+    <color name="dashboard_border">#E8E8E8</color>
     
-    <!-- Surface Colors -->
-    <color name="surface_1">#FEF7FF</color>
-    <color name="surface_2">#F3EDF7</color>
-    <color name="surface_3">#EBE3F4</color>
-    <color name="surface_4">#E6DEEB</color>
-    <color name="surface_5">#E0D8E6</color>
+    <!-- Gauge colors -->
+    <color name="gauge_safe">#4CAF50</color>
+    <color name="gauge_warning">#FF9800</color>
+    <color name="gauge_critical">#F44336</color>
+    <color name="gauge_info">#2196F3</color>
     
-    <!-- Gradient Colors for Aurora Effect -->
-    <color name="aurora_gradient_start">#6750A4</color>
-    <color name="aurora_gradient_mid">#7C4DFF</color>
-    <color name="aurora_gradient_end">#00BCD4</color>
+    <!-- Chart colors -->
+    <color name="chart_blue">#2196F3</color>
+    <color name="chart_green">#4CAF50</color>
+    <color name="chart_purple">#9C27B0</color>
+    <color name="chart_orange">#FF9800</color>
+    <color name="chart_red">#F44336</color>
     
-    <!-- Dark Theme Specific -->
-    <color name="aurora_primary_dark">#D0BCFF</color>
-    <color name="aurora_primary_container_dark">#4F378B</color>
-    <color name="aurora_surface_dark">#141218</color>
-    <color name="aurora_surface_variant_dark">#49454F</color>
+    <!-- Background colors -->
+    <color name="bg_light">#F5F5F5</color>
+    <color name="bg_card">#FFFFFF</color>
+    <color name="bg_card_dark">#2D2D2D</color>
+    <color name="text_primary">#212121</color>
+    <color name="text_secondary">#757575</color>
+    <color name="text_light">#9E9E9E</color>
+    
+    <!-- Button colors -->
+    <color name="button_primary">#7C4DFF</color>
+    <color name="button_primary_pressed">#5E35B1</color>
+    <color name="button_secondary">#F5F5F5</color>
+    <color name="button_secondary_pressed">#E0E0E0</color>
+    
+    <!-- Badge colors -->
+    <color name="badge_green_bg">#E8F5E9</color>
+    <color name="badge_red_bg">#FFEBEE</color>
+    <color name="badge_yellow_bg">#FFF8E1</color>
+    <color name="badge_blue_bg">#E3F2FD</color>
 </resources>

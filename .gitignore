@@ -1,0 +1,40 @@
+# Build outputs
+*.class
+*.dex
+*.apk
+*.ap_
+*.jar
+!manager/app/libs/*.jar
+
+# Gradle
+.gradle/
+build/
+*/build/
+gradle-*/
+manager/.gradle/
+manager/build/
+manager/gradle-*/
+manager/local.properties
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Rust
+userspace/aurorad/target/
+
+# Keys
+*.jks
+*.keystore
+release.keystore
+
+# Temp
+*.zip
+*.tmp
+*.log

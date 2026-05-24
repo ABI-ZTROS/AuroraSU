@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.aurora.su">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+    
+    <application
+        android:name=".AuroraApplication"
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.AuroraSU"
+        tools:targetApi="34">
+        
+        <!-- Main Activity -->
+        <activity
+            android:name=".ui.MainActivity"
+            android:exported="true"
+            android:theme="@style/Theme.AuroraSU.Starting">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        
+        <!-- Superuser Management -->
+        <activity
+            android:name=".ui.SuperuserActivity"
+            android:exported="false"
+            android:label="@string/superuser_manager"
+            android:parentActivityName=".ui.MainActivity" />
+        
+        <!-- Module Management -->
+        <activity
+            android:name=".ui.ModulesActivity"
+            android:exported="false"
+            android:label="@string/module_manager"
+            android:parentActivityName=".ui.MainActivity" />
+        
+        <!-- Log Viewer -->
+        <activity
+            android:name=".ui.LogActivity"
+            android:exported="false"
+            android:label="@string/logs"
+            android:parentActivityName=".ui.MainActivity" />
+        
+        <!-- Settings -->
+        <activity
+            android:name=".ui.SettingsActivity"
+            android:exported="false"
+            android:label="@string/settings"
+            android:parentActivityName=".ui.MainActivity" />
+        
+        <!-- About -->
+        <activity
+            android:name=".ui.AboutActivity"
+            android:exported="false"
+            android:label="@string/about"
+            android:parentActivityName=".ui.SettingsActivity" />
+        
+        <!-- Foreground Service -->
+        <service
+            android:name=".service.AuroraService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+        
+        <!-- Boot Receiver -->
+        <receiver
+            android:name=".service.BootReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+        
+        <!-- Root Request Receiver -->
+        <receiver
+            android:name=".receiver.RootRequestReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.aurora.su.action.ROOT_REQUEST" />
+            </intent-filter>
+        </receiver>
+        
+        <!-- Content Provider -->
+        <provider
+            android:name=".provider.AuroraProvider"
+            android:authorities="com.aurora.su.provider"
+            android:exported="false"
+            android:grantUriPermissions="false" />
+        
+    </application>
+
+</manifest>
