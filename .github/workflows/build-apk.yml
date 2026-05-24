@@ -34,7 +34,7 @@ jobs:
       run: |
         sdkmanager --install \
           "build-tools;37.0.0" \
-          "platforms;android-37" \
+          "platforms;android-37.0" \
           "platform-tools" \
           "ndk;29.0.14206865"
 
