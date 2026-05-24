@@ -1,50 +1,25 @@
-# AuroraSU Kernel Module Makefile
+KDIR := $(KDIR)
+MDIR := $(realpath $(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
 
-obj-m := aurora.o
-aurora-objs := core/init.o
+$(info -- KDIR: $(KDIR))
+$(info -- MDIR: $(MDIR))
 
-KDIR ?= /lib/modules/$(shell uname -r)/build
-PWD := $(shell pwd)
+.PHONY: all compdb clean format check-format
 
-# Compiler flags
-ccflags-y := -I$(PWD)/include -DAURORA_VERSION_MAJOR=1 -DAURORA_VERSION_MINOR=0 -DAURORA_VERSION_PATCH=0
+all: check_symbol
+	make -C $(KDIR) M=$(MDIR) modules -j$(shell nproc)
+	./check_symbol kernelsu.ko $(KDIR)/vmlinux
 
-# Feature flags (can be overridden)
-CONFIG_AURORA_DEBUG ?= n
-CONFIG_AURORA_KPM ?= y
-CONFIG_AURORA_REDUNDANCY ?= y
-
-ifeq ($(CONFIG_AURORA_DEBUG),y)
-    ccflags-y += -DCONFIG_AURORA_DEBUG
-endif
-
-ifeq ($(CONFIG_AURORA_KPM),y)
-    ccflags-y += -DCONFIG_AURORA_KPM
-endif
-
-ifeq ($(CONFIG_AURORA_REDUNDANCY),y)
-    ccflags-y += -DCONFIG_AURORA_REDUNDANCY
-endif
-
-# Architecture detection
-ARCH ?= $(shell uname -m)
-ifeq ($(ARCH),aarch64)
-    ARCH := arm64
-endif
-
-all:
-	$(MAKE) -C $(KDIR) M=$(PWD) modules
-
+compdb:
+	python3 $(MDIR)/.vscode/generate_compdb.py -O $(KDIR) $(MDIR)
 clean:
-	$(MAKE) -C $(KDIR) M=$(PWD) clean
+	make -C $(KDIR) M=$(MDIR) clean
+	rm check_symbol
+check_symbol: tools/check_symbol.c
+	$(CC) tools/check_symbol.c -o check_symbol
+format:
+	find . \( -name "*.c" -o -name "*.h" \) -print0 | xargs -0 clang-format -i
+check-format:
+	find . \( -name "*.c" -o -name "*.h" \) -print0 | xargs -0 clang-format --dry-run --Werror
 
-install:
-	$(MAKE) -C $(KDIR) M=$(PWD) modules_install
-	depmod -a
-
-# Create a minimal module for demo
-minimal:
-	@echo "Creating minimal AuroraSU module..."
-	$(MAKE) CONFIG_AURORA_KPM=n CONFIG_AURORA_REDUNDANCY=n all
-
-.PHONY: all clean install minimal
+# Keep a new line here!! Because someone may append config

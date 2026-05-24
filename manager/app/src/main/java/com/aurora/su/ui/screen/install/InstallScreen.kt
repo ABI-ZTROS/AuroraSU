@@ -1,0 +1,310 @@
+package com.aurora.su.ui.screen.install
+
+import android.app.Activity
+import android.content.Intent
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.compose.dropUnlessResumed
+import com.aurora.su.R
+import com.aurora.su.getKernelVersion
+import com.aurora.su.ui.LocalUiMode
+import com.aurora.su.ui.UiMode
+import com.aurora.su.ui.component.choosekmidialog.ChooseKmiDialog
+import com.aurora.su.ui.kernelFlash.KpmPatchOption
+import com.aurora.su.ui.kernelFlash.KpmPatchSelectionDialog
+import com.aurora.su.ui.kernelFlash.component.SlotSelectionDialog
+import com.aurora.su.ui.kernelFlash.rememberAnyKernel3State
+import com.aurora.su.ui.navigation3.LocalNavigator
+import com.aurora.su.ui.navigation3.Route
+import com.aurora.su.ui.screen.flash.FlashIt
+import com.aurora.su.ui.screen.susfs.util.SuSFSManager
+import com.aurora.su.ui.util.LkmSelection
+import com.aurora.su.ui.util.getAvailablePartitions
+import com.aurora.su.ui.util.getCurrentKmi
+import com.aurora.su.ui.util.getDefaultPartition
+import com.aurora.su.ui.util.getSlotSuffix
+import com.aurora.su.ui.util.isAbDevice
+import android.net.Uri
+import com.aurora.su.ui.util.rootAvailable
+
+@Composable
+fun InstallScreen(
+    preselectedKernelUri: Uri? = null
+) {
+    val navigator = LocalNavigator.current
+    val context = LocalContext.current
+
+    var installMethod by rememberSaveable { mutableStateOf<InstallMethod?>(null) }
+    var lkmSelection by rememberSaveable { mutableStateOf<LkmSelection>(LkmSelection.KmiNone) }
+    var partitionSelectionIndex by rememberSaveable { mutableIntStateOf(0) }
+    var hasCustomSelected by rememberSaveable { mutableStateOf(false) }
+    val showChooseKmiDialog = rememberSaveable { mutableStateOf(false) }
+    var advancedOptionsShown by rememberSaveable { mutableStateOf(false) }
+    var allowShell by rememberSaveable { mutableStateOf(false) }
+    var enableAdb by rememberSaveable { mutableStateOf(false) }
+    var spoofRelease by rememberSaveable { mutableStateOf(SuSFSManager.getKernelSpoofRelease(context)) }
+    var spoofVersion by rememberSaveable { mutableStateOf(SuSFSManager.getKernelSpoofVersion(context)) }
+
+    val currentKmi by produceState(initialValue = "") { value = getCurrentKmi() }
+    val partitions by produceState(initialValue = emptyList()) { value = getAvailablePartitions() }
+    val defaultPartition by produceState(initialValue = "") { value = getDefaultPartition() }
+    val rootAvailable by produceState(initialValue = false) { value = rootAvailable() }
+    val isAbDevice by produceState(initialValue = false) { value = isAbDevice() }
+    val isGkiDevice by produceState(initialValue = false) { value = getKernelVersion().isGKI() }
+
+    val selectFileTip = stringResource(id = R.string.select_file_tip, defaultPartition)
+    val selectFileTipNoGki = stringResource(id = R.string.select_file_tip_nogki)
+    val horizonKernelSummary = stringResource(R.string.horizon_kernel_summary)
+    val installMethodOptions = remember(rootAvailable, isAbDevice, isGkiDevice, selectFileTip, selectFileTipNoGki, horizonKernelSummary) {
+        buildList {
+            add(InstallMethod.SelectFile(summary = if (isGkiDevice) selectFileTip else selectFileTipNoGki))
+            if (rootAvailable && isGkiDevice) {
+                add(InstallMethod.DirectInstall)
+                if (isAbDevice) add(InstallMethod.DirectInstallToInactiveSlot)
+                add(InstallMethod.HorizonKernel(summary = horizonKernelSummary))
+            }
+        }
+    }
+
+    val installMethodState = remember { mutableStateOf<InstallMethod?>(null) }
+
+    // AnyKernel3 状态
+    val anyKernel3State = rememberAnyKernel3State(
+        installMethodState = installMethodState,
+        preselectedKernelUri = preselectedKernelUri?.toString(),
+        horizonKernelSummary = horizonKernelSummary,
+        isAbDevice = isAbDevice
+    )
+
+    // 同步 installMethod 和 anyKernel3State
+    LaunchedEffect(installMethod) {
+        installMethodState.value = installMethod
+    }
+
+    val kpmPatchOption = anyKernel3State.kpmPatchOption
+    val showSlotSelectionDialog = anyKernel3State.showSlotSelectionDialog && isAbDevice
+    val showKpmPatchDialog = anyKernel3State.showKpmPatchDialog
+
+    // 槽位选择对话框
+    if (showSlotSelectionDialog) {
+        SlotSelectionDialog(
+            show = true,
+            onDismiss = { anyKernel3State.onDismissSlotDialog() },
+            onSlotSelected = { slot ->
+                anyKernel3State.onSlotSelected(slot)
+            }
+        )
+    }
+
+    // KPM补丁选择对话框
+    if (showKpmPatchDialog) {
+        KpmPatchSelectionDialog(
+            show = true,
+            currentOption = kpmPatchOption,
+            onDismiss = { anyKernel3State.onDismissPatchDialog() },
+            onOptionSelected = { option ->
+                anyKernel3State.onOptionSelected(option)
+            }
+        )
+    }
+
+    val isOta = installMethod is InstallMethod.DirectInstallToInactiveSlot
+    val slotSuffix by produceState(initialValue = "", isOta) { value = getSlotSuffix(isOta) }
+    val defaultIndex = remember(partitions, defaultPartition) {
+        partitions.indexOf(defaultPartition).coerceAtLeast(0)
+    }
+
+    LaunchedEffect(partitions, defaultIndex, hasCustomSelected) {
+        if (partitions.isEmpty()) return@LaunchedEffect
+        if (!hasCustomSelected) {
+            partitionSelectionIndex = defaultIndex.coerceIn(0, partitions.lastIndex)
+        } else if (partitionSelectionIndex > partitions.lastIndex) {
+            partitionSelectionIndex = partitions.lastIndex
+        }
+    }
+
+    val displayPartitions = remember(partitions, defaultPartition) {
+        partitions.map { name -> if (defaultPartition == name) "$name (default)" else name }
+    }
+
+    val onInstall = {
+        installMethod?.let { method ->
+            when (method) {
+                is InstallMethod.HorizonKernel -> {
+                    method.uri?.let { uri ->
+                        navigator.push(
+                            Route.KernelFlash(
+                                kernelUri = uri,
+                                selectedSlot = method.slot,
+                                kpmPatchEnabled = kpmPatchOption == KpmPatchOption.PATCH_KPM,
+                                kpmUndoPatch = kpmPatchOption == KpmPatchOption.UNDO_PATCH_KPM
+                            )
+                        )
+                    }
+                }
+                else -> {
+                    val isOta = method is InstallMethod.DirectInstallToInactiveSlot
+                    navigator.push(
+                        Route.Flash(
+                            FlashIt.FlashBoot(
+                                boot = if (method is InstallMethod.SelectFile) method.uri else null,
+                                lkm = lkmSelection,
+                                ota = isOta,
+                                partition = partitions.getOrNull(partitionSelectionIndex),
+                                allowShell = allowShell,
+                                enableAdb = enableAdb,
+                                spoofRelease = spoofRelease.trim(),
+                                spoofVersion = spoofVersion.trim(),
+                            )
+                        )
+                    )
+                }
+            }
+        }
+    }
+
+    ChooseKmiDialog(
+        show = showChooseKmiDialog.value,
+        onDismissRequest = { showChooseKmiDialog.value = false },
+        onSelected = { kmi ->
+            kmi?.let {
+                lkmSelection = LkmSelection.KmiString(it)
+                onInstall()
+            }
+        }
+    )
+
+    val selectLkmLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) {
+        if (it.resultCode == Activity.RESULT_OK) {
+            it.data?.data?.let { uri ->
+                if (isKoFile(context, uri)) {
+                    lkmSelection = LkmSelection.LkmUri(uri)
+                } else {
+                    lkmSelection = LkmSelection.KmiNone
+                    Toast.makeText(context, R.string.install_only_support_ko_file, Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+    val selectImageLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) {
+        if (it.resultCode == Activity.RESULT_OK) {
+            it.data?.data?.let { uri ->
+                val option = when (installMethod) {
+                    is InstallMethod.SelectFile -> InstallMethod.SelectFile(uri, summary = selectFileTip)
+                    is InstallMethod.HorizonKernel -> InstallMethod.HorizonKernel(uri, summary = horizonKernelSummary)
+                    else -> null
+                }
+                option?.let { opt ->
+                    installMethod = opt
+                    // 对于 HorizonKernel，需要触发 AnyKernel3 流程（槽位选择和KPM修补）
+                    if (opt is InstallMethod.HorizonKernel) {
+                        anyKernel3State.onHorizonKernelSelected(opt)
+                    }
+                }
+            }
+        }
+    }
+
+    val state = InstallUiState(
+        installMethod = installMethod,
+        lkmSelection = lkmSelection,
+        partitionSelectionIndex = partitionSelectionIndex,
+        displayPartitions = displayPartitions,
+        currentKmi = currentKmi,
+        slotSuffix = slotSuffix,
+        installMethodOptions = installMethodOptions,
+        canSelectPartition = installMethod is InstallMethod.DirectInstall || installMethod is InstallMethod.DirectInstallToInactiveSlot,
+        advancedOptionsShown = advancedOptionsShown,
+        allowShell = allowShell,
+        enableAdb = enableAdb,
+        spoofRelease = spoofRelease,
+        spoofVersion = spoofVersion,
+        anyKernel3State = anyKernel3State,
+        kpmPatchOption = kpmPatchOption,
+        showSlotSelectionDialog = showSlotSelectionDialog,
+        showKpmPatchDialog = showKpmPatchDialog,
+    )
+    val actions = InstallScreenActions(
+        onBack = dropUnlessResumed { navigator.pop() },
+        onSelectMethod = { method ->
+            if (method is InstallMethod.HorizonKernel && method.uri != null) {
+                anyKernel3State.onHorizonKernelSelected(method)
+            } else {
+                installMethod = method
+            }
+        },
+        onSelectBootImage = { method ->
+            // 在打开文件选择器之前，先设置 installMethod
+            installMethod = method
+            selectImageLauncher.launch(Intent(Intent.ACTION_GET_CONTENT).apply {
+                type = "application/*"
+                putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("application/octet-stream", "application/zip"))
+            })
+        },
+        onUploadLkm = {
+            selectLkmLauncher.launch(Intent(Intent.ACTION_GET_CONTENT).apply { type = "application/octet-stream" })
+        },
+        onClearLkm = { lkmSelection = LkmSelection.KmiNone },
+        onSelectPartition = { index ->
+            hasCustomSelected = true
+            partitionSelectionIndex = index
+        },
+        onNext = {
+            val isLkmSelected = lkmSelection != LkmSelection.KmiNone
+            val isKmiUnknown = currentKmi.isBlank()
+            val isSelectFileMode = installMethod is InstallMethod.SelectFile
+            if (isGkiDevice && !isLkmSelected && (isKmiUnknown || isSelectFileMode) && installMethod !is InstallMethod.HorizonKernel) {
+                showChooseKmiDialog.value = true
+            } else {
+                onInstall()
+            }
+        },
+        onAdvancedOptionsClicked = {
+            advancedOptionsShown = !advancedOptionsShown
+        },
+        onSelectAllowShell = {
+            allowShell = it
+        },
+        onSelectEnableAdb = {
+            enableAdb = it
+        },
+        onSpoofReleaseChange = {
+            spoofRelease = it
+            SuSFSManager.saveUnameValue(context, it.trim().ifBlank { "default" })
+        },
+        onSpoofVersionChange = {
+            spoofVersion = it
+            SuSFSManager.saveBuildTimeValue(context, it.trim().ifBlank { "default" })
+        },
+        onHorizonKernelSelected = { method ->
+            anyKernel3State.onHorizonKernelSelected(method)
+        },
+        onReopenSlotDialog = { method ->
+            anyKernel3State.onReopenSlotDialog(method)
+        },
+        onReopenKpmDialog = { method ->
+            anyKernel3State.onReopenKpmDialog(method)
+        },
+    )
+
+    when (LocalUiMode.current) {
+        UiMode.Miuix -> InstallScreenMiuix(state, actions)
+        UiMode.Material -> InstallScreenMaterial(state, actions)
+    }
+}

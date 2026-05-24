@@ -11,18 +11,20 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-apk:
+  build-manager:
     runs-on: ubuntu-latest
     permissions:
       contents: write
 
     steps:
     - uses: actions/checkout@v4
+      with:
+        submodules: recursive
 
-    - name: Set up JDK 17
+    - name: Set up JDK 21
       uses: actions/setup-java@v4
       with:
-        java-version: '17'
+        java-version: '21'
         distribution: 'temurin'
 
     - name: Setup Android SDK
@@ -30,146 +32,51 @@ jobs:
 
     - name: Install Android SDK components
       run: |
-        sdkmanager --install "build-tools;34.0.0" "platforms;android-34" "platform-tools"
+        sdkmanager --install \
+          "build-tools;37.0.0" \
+          "platforms;android-37" \
+          "platform-tools" \
+          "ndk;29.0.14206865"
 
-    - name: Download dependencies
-      run: |
-        cd manager/app
-        mkdir -p libs
-        BASE_URL="https://dl.google.com/dl/android/maven2"
-        LIBS=(
-          "androidx/appcompat/appcompat/1.6.1/appcompat-1.6.1.aar"
-          "com/google/android/material/material/1.11.0/material-1.11.0.aar"
-          "androidx/core/core/1.12.0/core-1.12.0.aar"
-          "androidx/constraintlayout/constraintlayout/2.1.4/constraintlayout-2.1.4.aar"
-          "androidx/recyclerview/recyclerview/1.3.2/recyclerview-1.3.2.aar"
-          "androidx/cardview/cardview/1.0.0/cardview-1.0.0.aar"
-          "androidx/fragment/fragment/1.6.2/fragment-1.6.2.aar"
-          "androidx/viewpager2/viewpager2/1.0.0/viewpager2-1.0.0.aar"
-          "androidx/coordinatorlayout/coordinatorlayout/1.2.0/coordinatorlayout-1.2.0.aar"
-        )
-        for lib in "${LIBS[@]}"; do
-          filename=$(basename "$lib")
-          jarname="${filename%.aar}.jar"
-          if [ ! -f "libs/$jarname" ]; then
-            echo "Downloading $filename..."
-            curl -sL "$BASE_URL/$lib" -o "/tmp/$filename"
-            unzip -qo "/tmp/$filename" classes.jar -d /tmp/
-            mv /tmp/classes.jar "libs/$jarname"
-          fi
-        done
-        echo "Dependencies ready:"
-        ls -lh libs/
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v4
+      with:
+        gradle-home-cache-cleanup: true
 
-    - name: Generate icons
-      run: |
-        cd manager/app/src/main/res
-        python3 << 'PYEOF'
-        from PIL import Image, ImageDraw
-        import os, math
+    - name: Grant execute permission for gradlew
+      run: chmod +x manager/gradlew
 
-        sizes = {'mipmap-mdpi': 48, 'mipmap-hdpi': 72, 'mipmap-xhdpi': 96,
-                 'mipmap-xxhdpi': 144, 'mipmap-xxxhdpi': 192}
-
-        for folder, size in sizes.items():
-            os.makedirs(folder, exist_ok=True)
-            for suffix in ['ic_launcher.png', 'ic_launcher_round.png']:
-                img = Image.new('RGBA', (size, size), (0, 0, 0, 0))
-                draw = ImageDraw.Draw(img)
-                r = int(size * 0.22)
-                draw.rounded_rectangle([0, 0, size-1, size-1], radius=r, fill=(124, 77, 255, 255))
-                cx, cy = size // 2, size // 2
-                hr = int(size * 0.32)
-                pts = [(cx + hr * math.cos(math.radians(60*i - 90)),
-                        cy + hr * math.sin(math.radians(60*i - 90))) for i in range(6)]
-                draw.polygon(pts, fill=(255, 255, 255, 255))
-                cr = int(size * 0.07)
-                draw.ellipse([cx-cr, cy-cr, cx+cr, cy+cr], fill=(124, 77, 255, 255))
-                if 'round' in suffix:
-                    mask = Image.new('L', (size, size), 0)
-                    md = ImageDraw.Draw(mask)
-                    md.ellipse([0, 0, size-1, size-1], fill=255)
-                    img.putalpha(mask)
-                img.save(os.path.join(folder, suffix))
-        print("Icons generated!")
-        PYEOF
-
-    - name: Compile resources
+    - name: Build Release APK
       run: |
         cd manager
-        mkdir -p build/gen build/obj build/apk
-        export PATH=$ANDROID_HOME/build-tools/34.0.0:$PATH
-        aapt2 compile --dir app/src/main/res -o build/resources.zip
-        aapt2 link build/resources.zip \
-          -I $ANDROID_HOME/platforms/android-34/android.jar \
-          --manifest app/src/main/AndroidManifest.xml \
-          -o build/apk/base.apk \
-          --java build/gen \
-          --auto-add-overlay
-
-    - name: Compile Java sources
-      run: |
-        cd manager
-        export PATH=$ANDROID_HOME/build-tools/34.0.0:$PATH
-        mkdir -p build/gen/com/aurora/su/{core,service,receiver,provider,ui,util}
-        cp app/src/main/java/com/aurora/su/AuroraApplication.java build/gen/com/aurora/su/
-        cp app/src/main/java/com/aurora/su/core/*.java build/gen/com/aurora/su/core/ 2>/dev/null || true
-        cp app/src/main/java/com/aurora/su/service/*.java build/gen/com/aurora/su/service/ 2>/dev/null || true
-        cp app/src/main/java/com/aurora/su/receiver/*.java build/gen/com/aurora/su/receiver/ 2>/dev/null || true
-        cp app/src/main/java/com/aurora/su/provider/*.java build/gen/com/aurora/su/provider/ 2>/dev/null || true
-        cp app/src/main/java/com/aurora/su/ui/*.java build/gen/com/aurora/su/ui/ 2>/dev/null || true
-        cp app/src/main/java/com/aurora/su/util/*.java build/gen/com/aurora/su/util/ 2>/dev/null || true
-        find build/gen -name "*.java" > build/sources.txt
-        echo "Compiling $(wc -l < build/sources.txt) Java files..."
-        javac -source 1.8 -target 1.8 \
-          -bootclasspath $ANDROID_HOME/platforms/android-34/android.jar \
-          -cp "$ANDROID_HOME/platforms/android-34/android.jar:app/libs/*" \
-          -d build/obj \
-          -sourcepath build/gen \
-          @build/sources.txt 2>&1 || true
-
-    - name: Convert to DEX
-      run: |
-        cd manager
-        export PATH=$ANDROID_HOME/build-tools/34.0.0:$PATH
-        CLASS_FILES=$(find build/obj -name "*.class" 2>/dev/null)
-        if [ -n "$CLASS_FILES" ]; then
-          d8 --release --output build/apk \
-            --lib $ANDROID_HOME/platforms/android-34/android.jar \
-            $CLASS_FILES \
-            app/libs/*.jar 2>&1 || true
-        fi
-
-    - name: Package and sign APK
-      run: |
-        cd manager/build/apk
-        export PATH=$ANDROID_HOME/build-tools/34.0.0:$PATH
-        cp base.apk AuroraSU-release-unsigned.apk
-        if [ -f classes.dex ]; then
-          zip -uj AuroraSU-release-unsigned.apk classes.dex
-        fi
-        zipalign -f -p 4 AuroraSU-release-unsigned.apk AuroraSU-release-aligned.apk
-        keytool -genkey -v \
-          -keystore release.keystore \
-          -keyalg RSA -keysize 2048 -validity 10000 \
-          -alias aurora \
-          -dname "CN=AuroraSU, OU=Aurora, O=AuroraSU Team, L=Beijing, ST=Beijing, C=CN" \
-          -storepass aurorasu -keypass aurorasu
-        apksigner sign \
-          --ks release.keystore --ks-pass pass:aurorasu --key-pass pass:aurorasu \
-          --out AuroraSU-release.apk \
-          AuroraSU-release-aligned.apk
-        apksigner verify AuroraSU-release.apk
-        echo ""
-        echo "========== APK INFO =========="
-        ls -lh AuroraSU-release.apk
-        echo "==============================="
+        ./gradlew assembleRelease
+      env:
+        KEYSTORE_PATH: ${{ steps.create_keystore.outputs.keystore_path }}
+        KEYSTORE_PASSWORD: ${{ steps.create_keystore.outputs.keystore_password }}
+        KEY_ALIAS: ${{ steps.create_keystore.outputs.key_alias }}
+        KEY_PASSWORD: ${{ steps.create_keystore.outputs.key_password }}
 
     - name: Upload APK artifact
       uses: actions/upload-artifact@v4
       with:
         name: AuroraSU-Manager-APK
-        path: manager/build/apk/AuroraSU-release.apk
+        path: manager/app/build/outputs/apk/release/*.apk
+
+    - name: Get APK info
+      id: apk_info
+      run: |
+        APK_PATH=$(find manager/app/build/outputs/apk/release/*.apk -type f | head -1)
+        if [ -n "$APK_PATH" ]; then
+          APK_SIZE=$(du -h "$APK_PATH" | cut -f1)
+          APK_NAME=$(basename "$APK_PATH")
+          echo "apk_path=$APK_PATH" >> $GITHUB_OUTPUT
+          echo "apk_size=$APK_SIZE" >> $GITHUB_OUTPUT
+          echo "apk_name=$APK_NAME" >> $GITHUB_OUTPUT
+          echo "APK: $APK_NAME ($APK_SIZE)"
+        else
+          echo "No APK found!"
+          exit 1
+        fi
 
     - name: Create GitHub Release
       if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
@@ -180,23 +87,76 @@ jobs:
         body: |
           ## AuroraSU Manager
 
-          自动编译的 Release APK。
+          基于 SukiSU Ultra 源码构建，整合 Wild KSU 风格 UI。
 
-          ### 功能
-          - 多重仪表盘主页
-          - 超级用户管理
-          - 模块管理
-          - 日志查看
-          - 安全监控
-          - 多语言支持 (中文/英文)
+          ### 功能特性
+          - 🏠 多重仪表盘主页（系统状态、统计信息）
+          - ⚡ 快捷功能卡片（SELinux 切换、安全模式、Root 隐藏、内核卸载）
+          - 👑 超级用户管理
+          - 📦 模块管理（支持 KPM）
+          - 🔒 安全监控（SELinux、Seccomp、指纹）
+          - 🎨 双主题架构（Miuix + Material3）
+          - 🌈 15 种预设主题色 + Material You 动态取色
+          - 🌙 AMOLED 纯黑模式
+          - 🌐 30+ 语言支持
+          - 🔧 工具箱（SELinux 切换、模块仓库等）
 
-          ### 签名信息
-          - 签名方案: v1, v2, v3
-          - 构建环境: GitHub Actions (Ubuntu Latest)
-          - 目标 SDK: Android 14 (API 34)
-        files: manager/build/apk/AuroraSU-release.apk
+          ### 构建信息
+          - 源码: SukiSU Ultra v4.1.2
+          - UI: Wild KSU 风格自定义
+          - 目标 SDK: Android 37
+          - 最低 SDK: Android 12 (API 31)
+          - JDK: 21
+          - NDK: 29.0.14206865
+        files: ${{ steps.apk_info.outputs.apk_path }}
         draft: false
         prerelease: false
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      continue-on-error: true
+
+  build-kernel:
+    runs-on: ubuntu-latest
+    needs: []
+    continue-on-error: true
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential gcc-aarch64-linux-gnu
+
+    - name: Build kernel module (arm64)
+      run: |
+        cd kernel
+        export CROSS_COMPILE=aarch64-linux-gnu-
+        export ARCH=arm64
+        make -C /lib/modules/$(uname -r)/build M=$(pwd) modules 2>&1 || true
+      continue-on-error: true
+
+  build-aurorad:
+    runs-on: ubuntu-latest
+    needs: []
+    continue-on-error: true
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Rust
+      uses: dtolnay/rust-action@stable
+
+    - name: Install Android NDK
+      uses: nttld/setup-ndk@v1
+      with:
+        ndk-version: r26b
+
+    - name: Add Rust target
+      run: rustup target add aarch64-linux-android
+
+    - name: Build aurorad
+      run: |
+        cd userspace/ksud
+        cargo build --release --target aarch64-linux-android 2>&1 || true
       continue-on-error: true

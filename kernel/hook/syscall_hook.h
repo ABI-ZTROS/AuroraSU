@@ -1,46 +1,51 @@
-/*
- * AuroraSU - Syscall Hook Interface
- * 
- * Copyright (C) 2026 AuroraSU Team
- * SPDX-License-Identifier: GPL-2.0-or-later
- */
-
-#ifndef __AURORA_SYSCALL_HOOK_H__
-#define __AURORA_SYSCALL_HOOK_H__
-
-#include <linux/types.h>
+#ifndef __KSU_H_KSU_SYSCALL_HOOK
+#define __KSU_H_KSU_SYSCALL_HOOK
 #include <asm/syscall.h>
 
-/* Syscall Hook Handler Type */
-typedef long (*aurora_syscall_hook_fn)(int orig_nr, const struct pt_regs *regs);
+#if defined(__x86_64__)
+typedef sys_call_ptr_t syscall_fn_t;
+#endif
 
-/* Hook Registration */
-int aurora_register_syscall_hook(int nr, aurora_syscall_hook_fn fn);
-void aurora_unregister_syscall_hook(int nr);
-bool aurora_has_syscall_hook(int nr);
+extern syscall_fn_t *ksu_syscall_table;
 
-/* Direct Syscall Table Patching (for manual hook mode) */
-void aurora_syscall_table_hook(int nr, void *fn, void **old);
-void aurora_syscall_table_unhook(int nr);
+// Dispatcher slot number in syscall table
+extern int ksu_dispatcher_nr;
 
-/* Hook Manager */
-int aurora_syscall_hook_manager_init(void);
-void aurora_syscall_hook_manager_exit(void);
+// Syscall hook handler type.
+// orig_nr: the original syscall number before redirection
+// regs: the original pt_regs from userspace
+// Handler is responsible for calling ksu_syscall_table[orig_nr](regs) if needed.
+typedef long (*ksu_syscall_hook_fn)(int orig_nr, const struct pt_regs *regs);
 
-/* Kprobe Hook Functions */
-int aurora_kprobe_hook_init(void);
-void aurora_kprobe_hook_exit(void);
+// --- Dispatcher-based hook API (register/unregister) ---
+// Register a handler into the dispatcher's routing table for syscall @nr.
+// When a marked process invokes syscall @nr, the sys_enter tracepoint redirects
+// it to the unified dispatcher, which looks up @fn by @nr and calls it.
+// Does NOT modify the syscall table itself — the dispatcher slot is shared.
+// Returns 0 on success, -EEXIST if already registered, -EINVAL if nr invalid.
+int ksu_register_syscall_hook(int nr, ksu_syscall_hook_fn fn);
 
-/* Specific Hook Handlers */
-long aurora_hook_execve(int orig_nr, const struct pt_regs *regs);
-long aurora_hook_setresuid(int orig_nr, const struct pt_regs *regs);
-long aurora_hook_newfstatat(int orig_nr, const struct pt_regs *regs);
-long aurora_hook_faccessat(int orig_nr, const struct pt_regs *regs);
+// Remove a handler from the dispatcher's routing table for syscall @nr.
+// The syscall table is not touched — only the dispatcher stops routing @nr.
+void ksu_unregister_syscall_hook(int nr);
 
-/* Dispatcher Number (for tracepoint redirection) */
-extern int aurora_dispatcher_nr;
+// Check if a handler is registered in the dispatcher for syscall @nr.
+bool ksu_has_syscall_hook(int nr);
 
-/* Syscall Table Pointer */
-extern void **aurora_syscall_table;
+// --- Direct syscall table patching API (hook/unhook) ---
+// Directly overwrite syscall_table[@nr] with @fn using fixmap + stop_machine.
+// Saves the original handler to *@old (if non-NULL) and records the entry
+// for restoration at module exit. Use this for boot-time hooks that replace
+// a real syscall entry (e.g. ksud hooking __NR_execve/__NR_read/__NR_fstat).
+void ksu_syscall_table_hook(int nr, syscall_fn_t fn, syscall_fn_t *old);
 
-#endif /* __AURORA_SYSCALL_HOOK_H__ */
+// Restore syscall_table[@nr] to its original value recorded by
+// ksu_syscall_table_hook(), and remove the entry from the tracking list.
+// Use this to cleanly undo a direct hook when it is no longer needed
+// (e.g. ksud unhooking __NR_read after init.rc injection is done).
+void ksu_syscall_table_unhook(int nr);
+
+void ksu_syscall_hook_init(void);
+void ksu_syscall_hook_exit(void);
+
+#endif
