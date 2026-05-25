@@ -44,12 +44,12 @@ class HomeViewModel : ViewModel() {
 
     private fun buildState(): HomeUiState {
         val kernelVersion = getKernelVersion()
-        val isManager = Natives.isManager
-        val ksuVersion = if (isManager) Natives.version else null
-        val lkmMode = ksuVersion?.let { if (kernelVersion.isGKI()) Natives.isLkmMode else null }
+        val isManager = Natives.safe(false) { Natives.isManager }
+        val ksuVersion = if (isManager) Natives.safe(-1) { Natives.version } else null
+        val lkmMode = ksuVersion?.let { if (kernelVersion.isGKI()) Natives.safe(false) { Natives.isLkmMode } else null }
         val isRootAvailable = rootAvailable()
         val managerVersion = getManagerVersion(ksuApp)
-        val kernelFullVersion = Natives.getFullVersion()
+        val kernelFullVersion = Natives.safe("unknown") { Natives.getFullVersion() }
 
         return HomeUiState(
             kernelVersion = kernelVersion,
@@ -57,11 +57,11 @@ class HomeViewModel : ViewModel() {
             lkmMode = lkmMode,
             isManager = isManager,
             isManagerPrBuild = BuildConfig.IS_PR_BUILD,
-            isKernelPrBuild = Natives.isPrBuild,
-            requiresNewKernel = isManager && Natives.requireNewKernel(),
+            isKernelPrBuild = Natives.safe(false) { Natives.isPrBuild },
+            requiresNewKernel = isManager && Natives.safe(true) { Natives.requireNewKernel() },
             isRootAvailable = isRootAvailable,
-            isSafeMode = Natives.isSafeMode,
-            isLateLoadMode = Natives.isLateLoadMode,
+            isSafeMode = Natives.safe(false) { Natives.isSafeMode },
+            isLateLoadMode = Natives.safe(false) { Natives.isLateLoadMode },
             checkUpdateEnabled = ksuApp.getSharedPreferences("settings", Context.MODE_PRIVATE)
                 .getBoolean("check_update", true),
             latestVersionInfo = LatestVersionInfo(),

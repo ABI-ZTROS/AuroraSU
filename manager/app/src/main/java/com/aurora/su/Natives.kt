@@ -11,25 +11,12 @@ import kotlinx.serialization.Serializable
  * @date 2022/12/8.
  */
 object Natives {
-    // minimal supported kernel version
-    // 10915: allowlist breaking change, add app profile
-    // 10931: app profile struct add 'version' field
-    // 10946: add capabilities
-    // 10977: change groups_count and groups to avoid overflow write
-    // 11071: Fix the issue of failing to set a custom SELinux type.
-    // 12143: breaking: new supercall impl
-    // 32310: new get_allow_list ioctl
-    // 32336: new set_sepolicy ioctl
-    // 32377: add set_init_pgrp ioctl
     const val MINIMAL_SUPPORTED_KERNEL = 32377
 
-    // Get full version
     external fun getFullVersion(): String
     const val MINIMAL_SUPPORTED_KERNEL_FULL = "v4.0.0"
 
-    // 12040: Support disable sucompat mode
     const val KERNEL_SU_DOMAIN = "u:r:ksu:s0"
-
     const val ROOT_UID = 0
     const val ROOT_GID = 0
 
@@ -39,7 +26,6 @@ object Natives {
             val simpleVersion = match?.value ?: version
             return simpleVersion.trimStart('v').split('.').map { it.toIntOrNull() ?: 0 }
         }
-
         val v1Parts = extractVersionParts(v1Full)
         val v2Parts = extractVersionParts(v2Full)
         val maxLength = maxOf(v1Parts.size, v2Parts.size)
@@ -51,19 +37,26 @@ object Natives {
         return false
     }
 
-    private var libraryLoaded = false
+    var libraryLoaded = false
+        private set
 
     init {
         try {
             System.loadLibrary("kernelsu")
             libraryLoaded = true
         } catch (e: UnsatisfiedLinkError) {
-            android.util.Log.e("Natives", "Failed to load kernelsu library: ${e.message}")
+            android.util.Log.w("Natives", "kernelsu library not available: ${e.message}")
             libraryLoaded = false
         }
     }
 
-    fun isLibraryLoaded(): Boolean = libraryLoaded
+    /**
+     * Safe call wrapper - returns default value if library is not loaded or call fails.
+     */
+    inline fun <T> safe(default: T, block: () -> T): T {
+        if (!libraryLoaded) return default
+        return try { block() } catch (_: UnsatisfiedLinkError) { default } catch (_: Exception) { default }
+    }
 
     val version: Int
         external get
@@ -84,69 +77,27 @@ object Natives {
         external get
 
     external fun uidShouldUmount(uid: Int): Boolean
-
-    /**
-     * Get the profile of the given package.
-     * @param key usually the package name
-     * @return return null if failed.
-     */
     external fun getAppProfile(key: String?, uid: Int): Profile
     external fun setAppProfile(profile: Profile?): Boolean
-
-    /**
-     * `su` compat mode can be disabled temporarily.
-     *  0: disabled
-     *  1: enabled
-     *  negative : error
-     */
     external fun isSuEnabled(): Boolean
     external fun setSuEnabled(enabled: Boolean): Boolean
-
-    /**
-     * Kernel module umount can be disabled temporarily.
-     *  0: disabled
-     *  1: enabled
-     *  negative : error
-     */
     external fun isKernelUmountEnabled(): Boolean
     external fun setKernelUmountEnabled(enabled: Boolean): Boolean
-
-    /**
-     * SELinux hide can be disabled temporarily.
-     *  0: disabled
-     *  1: enabled
-     *  negative : error
-     */
     external fun isSelinuxHideEnabled(): Boolean
     external fun setSelinuxHideEnabled(enabled: Boolean): Int
-
-    /**
-     * Get the user name for the uid.
-     */
     external fun getUserName(uid: Int): String?
-
     external fun getSuperuserCount(): Int
-
     external fun getHookType(): String
 
     private const val NON_ROOT_DEFAULT_PROFILE_KEY = "$"
     private const val NOBODY_UID = 9999
 
     fun setDefaultUmountModules(umountModules: Boolean): Boolean {
-        Profile(
-            NON_ROOT_DEFAULT_PROFILE_KEY,
-            NOBODY_UID,
-            false,
-            umountModules = umountModules
-        ).let {
-            return setAppProfile(it)
-        }
+        return setAppProfile(Profile(NON_ROOT_DEFAULT_PROFILE_KEY, NOBODY_UID, false, umountModules = umountModules))
     }
 
     fun isDefaultUmountModules(): Boolean {
-        getAppProfile(NON_ROOT_DEFAULT_PROFILE_KEY, NOBODY_UID).let {
-            return it.umountModules
-        }
+        return getAppProfile(NON_ROOT_DEFAULT_PROFILE_KEY, NOBODY_UID).umountModules
     }
 
     fun requireNewKernel(): Boolean {
@@ -159,16 +110,9 @@ object Natives {
     @Parcelize
     @Serializable
     data class Profile(
-        // and there is a default profile for root and non-root
         val name: String,
-        // current uid for the package, this is convivent for kernel to check
-        // if the package name doesn't match uid, then it should be invalidated.
         val currentUid: Int = 0,
-
-        // if this is true, kernel will grant root permission to this package
         val allowSu: Boolean = false,
-
-        // these are used for root profile
         val rootUseDefault: Boolean = true,
         val rootTemplate: String? = null,
         val uid: Int = ROOT_UID,
@@ -177,17 +121,13 @@ object Natives {
         val capabilities: List<Int> = mutableListOf(),
         val context: String = KERNEL_SU_DOMAIN,
         val namespace: Int = Namespace.INHERITED.ordinal,
-
         val nonRootUseDefault: Boolean = true,
         val umountModules: Boolean = true,
-        var rules: String = "", // this field is save in ksud!!
+        var rules: String = "",
     ) : Parcelable {
         enum class Namespace {
-            INHERITED,
-            GLOBAL,
-            INDIVIDUAL,
+            INHERITED, GLOBAL, INDIVIDUAL,
         }
-
         constructor() : this("")
     }
 }
