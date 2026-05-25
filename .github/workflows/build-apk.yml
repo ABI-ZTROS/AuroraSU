@@ -36,7 +36,10 @@ jobs:
           "build-tools;37.0.0" \
           "platforms;android-37.0" \
           "platform-tools" \
-          "ndk;29.0.14206865"
+          "ndk;29.0.14206865" \
+          "cmake;3.22.1"
+        echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/29.0.14206865" >> $GITHUB_ENV
+        echo "$ANDROID_HOME/ndk/29.0.14206865" >> $GITHUB_PATH
 
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v4

@@ -51,9 +51,19 @@ object Natives {
         return false
     }
 
+    private var libraryLoaded = false
+
     init {
-        System.loadLibrary("kernelsu")
+        try {
+            System.loadLibrary("kernelsu")
+            libraryLoaded = true
+        } catch (e: UnsatisfiedLinkError) {
+            android.util.Log.e("Natives", "Failed to load kernelsu library: ${e.message}")
+            libraryLoaded = false
+        }
     }
+
+    fun isLibraryLoaded(): Boolean = libraryLoaded
 
     val version: Int
         external get
