@@ -3,6 +3,7 @@ package com.ztros.ztrosu.ui.screen
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -26,6 +27,7 @@ import com.ztros.ztrosu.ui.LocalScrollState
 import com.ztros.ztrosu.ui.rememberScrollConnection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -266,6 +268,13 @@ private fun SecurityCard(
     navigator: DestinationsNavigator,
     loadingDialog: LoadingDialogHandle
 ) {
+    val context = LocalContext.current
+    val snackBarHost = LocalSnackbarHost.current
+    val scope = rememberCoroutineScope()
+
+    // Detect ZTR_OS kernel by checking version tag
+    val isZtrOS = !Natives.getVersionTag().isNullOrBlank()
+
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.padding(12.dp),
@@ -286,6 +295,60 @@ private fun SecurityCard(
                 val shouldEnforce = !checked
                 if (setSelinuxEnforce(shouldEnforce)) {
                     isSelinuxPermissive = !shouldEnforce
+                }
+            }
+
+            // SuperKey setting - only show on ZTR_OS kernel
+            if (isZtrOS) {
+                var superKeyActive by rememberSaveable {
+                    mutableStateOf(Natives.isSuperKeyActive())
+                }
+                var showSuperKeyDialog by remember { mutableStateOf(false) }
+
+                ListItem(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable { showSuperKeyDialog = true },
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                    leadingContent = { Icon(Icons.Filled.Key, null) },
+                    headlineContent = {
+                        Text(
+                            text = stringResource(R.string.superkey_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    },
+                    supportingContent = {
+                        Text(
+                            if (superKeyActive) {
+                                stringResource(R.string.superkey_active)
+                            } else {
+                                stringResource(R.string.superkey_not_set)
+                            }
+                        )
+                    }
+                )
+
+                if (showSuperKeyDialog) {
+                    SuperKeyDialog(
+                        isActive = superKeyActive,
+                        onDismiss = { showSuperKeyDialog = false },
+                        onKeySet = {
+                            superKeyActive = true
+                            showSuperKeyDialog = false
+                            scope.launch {
+                                snackBarHost.showSnackbar(
+                                    context.getString(R.string.superkey_set_success)
+                                )
+                            }
+                        },
+                        onKeyCleared = {
+                            superKeyActive = false
+                            showSuperKeyDialog = false
+                        },
+                        loadingDialog = loadingDialog
+                    )
                 }
             }
 
@@ -461,6 +524,156 @@ private fun AppSettingsCard(
             )
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SuperKeyDialog(
+    isActive: Boolean,
+    onDismiss: () -> Unit,
+    onKeySet: () -> Unit,
+    onKeyCleared: () -> Unit,
+    loadingDialog: LoadingDialogHandle
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val snackBarHost = LocalSnackbarHost.current
+
+    var inputKey by remember { mutableStateOf("") }
+    var showClearConfirm by remember { mutableStateOf(false) }
+
+    if (showClearConfirm) {
+        AlertDialog(
+            onDismissRequest = { showClearConfirm = false },
+            title = {
+                Text(
+                    text = stringResource(R.string.superkey_title),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.SemiBold
+                )
+            },
+            text = {
+                Text(text = stringResource(R.string.superkey_clear_confirm))
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showClearConfirm = false
+                    scope.launch {
+                        val success = withContext(Dispatchers.IO) {
+                            // Clear superkey by setting an empty key
+                            Natives.setSuperKey("")
+                        }
+                        if (success) {
+                            onKeyCleared()
+                            snackBarHost.showSnackbar(
+                                context.getString(R.string.superkey_set_success)
+                            )
+                        } else {
+                            snackBarHost.showSnackbar(
+                                context.getString(R.string.superkey_set_failed)
+                            )
+                        }
+                    }
+                }) {
+                    Text(text = stringResource(R.string.confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showClearConfirm = false }) {
+                    Text(text = stringResource(R.string.cancel))
+                }
+            }
+        )
+        return
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = stringResource(R.string.superkey_dialog_title),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.SemiBold
+            )
+        },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(text = stringResource(R.string.superkey_dialog_message))
+
+                OutlinedTextField(
+                    value = inputKey,
+                    onValueChange = { inputKey = it },
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(),
+                    placeholder = { Text("********") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                if (isActive) {
+                    TextButton(
+                        onClick = { showClearConfirm = true },
+                        modifier = Modifier.align(Alignment.End)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.settings_uninstall),
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    val key = inputKey.trim()
+                    // Validate key: 8-64 chars, must contain letters and numbers
+                    if (key.length < 8 || key.length > 64 ||
+                        !key.any { it.isLetter() } ||
+                        !key.any { it.isDigit() }
+                    ) {
+                        Toast.makeText(
+                            context,
+                            context.getString(R.string.superkey_dialog_message),
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        return@TextButton
+                    }
+
+                    scope.launch {
+                        val success = withContext(Dispatchers.IO) {
+                            Natives.setSuperKey(key)
+                        }
+                        if (success) {
+                            // Verify the key was set correctly
+                            val verified = withContext(Dispatchers.IO) {
+                                Natives.verifySuperKey(key)
+                            }
+                            if (verified) {
+                                onKeySet()
+                            } else {
+                                snackBarHost.showSnackbar(
+                                    context.getString(R.string.superkey_verify_failed)
+                                )
+                            }
+                        } else {
+                            snackBarHost.showSnackbar(
+                                context.getString(R.string.superkey_set_failed)
+                            )
+                        }
+                    }
+                }
+            ) {
+                Text(text = stringResource(R.string.confirm))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(text = stringResource(R.string.cancel))
+            }
+        }
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

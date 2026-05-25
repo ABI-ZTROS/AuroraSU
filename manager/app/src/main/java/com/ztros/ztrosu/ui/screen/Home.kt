@@ -1007,6 +1007,21 @@ private fun InfoCard(autoExpand: Boolean = false) {
                             icon = Icons.Filled.Vaccines
                         )
                     }
+
+                    // SuperKey status - only show on ZTR_OS kernel
+                    val versionTag = Natives.getVersionTag()
+                    if (!versionTag.isNullOrBlank()) {
+                        Spacer(Modifier.height(16.dp))
+                        InfoCardItem(
+                            label = stringResource(R.string.superkey_title),
+                            content = if (Natives.isSuperKeyActive()) {
+                                stringResource(R.string.superkey_active)
+                            } else {
+                                stringResource(R.string.superkey_not_set)
+                            },
+                            icon = Icons.Filled.Key
+                        )
+                    }
                 }
 
                 AnimatedVisibility(visible = expanded) {

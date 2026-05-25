@@ -139,6 +139,11 @@ object Natives {
         return version != -1 && version < MINIMAL_SUPPORTED_KERNEL
     }
 
+    // ZTR_OS SU: SuperKey support
+    external fun setSuperKey(key: String): Boolean
+    external fun verifySuperKey(key: String): Boolean
+    external fun isSuperKeyActive(): Boolean
+
     val KSU_WORK_DIR = "/data/adb/ksu/"
 
     @Immutable

@@ -240,4 +240,15 @@
     <string name="backup_failed">Backup failed</string>
     <string name="restore_success">Restore completed successfully</string>
     <string name="restore_failed">Restore failed</string>
+    <string name="superkey_title">SuperKey</string>
+    <string name="superkey_summary">Authenticate manager without APK signature verification</string>
+    <string name="superkey_not_set">Not set (using signature verification)</string>
+    <string name="superkey_active">Active</string>
+    <string name="superkey_dialog_title">Set SuperKey</string>
+    <string name="superkey_dialog_message">Enter a SuperKey (8-64 characters, must contain letters and numbers). Once set, any app with the correct key can be recognized as manager.</string>
+    <string name="superkey_set_success">SuperKey set successfully</string>
+    <string name="superkey_set_failed">Failed to set SuperKey</string>
+    <string name="superkey_verify_success">SuperKey verified</string>
+    <string name="superkey_verify_failed">Incorrect SuperKey</string>
+    <string name="superkey_clear_confirm">Are you sure you want to clear the SuperKey? The app will fall back to signature verification.</string>
 </resources>

@@ -1,8 +1,11 @@
 #include <jni.h>
 
 #include <sys/prctl.h>
+#include <sys/reboot.h>
+#include <sys/syscall.h>
 #include <linux/capability.h>
 #include <pwd.h>
+#include <unistd.h>
 
 #include <android/log.h>
 #include <cstring>
@@ -376,4 +379,51 @@ Java_com_ztros_ztrosu_Natives_getUserName(JNIEnv *env, jobject thiz, jint uid) {
         return env->NewStringUTF(pw->pw_name);
     }
     return nullptr;
+}
+
+// ============================================================================
+// ZTR_OS SU: SuperKey support via sys_reboot magic2 commands
+// ============================================================================
+#define ZTRSU_SUPERKEY_SET       10020
+#define ZTRSU_SUPERKEY_VERIFY    10021
+#define ZTRSU_SUPERKEY_GET_STATUS 10022
+
+#define LINUX_REBOOT_MAGIC1 0xfee1dead
+#define SUPERKEY_CMD_SET    0
+#define SUPERKEY_CMD_VERIFY 1
+#define SUPERKEY_CMD_STATUS 2
+
+static int superkey_syscall(int magic2, int cmd, const char *arg) {
+    // Use syscall directly to avoid glibc wrapper restrictions
+    return syscall(__NR_reboot, LINUX_REBOOT_MAGIC1, magic2, cmd, arg);
+}
+
+extern "C"
+JNIEXPORT jboolean JNICALL
+Java_com_ztros_ztrosu_Natives_setSuperKey(JNIEnv *env, jobject thiz, jstring key) {
+    if (key == nullptr) return false;
+    auto ckey = env->GetStringUTFChars(key, nullptr);
+    int result = superkey_syscall(ZTRSU_SUPERKEY_SET, SUPERKEY_CMD_SET, ckey);
+    env->ReleaseStringUTFChars(key, ckey);
+    LOGD("setSuperKey result: %d", result);
+    return result == 0;
+}
+
+extern "C"
+JNIEXPORT jboolean JNICALL
+Java_com_ztros_ztrosu_Natives_verifySuperKey(JNIEnv *env, jobject thiz, jstring key) {
+    if (key == nullptr) return false;
+    auto ckey = env->GetStringUTFChars(key, nullptr);
+    int result = superkey_syscall(ZTRSU_SUPERKEY_VERIFY, SUPERKEY_CMD_VERIFY, ckey);
+    env->ReleaseStringUTFChars(key, ckey);
+    LOGD("verifySuperKey result: %d", result);
+    return result == 0;
+}
+
+extern "C"
+JNIEXPORT jboolean JNICALL
+Java_com_ztros_ztrosu_Natives_isSuperKeyActive(JNIEnv *env, jobject thiz) {
+    int result = superkey_syscall(ZTRSU_SUPERKEY_GET_STATUS, SUPERKEY_CMD_STATUS, nullptr);
+    LOGD("isSuperKeyActive result: %d", result);
+    return result == 0;
 }

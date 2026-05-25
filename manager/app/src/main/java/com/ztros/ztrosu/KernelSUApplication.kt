@@ -2,6 +2,7 @@ package com.ztros.ztrosu
 
 import android.app.Application
 import android.system.Os
+import android.util.Log
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
@@ -62,6 +63,23 @@ class KernelSUApplication : Application(), ViewModelStoreOwner {
                             .header("Accept-Language", Locale.getDefault().toLanguageTag()).build()
                     )
                 }.build()
+
+        // ZTR_OS SU: Check SuperKey status on first launch (background logging only)
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val versionTag = Natives.getVersionTag()
+                if (!versionTag.isNullOrBlank()) {
+                    // ZTR_OS kernel detected
+                    val isSuperKeyActive = Natives.isSuperKeyActive()
+                    Log.i(
+                        "KernelSUApplication",
+                        "ZTR_OS kernel detected (tag=$versionTag), SuperKey active: $isSuperKeyActive"
+                    )
+                }
+            } catch (e: Exception) {
+                Log.w("KernelSUApplication", "Failed to check SuperKey status: ${e.message}")
+            }
+        }
     }
 
     override val viewModelStore: ViewModelStore
