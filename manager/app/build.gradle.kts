@@ -23,7 +23,7 @@ apksign {
 }
 
 android {
-    namespace = "com.twj.wksu"
+    namespace = "com.ztros.ztrosu"
 
     buildTypes {
         release {
@@ -68,7 +68,7 @@ android {
     applicationVariants.all {
         outputs.forEach {
             val output = it as BaseVariantOutputImpl
-            output.outputFileName = "Wild_KSU_${managerVersionName}_${managerVersionCode}-$name.apk"
+            output.outputFileName = "ZTR_OS_SU_${managerVersionName}_${managerVersionCode}-$name.apk"
         }
         kotlin.sourceSets {
             getByName(name) {

@@ -1,15 +1,15 @@
 [English](README.md) | [简体中文](README_CN.md) | [繁體中文](README_TW.md) | [Türkçe](README_TR.md) | [Português (Brasil)](README_PT-BR.md) | [한국어](README_KO.md) | [Français](README_FR.md) | [Bahasa Indonesia](README_ID.md) | [Русский](README_RU.md) | [Українська](README_UA.md) | [ภาษาไทย](README_TH.md) | [Tiếng Việt](README_VI.md) | **Italiano** | [Polski](README_PL.md)  | [Български](README_BG.md) | [日本語](README_JA.md) | [Español](README_ES.md)
 
-# Wild KSU
+# ZTR_OS SU
 
-<img src="/assets/wksu.png" style="width: 96px;" alt="logo">
+<img src="/assets/ztrosu.png" style="width: 96px;" alt="logo">
 
 Una soluzione root basata sul kernel per dispositivi Android.
 
-[![Latest Release](https://img.shields.io/github/v/release/Wild-KSU/Wild-KSU?label=Release&logo=github)](https://github.com/Wild-KSU/Wild-KSU/releases/latest)
-[![Nightly Release](https://img.shields.io/badge/Nightly%20Release-gray?logo=hackthebox&logoColor=fff)](https://nightly.link/Wild-KSU/Wild-KSU/workflows/build-manager-ci/next/Manager)
+[![Latest Release](https://img.shields.io/github/v/release/ZTR-OS/ZTR-OS?label=Release&logo=github)](https://github.com/ZTR-OS/ZTR-OS/releases/latest)
+[![Nightly Release](https://img.shields.io/badge/Nightly%20Release-gray?logo=hackthebox&logoColor=fff)](https://nightly.link/ZTR-OS/ZTR-OS/workflows/build-manager-ci/next/Manager)
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-orange.svg?logo=gnu)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
-[![GitHub License](https://img.shields.io/github/license/Wild-KSU/Wild-KSU?logo=gnu)](/LICENSE)
+[![GitHub License](https://img.shields.io/github/license/ZTR-OS/ZTR-OS?logo=gnu)](/LICENSE)
 
 ## Caratteristiche
 
@@ -19,7 +19,7 @@ Una soluzione root basata sul kernel per dispositivi Android.
 
 ## Stato compatibilità
 
-Wild KSU supporta ufficialmente la maggior parte dei kernel Android dalla versione 4.4 alla 6.6.
+ZTR_OS SU supporta ufficialmente la maggior parte dei kernel Android dalla versione 4.4 alla 6.6.
  - I kernel GKI 2.0 (5.10+) possono eseguire immagini precostruite e GKI.
  - I kernel GKI 1.0 (4.19 - 5.4) devono essere ricostruiti con il driver KernelSU.
  - Anche i kernel EOL (<4.14) devono essere ricostruiti con il driver KernelSU (la versione 3.18+ è sperimentale e potrebbe richiedere alcuni backport di funzioni).
@@ -27,11 +27,11 @@ Wild KSU supporta ufficialmente la maggior parte dei kernel Android dalla versio
 Attualmente è supportata solo l'architettura `arm64-v8a`, `armeabi-v7a` & `x86_64`.
 
 > [!CAUTION]
-> Le versioni recenti del kernel hanno implementato una modifica che causa il fallimento di Wild KSU e potenzialmente innesca un kernel panic su `x86_64`! Controlla il sito web per maggiori informazioni!
+> Le versioni recenti del kernel hanno implementato una modifica che causa il fallimento di ZTR_OS SU e potenzialmente innesca un kernel panic su `x86_64`! Controlla il sito web per maggiori informazioni!
 
 ## Utilizzo
 
-- [Istruzioni per l'installazione](https://wksu.org/pages/installation.html)
+- [Istruzioni per l'installazione](https://ztros.su/pages/installation.html)
 
 ## Security
 
@@ -62,5 +62,5 @@ Per informazioni sulla segnalazione delle vulnerabilità di sicurezza in KernelS
 - [Magisk](https://github.com/topjohnwu/Magisk): Il potente strumento di root.
 - [genuine](https://github.com/brevent/genuine/): Convalida della firma APK v2.
 - [Diamorphine](https://github.com/m0nad/Diamorphine): Alcune competenze sui rootkit.
-- [KernelSU](https://github.com/tiann/KernelSU): Grazie a tiann, altrimenti Wild KSU non esisterebbe nemmeno.
+- [KernelSU](https://github.com/tiann/KernelSU): Grazie a tiann, altrimenti ZTR_OS SU non esisterebbe nemmeno.
 - [Magic Mount Port](https://github.com/5ec1cff/KernelSU/blob/main/userspace/ksud/src/magic_mount.rs): 💜 5ec1cff per aver salvato KernelSU!

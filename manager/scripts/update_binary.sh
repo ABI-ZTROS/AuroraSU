@@ -27,13 +27,13 @@ chmod 755 "$KSUD" "$MAGISKBOOT"
 # use ksud to install or uninstall
 case "$3" in
   *uninstall*|*Uninstall*)
-    ui_print "- Uninstalling Wild-KSU..."
+    ui_print "- Uninstalling ZTR-OS..."
     "$KSUD" uninstall --magiskboot "$MAGISKBOOT" 2>&1 | while read -r line; do
       ui_print "$line"
     done
     ;;
   *)
-    ui_print "- Installing Wild-KSU..."
+    ui_print "- Installing ZTR-OS..."
     "$KSUD" boot-patch --magiskboot "$MAGISKBOOT" --flash 2>&1 | while read -r line; do
       ui_print "$line"
     done

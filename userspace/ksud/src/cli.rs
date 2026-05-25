@@ -7,7 +7,7 @@ use log::{LevelFilter, info};
 
 use crate::{apk_sign, assets, debug, defs, init_event, ksucalls, module, module_config, utils};
 
-/// Wild KSU userspace cli
+/// ZTR_OS SU userspace cli
 #[derive(Parser, Debug)]
 #[command(author, version = defs::VERSION_NAME, about, long_about = None)]
 struct Args {
@@ -17,7 +17,7 @@ struct Args {
 
 #[derive(clap::Subcommand, Debug)]
 enum Commands {
-    /// Manage Wild KSU modules
+    /// Manage ZTR_OS SU modules
     Module {
         #[command(subcommand)]
         command: Module,
@@ -32,7 +32,7 @@ enum Commands {
     /// Trigger `boot-complete` event
     BootCompleted,
 
-    /// Install Wild KSU userspace component to system
+    /// Install ZTR_OS SU userspace component to system
     Install {
         #[arg(long, default_value = None)]
         magiskboot: Option<PathBuf>,
@@ -85,7 +85,7 @@ enum Debug {
     /// Set the manager app, kernel CONFIG_KSU_DEBUG should be enabled.
     SetManager {
         /// manager package name
-        #[arg(default_value_t = String::from("com.twj.wksu"))]
+        #[arg(default_value_t = String::from("com.ztros.ztrosu"))]
         apk: String,
     },
 
@@ -376,7 +376,7 @@ pub fn run() -> Result<()> {
     android_logger::init_once(
         Config::default()
             .with_max_level(crate::debug_select!(LevelFilter::Trace, LevelFilter::Info))
-            .with_tag("Wild KSU"),
+            .with_tag("ZTR_OS SU"),
     );
 
     // the kernel executes su with argv[0] = "su" and replace it with us
@@ -507,7 +507,7 @@ pub fn run() -> Result<()> {
         },
         Commands::Services => {
             if ksucalls::get_version() <= 0 {
-                info!("Wild KSU not available, exiting services");
+                info!("ZTR_OS SU not available, exiting services");
                 std::process::exit(0);
             }
             init_event::on_services();

@@ -3,25 +3,25 @@
 ---
 
 <div align="center">
-  <img src="/assets/wksu.png" width="96" alt="Wild KSU Logo">
+  <img src="/assets/ztrosu.png" width="96" alt="ZTR_OS SU Logo">
 
-  <h2>Wild KSU</h2>
+  <h2>ZTR_OS SU</h2>
   <p><strong>Bazujące na jądrze rozwiązanie root dla urządzeń z Androidem.</strong></p>
 
   <p>
-    <a href="https://github.com/Wild-KSU/Wild-KSU/releases/latest">
-      <img src="https://img.shields.io/github/v/release/Wild-KSU/Wild-KSU?label=Release&logo=github" alt="Latest Release">
+    <a href="https://github.com/ZTR-OS/ZTR-OS/releases/latest">
+      <img src="https://img.shields.io/github/v/release/ZTR-OS/ZTR-OS?label=Release&logo=github" alt="Latest Release">
     </a>
-    <a href="https://nightly.link/Wild-KSU/Wild-KSU/workflows/build-manager-ci/next/Manager">
+    <a href="https://nightly.link/ZTR-OS/ZTR-OS/workflows/build-manager-ci/next/Manager">
       <img src="https://img.shields.io/badge/Nightly%20Release-gray?logo=hackthebox&logoColor=fff" alt="Nightly Build">
     </a>
     <a href="https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html">
       <img src="https://img.shields.io/badge/License-GPL%20v2-orange.svg?logo=gnu" alt="License: GPL v2">
     </a>
     <a href="/LICENSE">
-      <img src="https://img.shields.io/github/license/Wild-KSU/Wild-KSU?logo=gnu" alt="GitHub License">
+      <img src="https://img.shields.io/github/license/ZTR-OS/ZTR-OS?logo=gnu" alt="GitHub License">
     </a>
-    <a title="Crowdin" target="_blank" href="https://crowdin.com/project/wild-ksu"><img src="https://badges.crowdin.net/wild-ksu/localized.svg"></a>
+    <a title="Crowdin" target="_blank" href="https://crowdin.com/project/ztros-su"><img src="https://badges.crowdin.net/ztros-su/localized.svg"></a>
   </p>
 </div>
 
@@ -37,7 +37,7 @@
 
 ## ✅ Kompatybilność
 
-Wild KSU obsługuje jądra Androida od wersji **4.4 do 6.6**:
+ZTR_OS SU obsługuje jądra Androida od wersji **4.4 do 6.6**:
 
 | Wersja jądra         | Informacje techniczne                                                                     |
 |----------------------|-------------------------------------------------------------------------------------------|
@@ -48,13 +48,13 @@ Wild KSU obsługuje jądra Androida od wersji **4.4 do 6.6**:
 **Obsługiwane architektury:** `arm64-v8a`, `armeabi-v7a` i `x86_64`
 
 > [!CAUTION]
-> Nowsze wersje jądra wprowadzają zmianę, która powoduje awarię Wild KSU i może wywołać kernel panic na `x86_64`! Sprawdź stronę internetową po więcej informacji!
+> Nowsze wersje jądra wprowadzają zmianę, która powoduje awarię ZTR_OS SU i może wywołać kernel panic na `x86_64`! Sprawdź stronę internetową po więcej informacji!
 
 ---
 
 ## 📦 Instalacja
 
-Instrukcje dotyczące instalacji można znaleźć w przewodniku [Instalacja](https://wild-ksu.github.io/webpage/pages/installation.html).
+Instrukcje dotyczące instalacji można znaleźć w przewodniku [Instalacja](https://ztros-su.github.io/webpage/pages/installation.html).
 
 ---
 
@@ -90,5 +90,5 @@ Jeśli chciałbyś wesprzeć projekt:
 - [Magisk](https://github.com/topjohnwu/Magisk) – Bazowa implementacja roota
 - [Genuine](https://github.com/brevent/genuine/) – Walidacja podpisu APK v2
 - [Diamorphine](https://github.com/m0nad/Diamorphine) – Techniki rootkit
-- [KernelSU](https://github.com/tiann/KernelSU) – Oryginalna baza, która umożliwiła powstanie Wild KSU
+- [KernelSU](https://github.com/tiann/KernelSU) – Oryginalna baza, która umożliwiła powstanie ZTR_OS SU
 - [Magic Mount Port](https://github.com/5ec1cff/KernelSU/blob/main/userspace/ksud/src/magic_mount.rs) – Za obsługę Magic Mount

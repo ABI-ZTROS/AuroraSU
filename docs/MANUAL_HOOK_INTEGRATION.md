@@ -1,7 +1,7 @@
-# Integrate Wild KSU (Advanced Manual Hook Guide)
+# Integrate ZTR_OS SU (Advanced Manual Hook Guide)
 
 This guide is intentionally laid out in the same practical patching style used
-by advanced non-GKI integration pages, but targets this Wild_KSU tree running
+by advanced non-GKI integration pages, but targets this ZTR_OS_SU tree running
 manual mode only.
 
 Scope:
@@ -154,7 +154,7 @@ if (ksu_handle_sys_reboot(magic1, magic2, cmd, &argp))
 
 ## Safe Mode Behavior
 
-This Wild_KSU tree does not require manual `input.c` patching for safe mode in
+This ZTR_OS_SU tree does not require manual `input.c` patching for safe mode in
 the default path. It uses internal ksud input handler registration.
 
 If your kernel blocks input handler registration in this context, add a custom

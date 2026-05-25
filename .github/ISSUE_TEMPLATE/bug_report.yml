@@ -1,5 +1,5 @@
 name: Bug report
-description: Create a report to help us improve Wild KSU
+description: Create a report to help us improve ZTR_OS SU
 labels: [Bug]
 
 body:
@@ -61,8 +61,8 @@ body:
           - Device:
           - OS Version:
           - Kernel Version:
-          - WKSU Driver Version:
-          - WKSU Manager Version:
+          - ZTRSU Driver Version:
+          - ZTRSU Manager Version:
     validations:
         required: true
 

@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       ksu_branch:
-        description: Wild KSU branch/commit/tag to setup
+        description: ZTR_OS SU branch/commit/tag to setup
         required: false
         default: dev
   push:
@@ -76,11 +76,11 @@ jobs:
           repo init -u https://android.googlesource.com/kernel/manifest -b "${{ matrix.branch }}" --depth=1
           repo --trace sync -c -j"$(nproc --all)" --fail-fast --no-tags --force-sync --no-clone-bundle --optimized-fetch --prune --current-branch
 
-      - name: Setup Wild KSU in source tree
+      - name: Setup ZTR_OS SU in source tree
         run: |
           set -euxo pipefail
           cd "$GITHUB_WORKSPACE/android-kernel"
-          bash <(curl -LSs "https://raw.githubusercontent.com/WildKernels/Wild_KSU/dev/kernel/setup.sh") -p "$KSU_BRANCH"
+          bash <(curl -LSs "https://raw.githubusercontent.com/ZTR-OS/AuroraSU/dev/kernel/setup.sh") -p "$KSU_BRANCH"
 
       - name: Write KSU fragment
         run: |
@@ -146,7 +146,7 @@ jobs:
       - name: Clone AnyKernel3 (flash test only)
         run: |
           set -euxo pipefail
-          git clone --depth 1 -b gki-2.0 https://github.com/WildKernels/AnyKernel3.git "$GITHUB_WORKSPACE/AnyKernel3"
+          git clone --depth 1 -b gki-2.0 https://github.com/ZTR-OS/AnyKernel3.git "$GITHUB_WORKSPACE/AnyKernel3"
 
       - name: Prepare AnyKernel3 Artifact (flash test only)
         run: |

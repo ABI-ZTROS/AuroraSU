@@ -3,25 +3,25 @@
 ---
 
 <div align="center">
-  <img src="/assets/wksu.png" width="96" alt="Wild KSU Logo">
+  <img src="/assets/ztrosu.png" width="96" alt="ZTR_OS SU Logo">
 
-  <h2>Wild KSU</h2>
+  <h2>ZTR_OS SU</h2>
   <p><strong>Решение за root достъп, базирано на ядрото, за устройства с Android.</strong></p>
 
   <p>
-    <a href="https://github.com/Wild-KSU/Wild-KSU/releases/latest">
-      <img src="https://img.shields.io/github/v/release/Wild-KSU/Wild-KSU?label=Release&logo=github" alt="Latest Release">
+    <a href="https://github.com/ZTR-OS/ZTR-OS/releases/latest">
+      <img src="https://img.shields.io/github/v/release/ZTR-OS/ZTR-OS?label=Release&logo=github" alt="Latest Release">
     </a>
-    <a href="https://nightly.link/Wild-KSU/Wild-KSU/workflows/build-manager-ci/next/Manager">
+    <a href="https://nightly.link/ZTR-OS/ZTR-OS/workflows/build-manager-ci/next/Manager">
       <img src="https://img.shields.io/badge/Nightly%20Release-gray?logo=hackthebox&logoColor=fff" alt="Nightly Build">
     </a>
     <a href="https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html">
       <img src="https://img.shields.io/badge/License-GPL%20v2-orange.svg?logo=gnu" alt="License: GPL v2">
     </a>
     <a href="/LICENSE">
-      <img src="https://img.shields.io/github/license/Wild-KSU/Wild-KSU?logo=gnu" alt="GitHub License">
+      <img src="https://img.shields.io/github/license/ZTR-OS/ZTR-OS?logo=gnu" alt="GitHub License">
     </a>
-    <a title="Crowdin" target="_blank" href="https://crowdin.com/project/wild-ksu"><img src="https://badges.crowdin.net/wild-ksu/localized.svg"></a>
+    <a title="Crowdin" target="_blank" href="https://crowdin.com/project/ztros-su"><img src="https://badges.crowdin.net/ztros-su/localized.svg"></a>
   </p>
 </div>
 
@@ -37,7 +37,7 @@
 
 ## ✅ Съвместимост
 
-Wild KSU официално поддържа повечето Android ядра от версия **4.4 до 6.6**.
+ZTR_OS SU официално поддържа повечето Android ядра от версия **4.4 до 6.6**.
 
 | Версия на ядрото     | Бележки относно поддръжката                                                                  |
 |----------------------|----------------------------------------------------------------------------------------------|
@@ -51,7 +51,7 @@ Wild KSU официално поддържа повечето Android ядра �
 
 ## 📦 Инсталация
 
-Моля, вижте ръководството за [Инсталация](https://wild-ksu.github.io/webpage/pages/installation.html) за инструкции за инсталация.
+Моля, вижте ръководството за [Инсталация](https://ztros-su.github.io/webpage/pages/installation.html) за инструкции за инсталация.
 
 ---
 

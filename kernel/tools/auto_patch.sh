@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-# Wild KSU auto patcher for manual hook integration.
+# ZTR_OS SU auto patcher for manual hook integration.
 # Applies predetermined .patch files for supported kernel versions.
 
 KERNEL_ROOT=""

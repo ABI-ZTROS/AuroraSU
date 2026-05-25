@@ -1,15 +1,15 @@
 [English](README.md) | [简体中文](README_CN.md) | [繁體中文](README_TW.md) | [Türkçe](README_TR.md) | [Português (Brasil)](README_PT-BR.md) | [한국어](README_KO.md) | [Français](README_FR.md) | [Bahasa Indonesia](README_ID.md) | [Русский](README_RU.md) | [Українська](README_UA.md) | [ภาษาไทย](README_TH.md) | [Tiếng Việt](README_VI.md) | [Italiano](README_IT.md) | [Polski](README_PL.md) | [Български](README_BG.md)  | **日本語** | [Español](README_ES.md)
 
-# Wild KSU
+# ZTR_OS SU
 
-<img src="/assets/wksu.png" style="width: 96px;" alt="logo">
+<img src="/assets/ztrosu.png" style="width: 96px;" alt="logo">
 
 Android デバイス用のカーネルベースな root ソリューション。
 
-[![Latest Release](https://img.shields.io/github/v/release/Wild-KSU/Wild-KSU?label=Release&logo=github)](https://github.com/Wild-KSU/Wild-KSU/releases/latest)
-[![Nightly Release](https://img.shields.io/badge/Nightly%20Release-gray?logo=hackthebox&logoColor=fff)](https://nightly.link/Wild-KSU/Wild-KSU/workflows/build-manager-ci/next/Manager)
+[![Latest Release](https://img.shields.io/github/v/release/ZTR-OS/ZTR-OS?label=Release&logo=github)](https://github.com/ZTR-OS/ZTR-OS/releases/latest)
+[![Nightly Release](https://img.shields.io/badge/Nightly%20Release-gray?logo=hackthebox&logoColor=fff)](https://nightly.link/ZTR-OS/ZTR-OS/workflows/build-manager-ci/next/Manager)
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-orange.svg?logo=gnu)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
-[![GitHub License](https://img.shields.io/github/license/Wild-KSU/Wild-KSU?logo=gnu)](/LICENSE)
+[![GitHub License](https://img.shields.io/github/license/ZTR-OS/ZTR-OS?logo=gnu)](/LICENSE)
 
 ## 機能
 
@@ -19,7 +19,7 @@ Android デバイス用のカーネルベースな root ソリューション。
 
 ## 互換性の状態
 
-Wild KSU は 4.4 から 6.6 までのほとんどの Android カーネルを公式でサポートしています。
+ZTR_OS SU は 4.4 から 6.6 までのほとんどの Android カーネルを公式でサポートしています。
  - GKI 2.0 (5.10 以降) のカーネルはビルド済みイメージで GKI を実行できます。
  - GKI 1.0 (4.19 - 5.4) のカーネルは、KernelSU ドライバを使用してビルドする必要があります。
  - EOL (4.14 未満) のカーネルも KernelSU ドライバを使用して再ビルドする必要があります (3.18 以降は実験中の段階であり、一部の関数のバックポートが必要になる場合があります)。
@@ -28,7 +28,7 @@ Wild KSU は 4.4 から 6.6 までのほとんどの Android カーネルを公�
 
 ## 使い方
 
-- [インストール手順](https://wksu.org/pages/installation.html)
+- [インストール手順](https://ztros.su/pages/installation.html)
 
 ## セキュリティ
 
@@ -59,5 +59,5 @@ KernelSU のセキュリティ脆弱性の報告については [SECURITY.md](/S
 - [Magisk](https://github.com/topjohnwu/Magisk): パワフルな root ツール。
 - [genuine](https://github.com/brevent/genuine/): APK v2 署名認証。
 - [Diamorphine](https://github.com/m0nad/Diamorphine): いくつかの rootkit スキル。
-- [KernelSU](https://github.com/tiann/KernelSU): tiann に感謝を申し上げます。これが存在しなければ Wild KSU は存在しませんでした。
+- [KernelSU](https://github.com/tiann/KernelSU): tiann に感謝を申し上げます。これが存在しなければ ZTR_OS SU は存在しませんでした。
 - [Magic Mount Port](https://github.com/5ec1cff/KernelSU/blob/main/userspace/ksud/src/magic_mount.rs): 💜 5ec1cff へ KernelSU を救ってくれてありがとう！

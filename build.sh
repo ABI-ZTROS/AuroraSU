@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-# This script builds the Wild KSU manager APK.
+# This script builds the ZTR_OS SU manager APK.
 
 # Ensure you have the setup Android SDK & NDK installed and necessary environment variables set and sourced.
 
@@ -27,7 +27,7 @@ cd manager
 cd ..
 
 # get exact APK filename (the one just built)
-APK=$(ls -t manager/app/build/outputs/apk/release/Wild_KSU_*.apk | head -n 1)
+APK=$(ls -t manager/app/build/outputs/apk/release/ZTR_OS_SU_*.apk | head -n 1)
 APK_NAME=$(basename "$APK")
 
 # Copy to Windows desktop

@@ -2,15 +2,15 @@
 set -eu
 
 GKI_ROOT=$(pwd)
-OWNER="WildKernels"
-REPO="Wild_KSU"
+OWNER="ZTR-OS"
+REPO="ZTR_OS_SU"
 
 display_usage() {
     echo "Usage: $0 [--cleanup | <commit-or-tag>]"
     echo "  --cleanup:              Cleans up previous modifications made by the script."
-    echo "  <commit-or-tag>:        Sets up or updates the Wild KSU to specified tag or commit."
+    echo "  <commit-or-tag>:        Sets up or updates the ZTR_OS SU to specified tag or commit."
     echo "  -h, --help:             Displays this usage information."
-    echo "  (no args):              Sets up or updates the Wild KSU environment to the latest tagged version."
+    echo "  (no args):              Sets up or updates the ZTR_OS SU environment to the latest tagged version."
 }
 
 initialize_variables() {
@@ -38,7 +38,7 @@ perform_cleanup() {
     fi
 }
 
-# Sets up or update Wild KSU environment
+# Sets up or update ZTR_OS SU environment
 setup_kernelsu() {
     echo "[+] Setting up $REPO..."
     test -d "$GKI_ROOT/$REPO" || git clone "https://github.com/$OWNER/$REPO" && echo "[+] Repository cloned."

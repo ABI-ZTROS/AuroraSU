@@ -17,5 +17,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Wild_KSU"
+rootProject.name = "ZTR_OS_SU"
 include(":app")

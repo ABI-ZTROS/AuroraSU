@@ -1,4 +1,4 @@
-# Wild_KSU GKI Manual-Hook Mode
+# ZTR_OS_SU GKI Manual-Hook Mode
 
 This repository is fully GKI-compliant and manual-hook only:
 

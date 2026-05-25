@@ -1,18 +1,18 @@
 name: Contribute to Unofficially Supported Devices
-description: Add your device kernel source to Wild KSU's Unofficially Supported Device List
+description: Add your device kernel source to ZTR_OS SU's Unofficially Supported Device List
 title: "[Add Device]: "
 labels: ["add-device"]
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for supporting Wild KSU!
+        Thanks for supporting ZTR_OS SU!
   - type: input
     id: repo-url
     attributes:
       label: Repository URL
       description: Your repository URL
-      placeholder: https://github.com/WildKernels/Wild_KSU
+      placeholder: https://github.com/ZTR-OS/AuroraSU
     validations:
       required: true
   - type: input

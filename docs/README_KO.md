@@ -1,15 +1,15 @@
 [English](README.md) | [简体中文](README_CN.md) | [繁體中文](README_TW.md) | [Türkçe](README_TR.md) | [Português (Brasil)](README_PT-BR.md) | **한국어** | [Français](README_FR.md) | [Bahasa Indonesia](README_ID.md) | [Русский](README_RU.md) | [Українська](README_UA.md) | [ภาษาไทย](README_TH.md) | [Tiếng Việt](README_VI.md) | [Italiano](README_IT.md) | [Polski](README_PL.md) | [Български](README_BG.md) | [日本語](README_JA.md) | [Español](README_ES.md)
 
-# Wild KSU
+# ZTR_OS SU
 
-<img src="/assets/wksu.png" style="width: 96px;" alt="logo">
+<img src="/assets/ztrosu.png" style="width: 96px;" alt="logo">
 
 안드로이드 기기들을 위한 커널 기반 루팅 솔루션입니다.
 
-[![Latest Release](https://img.shields.io/github/v/release/Wild-KSU/Wild-KSU?label=Release&logo=github)](https://github.com/Wild-KSU/Wild-KSU/releases/latest)
-[![Nightly Release](https://img.shields.io/badge/Nightly%20Release-gray?logo=hackthebox&logoColor=fff)](https://nightly.link/Wild-KSU/Wild-KSU/workflows/build-manager-ci/next/Manager)
+[![Latest Release](https://img.shields.io/github/v/release/ZTR-OS/ZTR-OS?label=Release&logo=github)](https://github.com/ZTR-OS/ZTR-OS/releases/latest)
+[![Nightly Release](https://img.shields.io/badge/Nightly%20Release-gray?logo=hackthebox&logoColor=fff)](https://nightly.link/ZTR-OS/ZTR-OS/workflows/build-manager-ci/next/Manager)
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-orange.svg?logo=gnu)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
-[![GitHub License](https://img.shields.io/github/license/Wild-KSU/Wild-KSU?logo=gnu)](/LICENSE)
+[![GitHub License](https://img.shields.io/github/license/ZTR-OS/ZTR-OS?logo=gnu)](/LICENSE)
 
 ## 기능
 
@@ -19,7 +19,7 @@
 
 ## 호환 상태
 
-Wild KSU는 공식적으로 대부분의 4.4부터 6.6의 안드로이드 커널을 지원합니다.
+ZTR_OS SU는 공식적으로 대부분의 4.4부터 6.6의 안드로이드 커널을 지원합니다.
  - GKI 2.0 (5.10+) 커널은 미리 빌드된 이미지와 GKI를 지원합니다.
  - GKI 1.0 (4.19 - 5.4) 커널은 KernelSU 드라이버로 다시 빌드해야 합니다.
  - EOL (<4.14) 커널도 역시 KernelSU 드라이버로 다시 빌드해야 합니다.(3.18+는 실험적이며 일부 함수의 이식이 필요할 수 있습니다.).
@@ -28,7 +28,7 @@ Wild KSU는 공식적으로 대부분의 4.4부터 6.6의 안드로이드 커널
 
 ## 사용 방법
 
-- [설치 방법](https://wksu.org/pages/installation.html)
+- [설치 방법](https://ztros.su/pages/installation.html)
 
 ## 보안
 
@@ -45,5 +45,5 @@ KernelSU의 보안 취약점 보고에 대한 자세한 내용은 [SECURITY.md](
 - [Magisk](https://github.com/topjohnwu/Magisk): 강력한 루팅 도구
 - [genuine](https://github.com/brevent/genuine/): APK v2 서명 검사
 - [Diamorphine](https://github.com/m0nad/Diamorphine): 일부 rootkit 기술
-- [KernelSU](https://github.com/tiann/KernelSU): Wild KSU가 존재할 수 있게 해 준 tiann에게 감사드립니다.
+- [KernelSU](https://github.com/tiann/KernelSU): ZTR_OS SU가 존재할 수 있게 해 준 tiann에게 감사드립니다.
 - [Magic Mount Port](https://github.com/5ec1cff/KernelSU/blob/main/userspace/ksud/src/magic_mount.rs): KernelSU를 구해준 5ec1cff에게 감사드립니다!

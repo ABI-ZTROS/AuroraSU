@@ -1,1 +1,1 @@
-# Wild KSU installer/uninstaller script
+# ZTR_OS SU installer/uninstaller script
