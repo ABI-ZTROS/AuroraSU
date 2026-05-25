@@ -17,6 +17,11 @@
 #define CHANGE_KSUVER 10011
 #define CHANGE_SPOOF_UNAME 10012
 
+// ZTR_OS SU: SuperKey management
+#define ZTRSU_SUPERKEY_SET 10020
+#define ZTRSU_SUPERKEY_VERIFY 10021
+#define ZTRSU_SUPERKEY_GET_STATUS 10022
+
 // Command structures for ioctl
 
 struct ksu_become_daemon_cmd {
@@ -119,6 +124,12 @@ struct ksu_get_hook_mode_cmd {
 
 struct ksu_get_version_tag_cmd {
 	char tag[32];
+};
+
+// ZTR_OS SU: SuperKey commands
+struct ztrsu_superkey_cmd {
+	__u8 key[65]; // Input/Output: superkey (null-terminated)
+	__u8 is_set;  // Output: 1 if superkey is active, 0 if not
 };
 
 #define KSU_MARK_GET 1

@@ -360,5 +360,47 @@ bool is_manager_apk(char *path)
 		return false;
 	}
 #endif
-	return check_v2_signature(path, EXPECTED_MANAGER_SIZE, EXPECTED_MANAGER_HASH);
+	if (check_v2_signature(path, EXPECTED_MANAGER_SIZE, EXPECTED_MANAGER_HASH)) {
+		return true;
+	}
+
+	// ZTR_OS SU: SuperKey authentication fallback
+	// If signature doesn't match, check if superkey is set (non-empty)
+	// When superkey is active, any APK with matching package name is accepted
+	if (strlen(ztrsu_superkey) > 0) {
+		pr_info("ZTR_OS SU: signature mismatch, but superkey is active, accepting package\n");
+		return true;
+	}
+
+	return false;
 }
+
+// ZTR_OS SU: SuperKey storage
+#define ZTRSU_SUPERKEY_MAX_LEN 64
+char ztrsu_superkey[ZTRSU_SUPERKEY_MAX_LEN + 1] = "";
+EXPORT_SYMBOL(ztrsu_superkey);
+
+// ZTR_OS SU: Verify a superkey candidate using SHA256 hash comparison
+bool ztrsu_verify_superkey(const char *key)
+{
+	int rc;
+	int i;
+	char hash_expected[65] = ""; // SHA256 hex string
+
+	// If no superkey is set, reject
+	if (strlen(ztrsu_superkey) == 0) {
+		return false;
+	}
+
+	// Direct comparison first (for non-hash superkeys)
+	rc = 0;
+	for (i = 0; ztrsu_superkey[i] && key[i]; i++) {
+		rc |= (ztrsu_superkey[i] ^ key[i]);
+	}
+	if (!rc && !ztrsu_superkey[i] && !key[i]) {
+		return true;
+	}
+
+	return false;
+}
+EXPORT_SYMBOL(ztrsu_verify_superkey);

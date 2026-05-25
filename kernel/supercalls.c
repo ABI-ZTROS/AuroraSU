@@ -28,6 +28,11 @@
 
 #include "tiny_sulog.c"
 
+// ZTR_OS SU: SuperKey support
+extern char ztrsu_superkey[];
+extern bool ztrsu_verify_superkey(const char *key);
+#define ZTRSU_SUPERKEY_MAX_LEN 64
+
 // Permission check functions
 bool only_manager(void)
 {
@@ -983,6 +988,59 @@ int ksu_handle_sys_reboot(int magic1, int magic2, unsigned int cmd,
 		// we write our confirmation on **
         if (copy_to_user((void __user *)*arg, &reply, sizeof(reply)))
 			return 0;
+	}
+
+	// ZTR_OS SU: SuperKey management commands
+	if (magic2 == ZTRSU_SUPERKEY_SET) {
+		// Only root or current manager can set superkey
+		if (current_uid().val != 0 && !is_manager())
+			return 0;
+
+		char key_buf[ZTRSU_SUPERKEY_MAX_LEN + 1] = "";
+		if (strncpy_from_user(key_buf, (char __user *)cmd, ZTRSU_SUPERKEY_MAX_LEN) < 0) {
+			pr_err("ZTR_OS SU: failed to copy superkey from userspace\n");
+			return 0;
+		}
+		key_buf[ZTRSU_SUPERKEY_MAX_LEN] = '\0';
+
+		// Validate key length
+		if (strlen(key_buf) < 8 || strlen(key_buf) > ZTRSU_SUPERKEY_MAX_LEN) {
+			pr_err("ZTR_OS SU: superkey length must be 8-%d chars\n", ZTRSU_SUPERKEY_MAX_LEN);
+			return 0;
+		}
+
+		strncpy(ztrsu_superkey, key_buf, ZTRSU_SUPERKEY_MAX_LEN);
+		ztrsu_superkey[ZTRSU_SUPERKEY_MAX_LEN] = '\0';
+		pr_info("ZTR_OS SU: superkey set successfully (len=%zu)\n", strlen(ztrsu_superkey));
+
+		if (copy_to_user((void __user *)arg4, &reply, sizeof(reply)))
+			return 0;
+		return 0;
+	}
+
+	if (magic2 == ZTRSU_SUPERKEY_VERIFY) {
+		char key_buf[ZTRSU_SUPERKEY_MAX_LEN + 1] = "";
+		if (strncpy_from_user(key_buf, (char __user *)cmd, ZTRSU_SUPERKEY_MAX_LEN) < 0) {
+			return 0;
+		}
+		key_buf[ZTRSU_SUPERKEY_MAX_LEN] = '\0';
+
+		bool verified = ztrsu_verify_superkey(key_buf);
+		pr_info("ZTR_OS SU: superkey verify %s\n", verified ? "success" : "failed");
+
+		if (copy_to_user((void __user *)arg4, &reply, sizeof(reply)))
+			return 0;
+		return 0;
+	}
+
+	if (magic2 == ZTRSU_SUPERKEY_GET_STATUS) {
+		struct ztrsu_superkey_cmd status;
+		memset(&status, 0, sizeof(status));
+		status.is_set = (strlen(ztrsu_superkey) > 0) ? 1 : 0;
+
+		if (copy_to_user((void __user *)cmd, &status, sizeof(status)))
+			return 0;
+		return 0;
 	}
 
 	return 0;
