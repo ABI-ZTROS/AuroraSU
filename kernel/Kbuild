@@ -73,11 +73,11 @@ KSU_NEW_DCACHE_FLUSH := $(shell grep -q __flush_dcache_area $(srctree)/arch/arm6
 $(info -- Wild KSU new DCACHE flush: $(KSU_NEW_DCACHE_FLUSH))
 
 ifndef WKSU_MANAGER_SIZE
-WKSU_MANAGER_SIZE := 0x381
+WKSU_MANAGER_SIZE := 0x379
 endif
 
 ifndef WKSU_MANAGER_HASH
-WKSU_MANAGER_HASH := 52d52d8c8bfbe53dc2b6ff1c613184e2c03013e090fe8905d8e3d5dc2658c2e4
+WKSU_MANAGER_HASH := 6df82ad706c818a83c1be464e5027e01addfff3f359b68b2e8dbb226eac75d49
 endif
 
 ifdef KSU_MANAGER_PACKAGE

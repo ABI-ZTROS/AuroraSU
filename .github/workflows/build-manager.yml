@@ -2,7 +2,7 @@ name: Build Manager
 
 on:
   push:
-    branches: [ "dev", "stable" ]
+    branches: [ "dev", "stable", "master" ]
     paths:
       - '.github/workflows/build-manager.yml'
       - '.github/workflows/ksud.yml'
@@ -11,7 +11,7 @@ on:
       - 'kernel/**'
       - 'userspace/**'
   pull_request:
-    branches: [ "dev", "stable" ]
+    branches: [ "dev", "stable", "master" ]
     paths:
       - '.github/workflows/build-manager.yml'
       - '.github/workflows/ksud.yml'
@@ -100,6 +100,23 @@ jobs:
               echo KEYSTORE_FILE='key.jks'
             } >> gradle.properties
             echo ${{ secrets.KEYSTORE }} | base64 -d > key.jks
+          else
+            # Generate AuroraSU CI keystore (deterministic, matches kernel/Kbuild hash)
+            keytool -genkeypair \
+              -alias aurorasu \
+              -keyalg RSA -keysize 2048 \
+              -validity 36500 \
+              -storepass aurorasu2025 \
+              -keypass aurorasu2025 \
+              -dname "CN=AuroraSU, OU=AuroraSU, O=AuroraSU, L=Unknown, ST=Unknown, C=CN" \
+              -storetype JKS \
+              -keystore key.jks
+            {
+              echo KEYSTORE_PASSWORD='aurorasu2025'
+              echo KEY_ALIAS='aurorasu'
+              echo KEY_PASSWORD='aurorasu2025'
+              echo KEYSTORE_FILE='key.jks'
+            } >> gradle.properties
           fi
 
       - name: Setup Java
