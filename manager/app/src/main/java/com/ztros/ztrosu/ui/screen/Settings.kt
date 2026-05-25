@@ -46,6 +46,8 @@ import com.ztros.ztrosu.Natives
 import com.ztros.ztrosu.R
 import com.ztros.ztrosu.ui.component.*
 import com.ztros.ztrosu.ui.util.*
+import com.ztros.ztrosu.ui.util.KernelDetect
+import com.ztros.ztrosu.ui.util.KernelDetect.KernelMode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -400,6 +402,80 @@ private fun SecurityCard(
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold
                     )
+                }
+            )
+
+            ListItem(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable { navigator.navigate(SELinuxScreenDestination) },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                leadingContent = { Icon(Icons.Filled.Security, null) },
+                headlineContent = {
+                    Text(
+                        text = stringResource(R.string.selinux_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                },
+                supportingContent = {
+                    Text(stringResource(R.string.selinux_screen_summary))
+                }
+            )
+
+            ListItem(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable { navigator.navigate(UpdateEngineScreenDestination) },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                leadingContent = { Icon(Icons.Filled.SystemUpdate, null) },
+                headlineContent = {
+                    Text(
+                        text = stringResource(R.string.update_engine_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                },
+                supportingContent = {
+                    Text(stringResource(R.string.update_engine_screen_summary))
+                }
+            )
+
+            // Kernel Mode display
+            val kernelMode = KernelDetect.getKernelMode()
+            val isModeLocked = KernelDetect.isModeLocked()
+            ListItem(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp)),
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                leadingContent = { Icon(Icons.Filled.Memory, null) },
+                headlineContent = {
+                    Text(
+                        text = stringResource(R.string.kernel_mode_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                },
+                supportingContent = {
+                    Column {
+                        Text(
+                            text = when (kernelMode) {
+                                KernelMode.ZTR_OS -> stringResource(R.string.kernel_mode_ztr_os)
+                                KernelMode.KSU_COMPAT -> stringResource(R.string.kernel_mode_ksu_compat)
+                                KernelMode.UNKNOWN -> stringResource(R.string.kernel_mode_unknown)
+                            }
+                        )
+                        if (isModeLocked) {
+                            Text(
+                                text = stringResource(R.string.kernel_mode_ztr_os_locked),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
                 }
             )
 

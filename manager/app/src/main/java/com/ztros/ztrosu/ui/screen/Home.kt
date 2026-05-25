@@ -67,6 +67,8 @@ import com.ztros.ztrosu.R
 import com.ztros.ztrosu.ui.component.rememberConfirmDialog
 import com.ztros.ztrosu.ui.theme.ORANGE
 import com.ztros.ztrosu.ui.util.*
+import com.ztros.ztrosu.ui.util.KernelDetect
+import com.ztros.ztrosu.ui.util.KernelDetect.KernelMode
 import com.ztros.ztrosu.ui.webui.WebUIActivity
 import com.ztros.ztrosu.ui.util.restartActivity
 import com.ztros.ztrosu.ui.util.module.LatestVersionInfo
@@ -1053,6 +1055,17 @@ private fun InfoCard(autoExpand: Boolean = false) {
                             label = stringResource(R.string.home_selinux_status),
                             content = getSELinuxStatus(),
                             icon = Icons.Filled.Security,
+                        )
+
+                        Spacer(Modifier.height(16.dp))
+                        InfoCardItem(
+                            label = stringResource(R.string.kernel_mode_title),
+                            content = when (KernelDetect.getKernelMode()) {
+                                KernelMode.ZTR_OS -> stringResource(R.string.kernel_mode_ztr_os)
+                                KernelMode.KSU_COMPAT -> stringResource(R.string.kernel_mode_ksu_compat)
+                                KernelMode.UNKNOWN -> stringResource(R.string.kernel_mode_unknown)
+                            },
+                            icon = Icons.Filled.Memory,
                         )
                     }
                 }
