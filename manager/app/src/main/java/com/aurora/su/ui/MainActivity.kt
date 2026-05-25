@@ -122,8 +122,18 @@ class MainActivity : ComponentActivity() {
         intentStateValue = savedInstanceState?.getInt(KEY_INTENT_STATE, 0) ?: 0
         intentStateFlow.value = intentStateValue
 
-        val isManager = Natives.isManager
-        if (isManager && !Natives.requireNewKernel()) install()
+        val isManager = try {
+            Natives.isManager
+        } catch (e: UnsatisfiedLinkError) {
+            false
+        }
+        if (isManager) {
+            try {
+                if (!Natives.requireNewKernel()) install()
+            } catch (e: UnsatisfiedLinkError) {
+                // ignore
+            }
+        }
 
         setContent {
             val viewModel = viewModel<MainActivityViewModel>()
