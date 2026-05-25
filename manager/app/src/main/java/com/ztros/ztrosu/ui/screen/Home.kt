@@ -1,11 +1,14 @@
 package com.ztros.ztrosu.ui.screen
 
 import android.annotation.SuppressLint
+import android.app.ActivityManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ShortcutInfo
 import android.os.Build
+import android.os.Environment
 import android.os.PowerManager
+import android.os.StatFs
 import android.system.Os
 import android.widget.Toast
 import androidx.annotation.StringRes
@@ -62,6 +65,7 @@ import com.ramcosta.composedestinations.generated.destinations.ModuleScreenDesti
 import com.ramcosta.composedestinations.generated.destinations.SettingScreenDestination
 import com.ramcosta.composedestinations.generated.destinations.SuperUserScreenDestination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import com.topjohnwu.superuser.ShellUtils
 import com.ztros.ztrosu.*
 import com.ztros.ztrosu.R
 import com.ztros.ztrosu.ui.component.rememberConfirmDialog
@@ -73,13 +77,14 @@ import com.ztros.ztrosu.ui.webui.WebUIActivity
 import com.ztros.ztrosu.ui.util.restartActivity
 import com.ztros.ztrosu.ui.util.module.LatestVersionInfo
 import com.ztros.ztrosu.ui.viewmodel.ModuleViewModel
-import com.ztros.ztrosu.ui.LocalScrollState 
+import com.ztros.ztrosu.ui.LocalScrollState
 import com.ztros.ztrosu.ui.screen.BottomBarDestination
-import com.ztros.ztrosu.ui.trackScroll 
+import com.ztros.ztrosu.ui.trackScroll
 import com.ztros.ztrosu.ui.rememberScrollConnection
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import java.io.File
 import java.util.*
 import androidx.core.net.toUri
 
@@ -217,6 +222,11 @@ fun HomeScreen(navigator: DestinationsNavigator) {
             }
 
             InfoCard(autoExpand = developerOptionsEnabled)
+            SystemInfoCard()
+            if (fullFeatured) {
+                QuickActionsCard()
+            }
+            ModuleSummaryCard()
             IssueReportCard()
             Spacer(Modifier)
         }
@@ -1144,6 +1154,472 @@ fun IssueReportCard() {
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun SystemInfoCard() {
+    val context = LocalContext.current
+
+    data class SystemInfo(
+        val deviceModel: String,
+        val androidVersion: String,
+        val kernelVersion: String,
+        val securityPatch: String,
+        val cpuArch: String,
+        val totalMemory: String,
+        val availableMemory: String,
+        val totalStorage: String,
+        val availableStorage: String
+    )
+
+    val systemInfo by produceState<SystemInfo?>(initialValue = null) {
+        value = withContext(Dispatchers.IO) {
+            val deviceModel = ShellUtils.fastCmd("getprop ro.product.model").trim().ifEmpty { Build.MODEL }
+            val androidVersion = ShellUtils.fastCmd("getprop ro.build.version.release").trim().ifEmpty { Build.VERSION.RELEASE }
+            val kernelVersion = Os.uname().release
+            val securityPatch = ShellUtils.fastCmd("getprop ro.build.version.security_patch").trim().ifEmpty { "Unknown" }
+            val cpuArch = ShellUtils.fastCmd("getprop ro.product.cpu.abi").trim().ifEmpty { Build.SUPPORTED_ABIS.firstOrNull() ?: "Unknown" }
+
+            val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+            val memInfo = ActivityManager.MemoryInfo()
+            activityManager.getMemoryInfo(memInfo)
+            val totalMemory = formatSize(memInfo.totalMem)
+            val availableMemory = formatSize(memInfo.availMem)
+
+            val dataPath = Environment.getDataDirectory()
+            val statFs = StatFs(dataPath.path)
+            val totalStorage = formatSize(statFs.totalBytes)
+            val availableStorage = formatSize(statFs.availableBytes)
+
+            SystemInfo(
+                deviceModel = deviceModel,
+                androidVersion = androidVersion,
+                kernelVersion = kernelVersion,
+                securityPatch = securityPatch,
+                cpuArch = cpuArch,
+                totalMemory = totalMemory,
+                availableMemory = availableMemory,
+                totalStorage = totalStorage,
+                availableStorage = availableStorage
+            )
+        }
+    }
+
+    Card {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 24.dp, top = 24.dp, end = 24.dp, bottom = 24.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.system_info_title),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+
+            Spacer(Modifier.height(16.dp))
+
+            if (systemInfo != null) {
+                @Composable
+                fun InfoRow(label: String, value: String, icon: ImageVector) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .padding(end = 16.dp)
+                                .size(20.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = label,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = value,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    }
+                }
+
+                InfoRow(
+                    label = stringResource(R.string.system_info_device_model),
+                    value = systemInfo.deviceModel,
+                    icon = Icons.Filled.PhoneAndroid
+                )
+
+                InfoRow(
+                    label = stringResource(R.string.system_info_android_version),
+                    value = systemInfo.androidVersion,
+                    icon = Icons.Filled.Android
+                )
+
+                InfoRow(
+                    label = stringResource(R.string.system_info_kernel_version),
+                    value = systemInfo.kernelVersion,
+                    icon = Icons.Filled.DeveloperBoard
+                )
+
+                InfoRow(
+                    label = stringResource(R.string.system_info_security_patch),
+                    value = systemInfo.securityPatch,
+                    icon = Icons.Filled.Security
+                )
+
+                InfoRow(
+                    label = stringResource(R.string.system_info_cpu_arch),
+                    value = systemInfo.cpuArch,
+                    icon = Icons.Filled.Memory
+                )
+
+                InfoRow(
+                    label = stringResource(R.string.system_info_memory),
+                    value = "${systemInfo.availableMemory} / ${systemInfo.totalMemory}",
+                    icon = Icons.Filled.Storage
+                )
+
+                InfoRow(
+                    label = stringResource(R.string.system_info_storage),
+                    value = "${systemInfo.availableStorage} / ${systemInfo.totalStorage}",
+                    icon = Icons.Filled.SdStorage
+                )
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        strokeWidth = 2.dp
+                    )
+                    Spacer(Modifier.width(12.dp))
+                    Text(
+                        text = stringResource(R.string.loading),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun QuickActionsCard() {
+    val context = LocalContext.current
+    val rebootConfirmDialog = rememberConfirmDialog()
+    val recoveryConfirmDialog = rememberConfirmDialog()
+    val bootloaderConfirmDialog = rememberConfirmDialog()
+    val systemUiConfirmDialog = rememberConfirmDialog()
+
+    Card {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 24.dp, top = 24.dp, end = 24.dp, bottom = 24.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.quick_actions_title),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+
+            Spacer(Modifier.height(16.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Reboot
+                FilledTonalButton(
+                    onClick = {
+                        rebootConfirmDialog.showConfirm(
+                            title = stringResource(R.string.quick_action_reboot),
+                            content = stringResource(R.string.quick_action_reboot_confirm),
+                            confirm = stringResource(R.string.confirm)
+                        ) {
+                            reboot()
+                        }
+                    },
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                        contentColor = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.PowerSettingsNew,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        text = stringResource(R.string.quick_action_reboot),
+                        style = MaterialTheme.typography.labelMedium
+                    )
+                }
+
+                // Reboot to Recovery
+                FilledTonalButton(
+                    onClick = {
+                        recoveryConfirmDialog.showConfirm(
+                            title = stringResource(R.string.quick_action_reboot_recovery),
+                            content = stringResource(R.string.quick_action_reboot_recovery_confirm),
+                            confirm = stringResource(R.string.confirm)
+                        ) {
+                            reboot("recovery")
+                        }
+                    },
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Healing,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        text = stringResource(R.string.quick_action_reboot_recovery),
+                        style = MaterialTheme.typography.labelMedium
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Reboot to Bootloader
+                FilledTonalButton(
+                    onClick = {
+                        bootloaderConfirmDialog.showConfirm(
+                            title = stringResource(R.string.quick_action_reboot_bootloader),
+                            content = stringResource(R.string.quick_action_reboot_bootloader_confirm),
+                            confirm = stringResource(R.string.confirm)
+                        ) {
+                            reboot("bootloader")
+                        }
+                    },
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.DeveloperBoard,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        text = stringResource(R.string.quick_action_reboot_bootloader),
+                        style = MaterialTheme.typography.labelMedium
+                    )
+                }
+
+                // Restart SystemUI
+                FilledTonalButton(
+                    onClick = {
+                        systemUiConfirmDialog.showConfirm(
+                            title = stringResource(R.string.quick_action_restart_systemui),
+                            content = stringResource(R.string.quick_action_restart_systemui_confirm),
+                            confirm = stringResource(R.string.confirm)
+                        ) {
+                            val success = ShellUtils.fastCmdResult("killall com.android.systemui")
+                            Toast.makeText(
+                                context,
+                                if (success) stringResource(R.string.quick_action_success)
+                                else stringResource(R.string.quick_action_failed),
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    },
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Refresh,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        text = stringResource(R.string.quick_action_restart_systemui),
+                        style = MaterialTheme.typography.labelMedium
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ModuleSummaryCard() {
+    val moduleViewModel: ModuleViewModel = viewModel()
+    val moduleList = moduleViewModel.moduleList
+
+    val installedCount = moduleList.size
+    val enabledCount = moduleList.count { it.enabled }
+    val disabledCount = installedCount - enabledCount
+
+    // Find the most recently updated module (highest versionCode)
+    val recentModule = moduleList
+        .filter { !it.remove }
+        .maxByOrNull { it.versionCode }
+
+    ElevatedCard(
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 24.dp, top = 24.dp, end = 24.dp, bottom = 24.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Widgets,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                    modifier = Modifier.padding(end = 12.dp)
+                )
+                Text(
+                    text = stringResource(R.string.module_summary_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Installed count
+                Column(
+                    modifier = Modifier.weight(1f),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = installedCount.toString(),
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                    Text(
+                        text = stringResource(R.string.module_summary_installed),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
+                    )
+                }
+
+                // Enabled count
+                Column(
+                    modifier = Modifier.weight(1f),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = enabledCount.toString(),
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = stringResource(R.string.module_summary_enabled),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
+                    )
+                }
+
+                // Disabled count
+                Column(
+                    modifier = Modifier.weight(1f),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = disabledCount.toString(),
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                    Text(
+                        text = stringResource(R.string.module_summary_disabled),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
+                    )
+                }
+            }
+
+            if (recentModule != null) {
+                Spacer(Modifier.height(16.dp))
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.12f)
+                )
+                Spacer(Modifier.height(12.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Update,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(16.dp)
+                            .padding(end = 8.dp),
+                        tint = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
+                    )
+                    Text(
+                        text = stringResource(R.string.module_summary_recent_update),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = "${recentModule.name} v${recentModule.version}",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        maxLines = 1
+                    )
+                }
+            }
+        }
+    }
+}
+
+private fun formatSize(bytes: Long): String {
+    return when {
+        bytes >= 1 shl 30 -> "%.1f GB".format(bytes.toDouble() / (1 shl 30))
+        bytes >= 1 shl 20 -> "%.0f MB".format(bytes.toDouble() / (1 shl 20))
+        bytes >= 1 shl 10 -> "%.0f KB".format(bytes.toDouble() / (1 shl 10))
+        else -> "$bytes B"
     }
 }
 

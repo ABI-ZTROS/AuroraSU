@@ -50,6 +50,7 @@ class ModuleViewModel : ViewModel() {
         val actionIconPath: String?,
         val webUiIconPath: String?,
         val donate: String,
+        val mountMode: Int,
     )
 
     data class ModuleUpdateInfo(
@@ -158,7 +159,8 @@ class ModuleViewModel : ViewModel() {
                                 metaModule,
                                 obj.optString("actionIcon").takeIf { it.isNotBlank() },
                                 obj.optString("webuiIcon").takeIf { it.isNotBlank() },
-                                obj.optString("donate")
+                                obj.optString("donate"),
+                                obj.optInt("mountMode", -1)
                             )
                         }.toList()
                     isNeedRefresh = false

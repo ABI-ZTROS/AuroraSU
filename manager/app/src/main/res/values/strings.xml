@@ -289,4 +289,43 @@
     <string name="kernel_mode_unknown">Unknown Kernel</string>
     <string name="kernel_mode_ztr_os_locked">ZTR_OS kernel detected. Mode is locked.</string>
     <string name="kernel_mode_switch_confirm">Switching kernel mode requires app restart. Continue?</string>
+    <!-- System Info Card -->
+    <string name="system_info_title">System Information</string>
+    <string name="system_info_device_model">Device Model</string>
+    <string name="system_info_android_version">Android Version</string>
+    <string name="system_info_kernel_version">Kernel Version</string>
+    <string name="system_info_security_patch">Security Patch</string>
+    <string name="system_info_cpu_arch">CPU Architecture</string>
+    <string name="system_info_memory">Memory</string>
+    <string name="system_info_storage">Storage</string>
+    <string name="system_info_available">Available</string>
+    <string name="system_info_total">Total</string>
+    <!-- Quick Actions Card -->
+    <string name="quick_actions_title">Quick Actions</string>
+    <string name="quick_action_reboot">Reboot</string>
+    <string name="quick_action_reboot_recovery">Recovery</string>
+    <string name="quick_action_reboot_bootloader">Bootloader</string>
+    <string name="quick_action_restart_systemui">Restart SystemUI</string>
+    <string name="quick_action_reboot_confirm">Are you sure you want to reboot?</string>
+    <string name="quick_action_reboot_recovery_confirm">Are you sure you want to reboot to Recovery?</string>
+    <string name="quick_action_reboot_bootloader_confirm">Are you sure you want to reboot to Bootloader?</string>
+    <string name="quick_action_restart_systemui_confirm">Are you sure you want to restart SystemUI?</string>
+    <string name="quick_action_success">Command executed successfully</string>
+    <string name="quick_action_failed">Command execution failed</string>
+    <!-- Module Summary Card -->
+    <string name="module_summary_title">Module Summary</string>
+    <string name="module_summary_installed">Installed</string>
+    <string name="module_summary_enabled">Enabled</string>
+    <string name="module_summary_disabled">Disabled</string>
+    <string name="module_summary_recent_update">Last Updated</string>
+    <string name="module_summary_none">None</string>
+    <!-- Mount Mode -->
+    <string name="mount_mode_title">Default Mount Mode</string>
+    <string name="mount_mode_magic">Magic Mount (Bind)</string>
+    <string name="mount_mode_overlay">OverlayFS</string>
+    <string name="mount_mode_auto">Auto</string>
+    <string name="mount_mode_per_module">Per-module mount mode</string>
+    <string name="module_install_mount_mode">Mount Mode</string>
+    <string name="module_install_mount_mode_default">Default (follow settings)</string>
+    <string name="module_mount_mode_label">Mount</string>
 </resources>

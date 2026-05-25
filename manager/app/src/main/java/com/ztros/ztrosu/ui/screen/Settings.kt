@@ -152,6 +152,9 @@ fun SettingScreen(navigator: DestinationsNavigator) {
                     navigator = navigator,
                     loadingDialog = loadingDialog
                 )
+                ModuleMountCard(
+                    prefs = prefs
+                )
             }
 
             AppSettingsCard(
@@ -259,6 +262,80 @@ private fun KernelFeaturesCard(
                         prefsLocal.edit { putInt("avc_spoof_mode", if (checked) 0 else 2) }
                         isAvcSpoofEnabled = checked
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ModuleMountCard(
+    prefs: android.content.SharedPreferences
+) {
+    val mountModeOptions = listOf(
+        R.string.mount_mode_auto to 0,
+        R.string.mount_mode_magic to 1,
+        R.string.mount_mode_overlay to 2
+    )
+
+    var selectedMountMode by rememberSaveable {
+        mutableStateOf(prefs.getInt("default_mount_mode", 0))
+    }
+
+    var showDropdown by remember { mutableStateOf(false) }
+
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            ListItem(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable { showDropdown = true },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                leadingContent = { Icon(Icons.Filled.SdCard, null) },
+                headlineContent = {
+                    Text(
+                        text = stringResource(R.string.mount_mode_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                },
+                supportingContent = {
+                    Text(
+                        text = mountModeOptions.firstOrNull { it.second == selectedMountMode }?.let {
+                            stringResource(it.first)
+                        } ?: stringResource(R.string.mount_mode_auto)
+                    )
+                },
+                trailingContent = {
+                    Icon(Icons.Filled.ArrowDropDown, null)
+                }
+            )
+
+            DropdownMenu(
+                expanded = showDropdown,
+                onDismissRequest = { showDropdown = false }
+            ) {
+                mountModeOptions.forEach { (stringRes, mode) ->
+                    DropdownMenuItem(
+                        text = { Text(stringResource(stringRes)) },
+                        onClick = {
+                            selectedMountMode = mode
+                            prefs.edit { putInt("default_mount_mode", mode) }
+                            showDropdown = false
+                        },
+                        trailingIcon = {
+                            if (selectedMountMode == mode) {
+                                Text(
+                                    text = "\u2713",
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                    )
                 }
             }
         }

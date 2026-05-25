@@ -1,5 +1,6 @@
 package com.ztros.ztrosu.ui.screen
 
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -13,6 +14,7 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
@@ -24,6 +26,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.content.edit
 import androidx.lifecycle.compose.dropUnlessResumed
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
@@ -43,7 +46,9 @@ import com.ztros.ztrosu.ui.util.*
 @Composable
 fun InstallScreen(navigator: DestinationsNavigator) {
     var selectedOption by remember { mutableStateOf<InstallMethod?>(null) }
+    var selectedMountMode by remember { mutableStateOf(-1) } // -1 = Default
     val context = LocalContext.current
+    val prefs = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
 
     val anyKernelPicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
@@ -52,12 +57,50 @@ fun InstallScreen(navigator: DestinationsNavigator) {
         navigator.navigate(FlashScreenDestination(FlashIt.FlashAnyKernel(uri)))
     }
 
+    val modulePicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode != android.app.Activity.RESULT_OK) {
+            return@rememberLauncherForActivityResult
+        }
+        val data = result.data ?: return@rememberLauncherForActivityResult
+        val clipData = data.clipData
+
+        val uris = mutableListOf<Uri>()
+        if (clipData != null) {
+            for (i in 0 until clipData.itemCount) {
+                clipData.getItemAt(i)?.uri?.let { uris.add(it) }
+            }
+        } else {
+            data.data?.let { uris.add(it) }
+        }
+
+        if (uris.isEmpty()) return@rememberLauncherForActivityResult
+
+        // Store the selected mount mode for this installation
+        if (selectedMountMode != -1) {
+            prefs.edit { putInt("install_mount_mode", selectedMountMode) }
+        } else {
+            prefs.edit { remove("install_mount_mode") }
+        }
+
+        navigator.navigate(FlashScreenDestination(FlashIt.FlashModules(uris)))
+    }
+
     val onInstall = {
         when (selectedOption) {
             is InstallMethod.AnyKernel -> {
                 anyKernelPicker.launch(Intent(Intent.ACTION_GET_CONTENT).apply {
                     type = "application/zip"
                     putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("application/zip", "application/x-zip-compressed", "application/octet-stream"))
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                })
+            }
+
+            is InstallMethod.Module -> {
+                modulePicker.launch(Intent(Intent.ACTION_GET_CONTENT).apply {
+                    type = "application/zip"
+                    putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
                     addCategory(Intent.CATEGORY_OPENABLE)
                 })
             }
@@ -89,6 +132,14 @@ fun InstallScreen(navigator: DestinationsNavigator) {
                 selectedOption = it
             }
 
+            // Show mount mode selector when Module install is selected
+            if (selectedOption is InstallMethod.Module) {
+                MountModeSelector(
+                    selectedMountMode = selectedMountMode,
+                    onMountModeSelected = { selectedMountMode = it }
+                )
+            }
+
             Button(
                 modifier = Modifier.fillMaxWidth(),
                 enabled = selectedOption != null,
@@ -103,10 +154,85 @@ fun InstallScreen(navigator: DestinationsNavigator) {
     }
 }
 
+@Composable
+private fun MountModeSelector(
+    selectedMountMode: Int,
+    onMountModeSelected: (Int) -> Unit
+) {
+    val mountModeOptions = listOf(
+        Triple(R.string.module_install_mount_mode_default, -1),
+        Triple(R.string.mount_mode_magic, 1),
+        Triple(R.string.mount_mode_overlay, 2)
+    )
+
+    var showDropdown by remember { mutableStateOf(false) }
+
+    Card(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.module_install_mount_mode),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+
+            Box {
+                OutlinedButton(
+                    onClick = { showDropdown = true },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = mountModeOptions.firstOrNull { it.second == selectedMountMode }?.let {
+                            stringResource(it.first)
+                        } ?: stringResource(R.string.module_install_mount_mode_default),
+                        modifier = Modifier.weight(1f)
+                    )
+                    Icon(
+                        imageVector = Icons.Filled.ArrowDropDown,
+                        contentDescription = null
+                    )
+                }
+
+                DropdownMenu(
+                    expanded = showDropdown,
+                    onDismissRequest = { showDropdown = false }
+                ) {
+                    mountModeOptions.forEach { (stringRes, mode) ->
+                        DropdownMenuItem(
+                            text = { Text(stringResource(stringRes)) },
+                            onClick = {
+                                onMountModeSelected(mode)
+                                showDropdown = false
+                            },
+                            trailingIcon = {
+                                if (selectedMountMode == mode) {
+                                    Text(
+                                        text = "\u2713",
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
 sealed class InstallMethod {
     data object AnyKernel : InstallMethod() {
         @StringRes
         val label: Int = R.string.flash_anykernel
+    }
+
+    data object Module : InstallMethod() {
+        @StringRes
+        val label: Int = R.string.flash_module
     }
 }
 
@@ -115,7 +241,7 @@ private fun SelectInstallMethod(
     selectedOption: InstallMethod?,
     onSelected: (InstallMethod) -> Unit
 ) {
-    val options = listOf(InstallMethod.AnyKernel)
+    val options = listOf(InstallMethod.Module, InstallMethod.AnyKernel)
 
     Column {
         options.forEach { option ->
@@ -145,7 +271,7 @@ private fun SelectInstallMethod(
                 Spacer(modifier = Modifier.width(12.dp))
 
                 Text(
-                    text = stringResource(InstallMethod.AnyKernel.label),
+                    text = stringResource(option.label),
                     style = MaterialTheme.typography.bodyLarge
                 )
             }

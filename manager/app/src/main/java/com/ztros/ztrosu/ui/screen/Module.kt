@@ -1155,6 +1155,23 @@ fun ModuleItem(
                                         )
                                     }
                                 }
+                                // Show mount mode label
+                                if (!module.remove) {
+                                    val mountModeText = when (module.mountMode) {
+                                        1 -> stringResource(R.string.mount_mode_magic)
+                                        2 -> stringResource(R.string.mount_mode_overlay)
+                                        else -> null
+                                    }
+                                    if (mountModeText != null) {
+                                        LabelItem(
+                                            text = mountModeText,
+                                            style = LabelItemDefaults.style.copy(
+                                                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                            )
+                                        )
+                                    }
+                                }
                             }
 
                             Spacer(modifier = Modifier.height(8.dp))
@@ -1454,7 +1471,8 @@ fun ModuleItemPreview() {
         isMetaModule = false,
         actionIconPath = null,
         webUiIconPath = null,
-        donate = ""
+        donate = "",
+        mountMode = 1
     )
     ModuleItem(
         EmptyDestinationsNavigator,
