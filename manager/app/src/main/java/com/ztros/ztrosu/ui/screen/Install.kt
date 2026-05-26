@@ -160,9 +160,9 @@ private fun MountModeSelector(
     onMountModeSelected: (Int) -> Unit
 ) {
     val mountModeOptions = listOf(
-        Triple(R.string.module_install_mount_mode_default, -1),
-        Triple(R.string.mount_mode_magic, 1),
-        Triple(R.string.mount_mode_overlay, 2)
+        Pair(R.string.module_install_mount_mode_default, -1),
+        Pair(R.string.mount_mode_magic, 1),
+        Pair(R.string.mount_mode_overlay, 2)
     )
 
     var showDropdown by remember { mutableStateOf(false) }
@@ -225,14 +225,17 @@ private fun MountModeSelector(
 }
 
 sealed class InstallMethod {
+    @StringRes
+    abstract val label: Int
+
     data object AnyKernel : InstallMethod() {
         @StringRes
-        val label: Int = R.string.flash_anykernel
+        override val label: Int = R.string.flash_anykernel
     }
 
     data object Module : InstallMethod() {
         @StringRes
-        val label: Int = R.string.flash_module
+        override val label: Int = R.string.flash_module
     }
 }
 
