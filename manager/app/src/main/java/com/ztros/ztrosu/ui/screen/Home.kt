@@ -1222,7 +1222,7 @@ private fun AboutCard() {
             // Package name
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
-                    imageVector = Icons.Filled.Package,
+                    imageVector = Icons.Filled.Description,
                     contentDescription = null,
                     modifier = Modifier.padding(end = 16.dp),
                     tint = MaterialTheme.colorScheme.secondary
@@ -1399,7 +1399,7 @@ private fun SystemInfoCard() {
                 InfoRow(
                     label = stringResource(R.string.system_info_storage),
                     value = "${systemInfo.availableStorage} / ${systemInfo.totalStorage}",
-                    icon = Icons.Filled.SdStorage
+                    icon = Icons.Filled.SdCard
                 )
             } else {
                 Row(
