@@ -5,9 +5,8 @@ import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
-import android.view.View
 import android.widget.RemoteViews
-import com.ztros.ztrosu.MainActivity
+import com.ztros.ztrosu.ui.MainActivity
 import com.ztros.ztrosu.R
 
 class ZtrOsSuWidgetReceiver : AppWidgetProvider() {
