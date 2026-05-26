@@ -106,6 +106,96 @@ fun MaterialYouScreen(navigator: DestinationsNavigator) {
                 .padding(horizontal = 16.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // Theme Preset Card
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(
+                    modifier = Modifier.padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
+                        text = "主题预设",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                        modifier = Modifier.padding(start = 4.dp)
+                    )
+                    Text(
+                        text = "选择预设主题配色方案",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(start = 4.dp)
+                    )
+
+                    var selectedPreset by rememberSaveable {
+                        mutableStateOf(prefs.getString("theme_preset", "default") ?: "default")
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Default preset
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.clickable {
+                                selectedPreset = "default"
+                                prefs.edit { putString("theme_preset", "default") }
+                                val activity = context as? com.ztros.ztrosu.ui.MainActivity
+                                activity?.setThemePreset("default")
+                            }
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(MaterialTheme.colorScheme.surface)
+                                    .then(
+                                        if (selectedPreset == "default") {
+                                            Modifier.border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(12.dp))
+                                        } else {
+                                            Modifier.border(1.dp, Color.Gray.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+                                        }
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Filled.Palette, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
+                            }
+                            Spacer(Modifier.height(4.dp))
+                            Text("默认", style = MaterialTheme.typography.labelSmall)
+                        }
+
+                        // Ice Abyss preset
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.clickable {
+                                selectedPreset = "ice_abyss"
+                                prefs.edit { putString("theme_preset", "ice_abyss") }
+                                val activity = context as? com.ztros.ztrosu.ui.MainActivity
+                                activity?.setThemePreset("ice_abyss")
+                            }
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(Color(0xFFE6F4FA))
+                                    .then(
+                                        if (selectedPreset == "ice_abyss") {
+                                            Modifier.border(2.dp, Color(0xFF00B4D8), RoundedCornerShape(12.dp))
+                                        } else {
+                                            Modifier.border(1.dp, Color.Gray.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+                                        }
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Filled.AcUnit, contentDescription = null, tint = Color(0xFF00B4D8), modifier = Modifier.size(24.dp))
+                            }
+                            Spacer(Modifier.height(4.dp))
+                            Text("冰渊", style = MaterialTheme.typography.labelSmall)
+                        }
+                    }
+                }
+            }
+
             // Dynamic Color Card
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(

@@ -42,6 +42,7 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.Velocity
+import androidx.core.content.edit
 import androidx.lifecycle.lifecycleScope
 import kotlin.math.abs
 import kotlinx.coroutines.launch
@@ -153,6 +154,7 @@ class MainActivity : ComponentActivity() {
     var navigateLoc by mutableStateOf<NavigateLocation?>(null)
     var moduleActionId by mutableStateOf<String?>(null)
     var amoledModeState = mutableStateOf(false)
+    var themePresetState = mutableStateOf("default")
     private val handler = Handler(Looper.getMainLooper())
 
     val moduleViewModel: ModuleViewModel by viewModels()
@@ -183,6 +185,15 @@ class MainActivity : ComponentActivity() {
         try {
             val prefsInit = getSharedPreferences("settings", MODE_PRIVATE)
             amoledModeState.value = prefsInit.getBoolean("enable_amoled", false)
+            themePresetState.value = prefsInit.getString("theme_preset", "default") ?: "default"
+        } catch (_: Exception) {}
+
+        // Set window background for Ice Abyss theme frosted glass effect
+        try {
+            val prefsBg = getSharedPreferences("settings", MODE_PRIVATE)
+            if (prefsBg.getString("theme_preset", "default") == "ice_abyss") {
+                window.decorView.setBackgroundColor(0xFFE6F4FA.toInt())
+            }
         } catch (_: Exception) {}
 
         val isManager = Natives.isManager
@@ -197,7 +208,7 @@ class MainActivity : ComponentActivity() {
             handleIntent(intent)
 
         setContent {
-            KernelSUTheme(amoledMode = amoledModeState.value) {
+            KernelSUTheme(amoledMode = amoledModeState.value, themePreset = themePresetState.value) {
                 val navController = rememberNavController()
                 val snackBarHostState = remember { SnackbarHostState() }
                 val currentDestination = navController.currentBackStackEntryAsState().value?.destination
@@ -402,6 +413,17 @@ class MainActivity : ComponentActivity() {
             prefs.edit().putBoolean("enable_amoled", enabled).apply()
         } catch (_: Exception) {}
         amoledModeState.value = enabled
+    }
+
+    fun setThemePreset(preset: String) {
+        themePresetState.value = preset
+        getSharedPreferences("settings", MODE_PRIVATE).edit { putString("theme_preset", preset) }
+        // Update window background for Ice Abyss frosted glass effect
+        if (preset == "ice_abyss") {
+            window.decorView.setBackgroundColor(0xFFE6F4FA.toInt())
+        } else {
+            window.decorView.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+        }
     }
 
     override fun onNewIntent(intent: Intent) {
