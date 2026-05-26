@@ -24,12 +24,13 @@ import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
-import com.ztros.ztrosu.Natives
 import com.ztros.ztrosu.R
 import com.ztros.ztrosu.ui.LocalScrollState
 import com.ztros.ztrosu.ui.component.rememberLoadingDialog
 import com.ztros.ztrosu.ui.rememberScrollConnection
 import com.ztros.ztrosu.ui.util.*
+import com.ztros.ztrosu.ui.util.KsuCli.getSelinuxEnforce
+import com.ztros.ztrosu.ui.util.KsuCli.setSelinuxEnforce
 import com.topjohnwu.superuser.ShellUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -45,7 +46,7 @@ private data class SELinuxInfo(
 )
 
 /**
- * Get SELinux status via shell command
+ * Get SELinux status via shell command (using libsu ShellUtils)
  */
 private suspend fun getSELinuxStatus(): String = withContext(Dispatchers.IO) {
     runCatching {
@@ -54,35 +55,31 @@ private suspend fun getSELinuxStatus(): String = withContext(Dispatchers.IO) {
 }
 
 /**
- * Set SELinux enforce mode via shell command
- */
-private suspend fun setSELinuxMode(enforce: Boolean): Boolean = withContext(Dispatchers.IO) {
-    runCatching {
-        val valStr = if (enforce) "1" else "0"
-        ShellUtils.fastCmdResult("setenforce $valStr")
-    }.getOrDefault(false)
-}
-
-/**
  * Get SELinux version info
  */
 private suspend fun getSELinuxVersion(): String = withContext(Dispatchers.IO) {
     runCatching {
-        ShellUtils.fastCmd("sestatus").trim()
-    }.getOrDefault("")
+        val sestatus = ShellUtils.fastCmd("sestatus 2>/dev/null").trim()
+        if (sestatus.isNotBlank()) {
+            val versionLine = sestatus.lines().firstOrNull { it.contains("version", ignoreCase = true) }
+            versionLine?.substringAfter(":")?.trim() ?: "N/A"
+        } else {
+            "N/A"
+        }
+    }.getOrDefault("N/A")
 }
 
 /**
- * Get SELinux policy load time from /sys/fs/selinux/policy_capabilities or /proc
+ * Get SELinux policy load time
  */
 private suspend fun getPolicyLoadTime(): String = withContext(Dispatchers.IO) {
     runCatching {
-        val output = ShellUtils.fastCmd("cat /sys/fs/selinux/policy_capabilities 2>/dev/null || echo ''").trim()
-        if (output.isBlank()) {
-            // Try reading checkreqprot as a proxy for policy info
-            ShellUtils.fastCmd("stat -c '%y' /sys/fs/selinux/policy 2>/dev/null || echo 'N/A'").trim()
+        val sestatus = ShellUtils.fastCmd("sestatus 2>/dev/null").trim()
+        if (sestatus.isNotBlank()) {
+            val timeLine = sestatus.lines().firstOrNull { it.contains("loaded", ignoreCase = true) }
+            timeLine?.substringAfter(":")?.trim() ?: "N/A"
         } else {
-            "Available"
+            "N/A"
         }
     }.getOrDefault("N/A")
 }
@@ -92,32 +89,21 @@ private suspend fun getPolicyLoadTime(): String = withContext(Dispatchers.IO) {
  */
 private suspend fun getSELinuxInfo(): SELinuxInfo = withContext(Dispatchers.IO) {
     val status = getSELinuxStatus()
-
-    val version = runCatching {
-        val sestatus = ShellUtils.fastCmd("sestatus 2>/dev/null").trim()
-        if (sestatus.isNotBlank()) {
-            val versionLine = sestatus.lines().firstOrNull { it.contains("version", ignoreCase = true) }
-            versionLine?.substringAfter(":")?.trim() ?: "N/A"
-        } else {
-            "N/A"
-        }
-    }.getOrDefault("N/A")
-
-    val policyLoadTime = runCatching {
-        val sestatus = ShellUtils.fastCmd("sestatus 2>/dev/null").trim()
-        if (sestatus.isNotBlank()) {
-            val timeLine = sestatus.lines().firstOrNull { it.contains("loaded", ignoreCase = true) }
-            timeLine?.substringAfter(":")?.trim() ?: "N/A"
-        } else {
-            "N/A"
-        }
-    }.getOrDefault("N/A")
-
+    val version = getSELinuxVersion()
+    val policyLoadTime = getPolicyLoadTime()
+    
     SELinuxInfo(
         status = status,
         version = version,
         policyLoadTime = policyLoadTime
     )
+}
+
+/**
+ * Set SELinux mode using KsuCli's proper implementation
+ */
+private suspend fun setSELinuxMode(enforce: Boolean): Boolean = withContext(Dispatchers.IO) {
+    setSelinuxEnforce(enforce)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
