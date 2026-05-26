@@ -2,33 +2,32 @@ package com.ztros.ztrosu.ui.widget
 
 import android.content.Context
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.glance.GlanceId
-import androidx.glance.GlanceState
+import androidx.glance.GlanceModifier
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
+import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
-import androidx.glance.appwidget.state.updateAppWidgetState
-import androidx.glance.layout.*
-import androidx.glance.text.Text
-import androidx.glance.text.FontWeight
 import androidx.glance.background
-import androidx.glance.LocalContext
-import androidx.glance.action.actionStartActivity
-import androidx.glance.action.clickable
-import androidx.glance.color.ColorProvider
+import androidx.glance.layout.Alignment
+import androidx.glance.layout.Box
+import androidx.glance.layout.Column
+import androidx.glance.layout.Row
+import androidx.glance.layout.Spacer
+import androidx.glance.layout.fillMaxSize
+import androidx.glance.layout.height
+import androidx.glance.layout.padding
+import androidx.glance.layout.size
+import androidx.glance.layout.width
+import androidx.glance.text.FontWeight
+import androidx.glance.text.Text
+import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
-import com.ztros.ztrosu.ui.MainActivity
 
 class ZtrOsSuWidget : GlanceAppWidget() {
-
-    companion object {
-        private const val PREFS_NAME = "ztr_os_su_widget_prefs"
-        private const val KEY_LAST_UPDATE = "last_update"
-    }
-
-    override suspend fun provideGlance(context: Context, id: GlanceId) {
+    override fun provideGlance(context: Context, id: Int) {
         provideContent {
             WidgetContent()
         }
@@ -41,78 +40,88 @@ class ZtrOsSuWidgetReceiver : GlanceAppWidgetReceiver() {
 
 @Composable
 private fun WidgetContent() {
-    val context = LocalContext.current
-
     Box(
-        modifier = Modifier
+        modifier = GlanceModifier
             .fillMaxSize()
-            .padding(16.dp)
-            .background(ColorProvider(day = android.graphics.Color.WHITE, night = android.graphics.Color.parseColor("#1E1E1E")))
             .cornerRadius(16.dp)
-            .clickable(actionStartActivity<MainActivity>())
+            .background(ColorProvider(Color(0xFFFFFFFF)))
+            .padding(16.dp)
     ) {
         Column(
-            modifier = Modifier.fillMaxSize(),
+            modifier = GlanceModifier.fillMaxSize(),
             verticalAlignment = Alignment.Top,
             horizontalAlignment = Alignment.Start
         ) {
-            // App name
             Text(
                 text = "ZTR_OS SU",
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp
+                style = TextStyle(
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = ColorProvider(Color(0xFF212121))
+                )
             )
-
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = GlanceModifier.height(8.dp))
 
             // Root status
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(vertical = 2.dp)
+                modifier = GlanceModifier.padding(vertical = 2.dp)
             ) {
                 Box(
-                    modifier = Modifier
+                    modifier = GlanceModifier
                         .size(8.dp)
                         .cornerRadius(4.dp)
-                        .background(ColorProvider(day = android.graphics.Color.parseColor("#4CAF50"), night = android.graphics.Color.parseColor("#66BB6A")))
+                        .background(ColorProvider(Color(0xFF4CAF50)))
                 ) {}
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = GlanceModifier.width(8.dp))
                 Text(
                     text = "Root: Active",
-                    fontSize = 14.sp
+                    style = TextStyle(
+                        fontSize = 14.sp,
+                        color = ColorProvider(Color(0xFF212121))
+                    )
                 )
             }
 
             // SELinux status
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(vertical = 2.dp)
+                modifier = GlanceModifier.padding(vertical = 2.dp)
             ) {
                 Box(
-                    modifier = Modifier
+                    modifier = GlanceModifier
                         .size(8.dp)
                         .cornerRadius(4.dp)
-                        .background(ColorProvider(day = android.graphics.Color.parseColor("#FF9800"), night = android.graphics.Color.parseColor("#FFA726")))
+                        .background(ColorProvider(Color(0xFFFF9800)))
                 ) {}
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = GlanceModifier.width(8.dp))
                 Text(
                     text = "SELinux: Enforcing",
-                    fontSize = 14.sp
+                    style = TextStyle(
+                        fontSize = 14.sp,
+                        color = ColorProvider(Color(0xFF212121))
+                    )
                 )
             }
 
             // Module count
             Text(
                 text = "Modules: 0",
-                fontSize = 14.sp
+                style = TextStyle(
+                    fontSize = 14.sp,
+                    color = ColorProvider(Color(0xFF212121))
+                )
             )
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = GlanceModifier.height(4.dp))
 
             // Last updated
             Text(
                 text = "Updated: --",
-                fontSize = 12.sp
+                style = TextStyle(
+                    fontSize = 12.sp,
+                    color = ColorProvider(Color(0xFF757575))
+                )
             )
         }
     }

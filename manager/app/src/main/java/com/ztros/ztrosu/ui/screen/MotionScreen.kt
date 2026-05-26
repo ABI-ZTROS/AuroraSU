@@ -65,6 +65,10 @@ fun MotionScreen(navigator: DestinationsNavigator) {
     val context = LocalContext.current
     val prefs = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
 
+    var animSpeed by rememberSaveable {
+        mutableFloatStateOf(prefs.getFloat("motion_animation_speed", 1.0f))
+    }
+
     // Pre-resolve all string resources
     val pageTransitionTitle = stringResource(R.string.motion_animation)
     val pageTransitionSummary = stringResource(R.string.motion_animation_desc)
@@ -160,10 +164,6 @@ fun MotionScreen(navigator: DestinationsNavigator) {
                     modifier = Modifier.padding(12.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    var animSpeed by rememberSaveable {
-                        mutableFloatStateOf(prefs.getFloat("motion_animation_speed", 1.0f))
-                    }
-
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
