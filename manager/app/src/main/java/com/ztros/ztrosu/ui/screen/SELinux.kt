@@ -29,8 +29,6 @@ import com.ztros.ztrosu.ui.LocalScrollState
 import com.ztros.ztrosu.ui.component.rememberLoadingDialog
 import com.ztros.ztrosu.ui.rememberScrollConnection
 import com.ztros.ztrosu.ui.util.*
-import com.ztros.ztrosu.ui.util.KsuCli.getSelinuxEnforce
-import com.ztros.ztrosu.ui.util.KsuCli.setSelinuxEnforce
 import com.topjohnwu.superuser.ShellUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
