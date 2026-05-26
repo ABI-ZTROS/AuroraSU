@@ -2,6 +2,11 @@ package com.ztros.ztrosu.ui.screen
 
 import android.content.Context
 import android.content.Intent
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -367,6 +372,28 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
                 horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.Start),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // Animated border properties for theme presets
+                val defaultBorderWidth by animateFloatAsState(
+                    targetValue = if (selectedPreset == "default") 2.5f else 1f,
+                    animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+                    label = "defaultBorderWidth"
+                )
+                val defaultBorderColor by animateColorAsState(
+                    targetValue = if (selectedPreset == "default") MaterialTheme.colorScheme.primary else Color.Gray.copy(alpha = 0.3f),
+                    animationSpec = tween(300),
+                    label = "defaultBorderColor"
+                )
+                val iceBorderWidth by animateFloatAsState(
+                    targetValue = if (selectedPreset == "ice_abyss") 2.5f else 1f,
+                    animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+                    label = "iceBorderWidth"
+                )
+                val iceBorderColor by animateColorAsState(
+                    targetValue = if (selectedPreset == "ice_abyss") Color(0xFF00B4D8) else Color.Gray.copy(alpha = 0.3f),
+                    animationSpec = tween(300),
+                    label = "iceBorderColor"
+                )
+
                 // Default preset
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -381,13 +408,7 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
                             .size(56.dp)
                             .clip(RoundedCornerShape(16.dp))
                             .background(MaterialTheme.colorScheme.surface)
-                            .then(
-                                if (selectedPreset == "default") {
-                                    Modifier.border(2.5.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(16.dp))
-                                } else {
-                                    Modifier.border(1.dp, Color.Gray.copy(alpha = 0.3f), RoundedCornerShape(16.dp))
-                                }
-                            ),
+                            .border(defaultBorderWidth.dp, defaultBorderColor, RoundedCornerShape(16.dp)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(Icons.Filled.Palette, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
@@ -410,13 +431,7 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
                             .size(56.dp)
                             .clip(RoundedCornerShape(16.dp))
                             .background(Color(0xFFE6F4FA))
-                            .then(
-                                if (selectedPreset == "ice_abyss") {
-                                    Modifier.border(2.5.dp, Color(0xFF00B4D8), RoundedCornerShape(16.dp))
-                                } else {
-                                    Modifier.border(1.dp, Color.Gray.copy(alpha = 0.3f), RoundedCornerShape(16.dp))
-                                }
-                            ),
+                            .border(iceBorderWidth.dp, iceBorderColor, RoundedCornerShape(16.dp)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(Icons.Filled.AcUnit, contentDescription = null, tint = Color(0xFF00B4D8), modifier = Modifier.size(24.dp))

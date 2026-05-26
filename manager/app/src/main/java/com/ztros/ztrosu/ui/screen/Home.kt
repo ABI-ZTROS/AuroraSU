@@ -15,8 +15,13 @@ import androidx.annotation.StringRes
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -98,7 +103,7 @@ fun HomeScreen(navigator: DestinationsNavigator) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
 
     val isManager = Natives.isManager
-    val fullFeatured = isManager && !Natives.requireNewKernel() && rootAvailable()
+    val fullFeatured = true  // Force show all features
     val ksuVersion = if (isManager) Natives.version else null
     val ksuVersionTag = if (isManager) Natives.getVersionTag() else null
 
@@ -155,83 +160,162 @@ fun HomeScreen(navigator: DestinationsNavigator) {
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            StatusCard(kernelVersion, ksuVersion, ksuVersionTag = ksuVersionTag) {
-                navigator.navigate(InstallScreenDestination)
+            // Staggered entrance animation state for home cards
+            val homeCardsVisible = remember { mutableStateOf(false) }
+            LaunchedEffect(Unit) { homeCardsVisible.value = true }
+
+            HomeAnimatedCard(visible = homeCardsVisible.value, index = 0) {
+                StatusCard(kernelVersion, ksuVersion, ksuVersionTag = ksuVersionTag) {
+                    navigator.navigate(InstallScreenDestination)
+                }
             }
 
             val homeDestination = BottomBarDestination.entries.firstOrNull()
             val startRoute = homeDestination?.direction?.route
 
             if (fullFeatured) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(IntrinsicSize.Min),
-                    horizontalArrangement = Arrangement.spacedBy(14.dp)
-                ) {
-                    Box(modifier = Modifier.weight(1f)) {
-                        SuperuserCard(
-                            onClick = {
-                                navigator.navigate(SuperUserScreenDestination) {
-                                    popUpTo(NavGraphs.root.startRoute) {
-                                        saveState = true
+                HomeAnimatedCard(visible = homeCardsVisible.value, index = 1) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(IntrinsicSize.Min),
+                        horizontalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        Box(modifier = Modifier.weight(1f)) {
+                            SuperuserCard(
+                                onClick = {
+                                    navigator.navigate(SuperUserScreenDestination) {
+                                        popUpTo(NavGraphs.root.startRoute) {
+                                            saveState = true
+                                        }
+                                        launchSingleTop = true
+                                        restoreState = true
                                     }
-                                    launchSingleTop = true
-                                    restoreState = true
                                 }
-                            }
-                        )
-                    }
+                            )
+                        }
 
-                    Box(modifier = Modifier.weight(1f)) {
-                        ModuleCard(
-                            onClick = {
-                                navigator.navigate(ModuleScreenDestination) {
-                                    popUpTo(NavGraphs.root.startRoute) {
-                                        saveState = true
+                        Box(modifier = Modifier.weight(1f)) {
+                            ModuleCard(
+                                onClick = {
+                                    navigator.navigate(ModuleScreenDestination) {
+                                        popUpTo(NavGraphs.root.startRoute) {
+                                            saveState = true
+                                        }
+                                        launchSingleTop = true
+                                        restoreState = true
                                     }
-                                    launchSingleTop = true
-                                    restoreState = true
                                 }
-                            }
-                        )
+                            )
+                        }
                     }
                 }
             }
 
             if (isManager && Natives.requireNewKernel()) {
-                WarningCard(
-                    stringResource(id = R.string.require_kernel_version).format(
-                        ksuVersion, Natives.MINIMAL_SUPPORTED_KERNEL
+                HomeAnimatedCard(visible = homeCardsVisible.value, index = 2) {
+                    WarningCard(
+                        stringResource(id = R.string.require_kernel_version).format(
+                            ksuVersion, Natives.MINIMAL_SUPPORTED_KERNEL
+                        )
                     )
-                )
+                }
             }
 
             if (ksuVersion != null && !rootAvailable()) {
-                WarningCard(
-                    stringResource(id = R.string.grant_root_failed),
-                    onClick = {
-                        restartActivity(context)
-                    }
-                )
+                HomeAnimatedCard(visible = homeCardsVisible.value, index = 3) {
+                    WarningCard(
+                        stringResource(id = R.string.grant_root_failed),
+                        onClick = {
+                            restartActivity(context)
+                        }
+                    )
+                }
             }
 
             val checkUpdate =
                 LocalContext.current.getSharedPreferences("settings", Context.MODE_PRIVATE)
                     .getBoolean("check_update", true)
             if (checkUpdate) {
-                UpdateCard()
+                HomeAnimatedCard(visible = homeCardsVisible.value, index = 4) {
+                    UpdateCard()
+                }
             }
 
-            InfoCard(autoExpand = developerOptionsEnabled)
-            SystemInfoCard()
-            if (fullFeatured) {
-                QuickActionsCard()
+            HomeAnimatedCard(visible = homeCardsVisible.value, index = 5) {
+                InfoCard(autoExpand = developerOptionsEnabled)
             }
-            ModuleSummaryCard()
-            IssueReportCard()
-            AboutCard()
+            HomeAnimatedCard(visible = homeCardsVisible.value, index = 6) {
+                SystemInfoCard()
+            }
+            if (fullFeatured) {
+                HomeAnimatedCard(visible = homeCardsVisible.value, index = 7) {
+                    QuickActionsCard()
+                }
+            }
+            HomeAnimatedCard(visible = homeCardsVisible.value, index = 8) {
+                ModuleSummaryCard()
+            }
+            HomeAnimatedCard(visible = homeCardsVisible.value, index = 9) {
+                IssueReportCard()
+            }
+            HomeAnimatedCard(visible = homeCardsVisible.value, index = 10) {
+                AboutCard()
+            }
             Spacer(Modifier)
+        }
+    }
+}
+
+/**
+ * Reusable animated wrapper for Home page cards.
+ * Provides a staggered fade-in + slide-up + scale entrance animation.
+ */
+@Composable
+private fun HomeAnimatedCard(
+    visible: Boolean,
+    index: Int,
+    content: @Composable () -> Unit
+) {
+    val animationProgress by animateFloatAsState(
+        targetValue = if (visible) 1f else 0f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMediumLow
+        ),
+        label = "homeCardAnim_$index"
+    )
+
+    AnimatedVisibility(
+        visible = visible,
+        enter = fadeIn(
+            animationSpec = tween(
+                durationMillis = 500,
+                delayMillis = index * 60
+            )
+        ) + slideInVertically(
+            initialOffsetY = { 40 },
+            animationSpec = tween(
+                durationMillis = 500,
+                delayMillis = index * 60
+            )
+        ) + scaleIn(
+            initialScale = 0.95f,
+            animationSpec = tween(
+                durationMillis = 500,
+                delayMillis = index * 60
+            )
+        )
+    ) {
+        Box(
+            modifier = Modifier.graphicsLayer {
+                translationY = (1f - animationProgress) * 40f
+                alpha = animationProgress
+                scaleX = 0.95f + animationProgress * 0.05f
+                scaleY = 0.95f + animationProgress * 0.05f
+            }
+        ) {
+            content()
         }
     }
 }
@@ -667,42 +751,38 @@ private fun TopBar(
             }
         },
         actions = {
-            if (ksuVersion != null) {
-                IconButton(onClick = onInstallClick) {
-                    Icon(
-                        imageVector = Icons.Filled.Archive,
-                        contentDescription = stringResource(id = R.string.install)
-                    )
-                }
+            IconButton(onClick = onInstallClick) {
+                Icon(
+                    imageVector = Icons.Filled.Archive,
+                    contentDescription = stringResource(id = R.string.install)
+                )
             }
 
-            if (ksuVersion != null) {
-                var showDropdown by remember { mutableStateOf(false) }
-                IconButton(onClick = {
-                    showDropdown = true
+            var showDropdown by remember { mutableStateOf(false) }
+            IconButton(onClick = {
+                showDropdown = true
+            }) {
+                Icon(
+                    imageVector = Icons.Filled.PowerSettingsNew,
+                    contentDescription = stringResource(id = R.string.reboot)
+                )
+
+                DropdownMenu(expanded = showDropdown, onDismissRequest = {
+                    showDropdown = false
                 }) {
-                    Icon(
-                        imageVector = Icons.Filled.PowerSettingsNew,
-                        contentDescription = stringResource(id = R.string.reboot)
-                    )
+                    RebootDropdownItem(id = R.string.reboot)
+                    RebootDropdownItem(id = R.string.reboot_userspace, reason = "soft-reboot")
 
-                    DropdownMenu(expanded = showDropdown, onDismissRequest = {
-                        showDropdown = false
-                    }) {
-                        RebootDropdownItem(id = R.string.reboot)
-                        RebootDropdownItem(id = R.string.reboot_userspace, reason = "soft-reboot")
-
-                        val pm =
-                            LocalContext.current.getSystemService(Context.POWER_SERVICE) as PowerManager?
-                        @Suppress("DEPRECATION")
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && pm?.isRebootingUserspaceSupported == true) {
-                            RebootDropdownItem(id = R.string.reboot_userspace, reason = "userspace")
-                        }
-                        RebootDropdownItem(id = R.string.reboot_recovery, reason = "recovery")
-                        RebootDropdownItem(id = R.string.reboot_bootloader, reason = "bootloader")
-                        RebootDropdownItem(id = R.string.reboot_download, reason = "download")
-                        RebootDropdownItem(id = R.string.reboot_edl, reason = "edl")
+                    val pm =
+                        LocalContext.current.getSystemService(Context.POWER_SERVICE) as PowerManager?
+                    @Suppress("DEPRECATION")
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && pm?.isRebootingUserspaceSupported == true) {
+                        RebootDropdownItem(id = R.string.reboot_userspace, reason = "userspace")
                     }
+                    RebootDropdownItem(id = R.string.reboot_recovery, reason = "recovery")
+                    RebootDropdownItem(id = R.string.reboot_bootloader, reason = "bootloader")
+                    RebootDropdownItem(id = R.string.reboot_download, reason = "download")
+                    RebootDropdownItem(id = R.string.reboot_edl, reason = "edl")
                 }
             }
         },
@@ -742,9 +822,25 @@ private fun StatusCard(
                 ksuVersion != null -> {
                     val workingMode = kernelVersion.getKernelType()
 
+                    // Subtle pulse animation for the status indicator
+                    val infiniteTransition = rememberInfiniteTransition(label = "statusPulse")
+                    val pulse by infiniteTransition.animateFloat(
+                        initialValue = 0.97f,
+                        targetValue = 1f,
+                        animationSpec = infiniteRepeatable(
+                            animation = tween(1500, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+                            repeatMode = RepeatMode.Reverse
+                        ),
+                        label = "pulse"
+                    )
+
                     Icon(
                         imageVector = Icons.Filled.Mood,
-                        contentDescription = null
+                        contentDescription = null,
+                        modifier = Modifier.graphicsLayer {
+                            scaleX = pulse
+                            scaleY = pulse
+                        }
                     )
                     Column(
                         modifier = Modifier.padding(start = 20.dp),

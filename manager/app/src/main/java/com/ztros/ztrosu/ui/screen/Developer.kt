@@ -95,16 +95,14 @@ fun DeveloperScreen(navigator: DestinationsNavigator) {
                     prefs.getBoolean("enable_developer_options", false)
                 )
             }
-            if (ksuVersion != null) {
-                SwitchItem(
-                    icon = Icons.Filled.DeveloperMode,
-                    title = stringResource(id = R.string.enable_developer_options),
-                    summary = stringResource(id = R.string.enable_developer_options_summary),
-                    checked = developerOptionsEnabled
-                ) {
-                    prefs.edit { putBoolean("enable_developer_options", it) }
-                    developerOptionsEnabled = it
-                }
+            SwitchItem(
+                icon = Icons.Filled.DeveloperMode,
+                title = stringResource(id = R.string.enable_developer_options),
+                summary = stringResource(id = R.string.enable_developer_options_summary),
+                checked = developerOptionsEnabled
+            ) {
+                prefs.edit { putBoolean("enable_developer_options", it) }
+                developerOptionsEnabled = it
             }
 
             var enableWebDebugging by rememberSaveable {
@@ -112,17 +110,15 @@ fun DeveloperScreen(navigator: DestinationsNavigator) {
                     prefs.getBoolean("enable_web_debugging", false)
                 )
             }
-            if (ksuVersion != null) {
-                SwitchItem(
-                    enabled = developerOptionsEnabled,
-                    icon = Icons.Filled.Web,
-                    title = stringResource(id = R.string.enable_web_debugging),
-                    summary = stringResource(id = R.string.enable_web_debugging_summary),
-                    checked = enableWebDebugging
-                ) {
-                    prefs.edit { putBoolean("enable_web_debugging", it) }
-                    enableWebDebugging = it
-                }
+            SwitchItem(
+                enabled = developerOptionsEnabled,
+                icon = Icons.Filled.Web,
+                title = stringResource(id = R.string.enable_web_debugging),
+                summary = stringResource(id = R.string.enable_web_debugging_summary),
+                checked = enableWebDebugging
+            ) {
+                prefs.edit { putBoolean("enable_web_debugging", it) }
+                enableWebDebugging = it
             }
         }
     }

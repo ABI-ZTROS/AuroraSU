@@ -6,12 +6,19 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -142,32 +149,88 @@ fun SettingScreen(navigator: DestinationsNavigator) {
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            if (ksuVersion != null) {
+            // Staggered entrance animation state
+            val cardsVisible = remember { mutableStateOf(false) }
+            LaunchedEffect(Unit) { cardsVisible.value = true }
+
+            SettingsAnimatedCard(visible = cardsVisible.value, index = 0) {
                 KernelFeaturesCard(
                     suCompatStatus = suCompatStatus,
                     kernelUmountStatus = kernelUmountStatus,
                     avcSpoofStatus = avcSpoofStatus
                 )
+            }
+            SettingsAnimatedCard(visible = cardsVisible.value, index = 1) {
                 SecurityCard(
                     navigator = navigator,
                     loadingDialog = loadingDialog
                 )
+            }
+            SettingsAnimatedCard(visible = cardsVisible.value, index = 2) {
                 ModuleMountCard(
                     prefs = prefs
                 )
             }
 
-            AppSettingsCard(
-                navigator = navigator,
-                prefs = prefs,
-                aboutDialog = aboutDialog,
-                exportBugreportLauncher = exportBugreportLauncher,
-                loadingDialog = loadingDialog,
-                scope = scope,
-                context = context
-            )
+            SettingsAnimatedCard(visible = cardsVisible.value, index = 3) {
+                AppSettingsCard(
+                    navigator = navigator,
+                    prefs = prefs,
+                    aboutDialog = aboutDialog,
+                    exportBugreportLauncher = exportBugreportLauncher,
+                    loadingDialog = loadingDialog,
+                    scope = scope,
+                    context = context
+                )
+            }
 
             Spacer(Modifier)
+        }
+    }
+}
+
+/**
+ * Reusable animated wrapper for Settings page cards.
+ * Provides a staggered fade-in + slide-up entrance animation.
+ */
+@Composable
+private fun SettingsAnimatedCard(
+    visible: Boolean,
+    index: Int,
+    content: @Composable () -> Unit
+) {
+    val animationProgress by animateFloatAsState(
+        targetValue = if (visible) 1f else 0f,
+        animationSpec = tween(
+            durationMillis = 400,
+            delayMillis = index * 80,
+            easing = androidx.compose.animation.core.FastOutSlowInEasing
+        ),
+        label = "settingsCardAnim_$index"
+    )
+
+    androidx.compose.animation.AnimatedVisibility(
+        visible = visible,
+        enter = fadeIn(
+            animationSpec = tween(
+                durationMillis = 400,
+                delayMillis = index * 80
+            )
+        ) + slideInVertically(
+            initialOffsetY = { it / 4 },
+            animationSpec = tween(
+                durationMillis = 400,
+                delayMillis = index * 80
+            )
+        )
+    ) {
+        androidx.compose.foundation.layout.Box(
+            modifier = Modifier.graphicsLayer {
+                translationY = (1f - animationProgress) * 30f
+                alpha = animationProgress
+            }
+        ) {
+            content()
         }
     }
 }

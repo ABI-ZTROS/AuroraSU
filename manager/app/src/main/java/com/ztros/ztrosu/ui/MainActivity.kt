@@ -468,7 +468,7 @@ private fun BottomBar(
     val fullFeatured = isManager && !Natives.requireNewKernel() && rootAvailable()
 
     val visibleDestinations = remember(fullFeatured) {
-        BottomBarDestination.entries.filter { fullFeatured || !it.rootRequired }
+        BottomBarDestination.entries
     }
 
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
