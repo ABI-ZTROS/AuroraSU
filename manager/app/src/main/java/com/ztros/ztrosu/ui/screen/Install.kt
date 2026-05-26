@@ -225,7 +225,6 @@ private fun MountModeSelector(
 }
 
 sealed class InstallMethod {
-    @StringRes
     abstract val label: Int
 
     data object AnyKernel : InstallMethod() {

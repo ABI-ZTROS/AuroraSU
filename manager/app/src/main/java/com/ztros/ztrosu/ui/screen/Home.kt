@@ -1332,7 +1332,7 @@ private fun SystemInfoCard() {
             Spacer(Modifier.height(16.dp))
 
             if (systemInfo != null) {
-                val info = systemInfo
+                val info = systemInfo!!
                 @Composable
                 fun InfoRow(label: String, value: String, icon: ImageVector) {
                     Row(
