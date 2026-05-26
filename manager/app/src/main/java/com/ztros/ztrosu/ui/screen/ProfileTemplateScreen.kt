@@ -29,6 +29,7 @@ import com.ztros.ztrosu.ui.LocalScrollState
 import com.ztros.ztrosu.ui.component.rememberCustomDialog
 import com.ztros.ztrosu.ui.rememberScrollConnection
 import com.ztros.ztrosu.ui.util.LocalSnackbarHost
+import kotlinx.coroutines.launch
 
 private enum class TemplateType {
     GAME, SOCIAL, SYSTEM_TOOL, CUSTOM
@@ -311,11 +312,13 @@ fun ProfileTemplateScreen(navigator: DestinationsNavigator) {
             ) {
                 OutlinedButton(
                     onClick = {
-                        val data = templates.filter { it.enabled }.map {
-                            "${it.type.name}:${it.startTime}:${it.endTime}"
-                        }.joinToString("\n")
-                        prefs.edit { putString("exported_templates", data) }
-                        snackBarHost.showSnackbar(message = exportedMsg)
+                        scope.launch {
+                            val data = templates.filter { it.enabled }.map {
+                                "${it.type.name}:${it.startTime}:${it.endTime}"
+                            }.joinToString("\n")
+                            prefs.edit { putString("exported_templates", data) }
+                            snackBarHost.showSnackbar(message = exportedMsg)
+                        }
                     },
                     modifier = Modifier.weight(1f)
                 ) {
@@ -324,29 +327,31 @@ fun ProfileTemplateScreen(navigator: DestinationsNavigator) {
                 }
                 OutlinedButton(
                     onClick = {
-                        val data = prefs.getString("exported_templates", "") ?: ""
-                        if (data.isNotBlank()) {
-                            data.lines().forEach { line ->
-                                val parts = line.split(":")
-                                if (parts.size >= 1) {
-                                    val type = runCatching { TemplateType.valueOf(parts[0]) }.getOrNull()
-                                    if (type != null) {
-                                        templates = templates.map {
-                                            if (it.type == type) it.copy(
-                                                enabled = true,
-                                                startTime = parts.getOrElse(1) { "" },
-                                                endTime = parts.getOrElse(2) { "" }
-                                            ) else it
-                                        }
-                                        prefs.edit {
-                                            putBoolean(KEY_ENABLED + type.name, true)
-                                            putString(KEY_START_TIME + type.name, parts.getOrElse(1) { "" })
-                                            putString(KEY_END_TIME + type.name, parts.getOrElse(2) { "" })
+                        scope.launch {
+                            val data = prefs.getString("exported_templates", "") ?: ""
+                            if (data.isNotBlank()) {
+                                data.lines().forEach { line ->
+                                    val parts = line.split(":")
+                                    if (parts.size >= 1) {
+                                        val type = runCatching { TemplateType.valueOf(parts[0]) }.getOrNull()
+                                        if (type != null) {
+                                            templates = templates.map {
+                                                if (it.type == type) it.copy(
+                                                    enabled = true,
+                                                    startTime = parts.getOrElse(1) { "" },
+                                                    endTime = parts.getOrElse(2) { "" }
+                                                ) else it
+                                            }
+                                            prefs.edit {
+                                                putBoolean(KEY_ENABLED + type.name, true)
+                                                putString(KEY_START_TIME + type.name, parts.getOrElse(1) { "" })
+                                                putString(KEY_END_TIME + type.name, parts.getOrElse(2) { "" })
+                                            }
                                         }
                                     }
                                 }
+                                snackBarHost.showSnackbar(message = importedMsg)
                             }
-                            snackBarHost.showSnackbar(message = importedMsg)
                         }
                     },
                     modifier = Modifier.weight(1f)
@@ -359,7 +364,7 @@ fun ProfileTemplateScreen(navigator: DestinationsNavigator) {
             // Apply Button
             Button(
                 onClick = {
-                    snackBarHost.showSnackbar(message = appliedMsg)
+                    scope.launch { snackBarHost.showSnackbar(message = appliedMsg) }
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {

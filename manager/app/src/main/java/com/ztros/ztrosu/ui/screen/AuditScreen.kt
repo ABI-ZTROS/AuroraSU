@@ -29,6 +29,7 @@ import com.ztros.ztrosu.ui.rememberScrollConnection
 import com.ztros.ztrosu.ui.util.LocalSnackbarHost
 import com.topjohnwu.superuser.ShellUtils
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 private data class AuditStats(

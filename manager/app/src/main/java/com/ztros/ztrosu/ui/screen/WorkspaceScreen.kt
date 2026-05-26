@@ -31,6 +31,7 @@ import com.ztros.ztrosu.ui.LocalScrollState
 import com.ztros.ztrosu.ui.component.SwitchItem
 import com.ztros.ztrosu.ui.rememberScrollConnection
 import com.ztros.ztrosu.ui.util.LocalSnackbarHost
+import kotlinx.coroutines.launch
 
 private enum class WorkspaceProfile(val key: String) {
     Personal("personal"),
