@@ -2,13 +2,17 @@ package com.ztros.ztrosu.ui.screen
 
 import android.content.Context
 import android.content.Intent
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.AcUnit
 import androidx.compose.material.icons.filled.Contrast
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Translate
@@ -16,11 +20,14 @@ import androidx.compose.material.icons.filled.ViewCarousel
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import com.ztros.ztrosu.ui.LocalScrollState
-import com.ztros.ztrosu.ui.rememberScrollConnection
+import androidx.compose.ui.rememberScrollConnection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -333,6 +340,93 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
                     themeStyleDialog.show()
                 }
             )
+
+            // === Color Theme Preset (Ice Abyss) ===
+            var selectedPreset by rememberSaveable {
+                mutableStateOf(prefs.getString("theme_preset", "default") ?: "default")
+            }
+
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = stringResource(R.string.theme_preset_title),
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+            Text(
+                text = stringResource(R.string.theme_preset_summary),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+            Spacer(Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.Start),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Default preset
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.clickable {
+                        selectedPreset = "default"
+                        prefs.edit { putString("theme_preset", "default") }
+                        (context as? MainActivity)?.setThemePreset("default")
+                    }
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(56.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(MaterialTheme.colorScheme.surface)
+                            .then(
+                                if (selectedPreset == "default") {
+                                    Modifier.border(2.5.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(16.dp))
+                                } else {
+                                    Modifier.border(1.dp, Color.Gray.copy(alpha = 0.3f), RoundedCornerShape(16.dp))
+                                }
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Filled.Palette, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
+                    }
+                    Spacer(Modifier.height(6.dp))
+                    Text(stringResource(R.string.theme_preset_default), style = MaterialTheme.typography.labelMedium)
+                }
+
+                // Ice Abyss preset
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.clickable {
+                        selectedPreset = "ice_abyss"
+                        prefs.edit { putString("theme_preset", "ice_abyss") }
+                        (context as? MainActivity)?.setThemePreset("ice_abyss")
+                    }
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(56.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(Color(0xFFE6F4FA))
+                            .then(
+                                if (selectedPreset == "ice_abyss") {
+                                    Modifier.border(2.5.dp, Color(0xFF00B4D8), RoundedCornerShape(16.dp))
+                                } else {
+                                    Modifier.border(1.dp, Color.Gray.copy(alpha = 0.3f), RoundedCornerShape(16.dp))
+                                }
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Filled.AcUnit, contentDescription = null, tint = Color(0xFF00B4D8), modifier = Modifier.size(24.dp))
+                    }
+                    Spacer(Modifier.height(6.dp))
+                    Text(stringResource(R.string.theme_preset_ice_abyss), style = MaterialTheme.typography.labelMedium)
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
 
             var useBanner by rememberSaveable {
                 mutableStateOf(

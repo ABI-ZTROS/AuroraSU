@@ -334,6 +334,10 @@
     <string name="theme_style_md3">Material You</string>
     <string name="theme_style_miui_x">MIUI X</string>
     <string name="theme_style_summary">Choose the visual theme style for the app</string>
+    <string name="theme_preset_title">Color Theme</string>
+    <string name="theme_preset_summary">Choose a preset color theme</string>
+    <string name="theme_preset_default">Default</string>
+    <string name="theme_preset_ice_abyss">Ice Abyss</string>
     <!-- Brand Info -->
     <string name="brand_info">Powered by ZTR_OS SU</string>
     <string name="about_card_title">About</string>
