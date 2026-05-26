@@ -69,6 +69,7 @@ import com.topjohnwu.superuser.ShellUtils
 import com.ztros.ztrosu.*
 import com.ztros.ztrosu.R
 import com.ztros.ztrosu.ui.component.rememberConfirmDialog
+import com.ztros.ztrosu.ui.component.ConfirmResult
 import com.ztros.ztrosu.ui.theme.ORANGE
 import com.ztros.ztrosu.ui.util.*
 import com.ztros.ztrosu.ui.util.KernelDetect
@@ -83,6 +84,7 @@ import com.ztros.ztrosu.ui.trackScroll
 import com.ztros.ztrosu.ui.rememberScrollConnection
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.*
@@ -1293,13 +1295,13 @@ private fun SystemInfoCard() {
             val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
             val memInfo = ActivityManager.MemoryInfo()
             activityManager.getMemoryInfo(memInfo)
-            val totalMemory = formatSize(memInfo.totalMem)
-            val availableMemory = formatSize(memInfo.availMem)
+            val totalMemory = formatSizeZtrsu(memInfo.totalMem)
+            val availableMemory = formatSizeZtrsu(memInfo.availMem)
 
             val dataPath = Environment.getDataDirectory()
             val statFs = StatFs(dataPath.path)
-            val totalStorage = formatSize(statFs.totalBytes)
-            val availableStorage = formatSize(statFs.availableBytes)
+            val totalStorage = formatSizeZtrsu(statFs.totalBytes)
+            val availableStorage = formatSizeZtrsu(statFs.availableBytes)
 
             SystemInfo(
                 deviceModel = deviceModel,
@@ -1330,6 +1332,7 @@ private fun SystemInfoCard() {
             Spacer(Modifier.height(16.dp))
 
             if (systemInfo != null) {
+                val info = systemInfo
                 @Composable
                 fun InfoRow(label: String, value: String, icon: ImageVector) {
                     Row(
@@ -1362,43 +1365,43 @@ private fun SystemInfoCard() {
 
                 InfoRow(
                     label = stringResource(R.string.system_info_device_model),
-                    value = systemInfo.deviceModel,
+                    value = info.deviceModel,
                     icon = Icons.Filled.PhoneAndroid
                 )
 
                 InfoRow(
                     label = stringResource(R.string.system_info_android_version),
-                    value = systemInfo.androidVersion,
+                    value = info.androidVersion,
                     icon = Icons.Filled.Android
                 )
 
                 InfoRow(
                     label = stringResource(R.string.system_info_kernel_version),
-                    value = systemInfo.kernelVersion,
+                    value = info.kernelVersion,
                     icon = Icons.Filled.DeveloperBoard
                 )
 
                 InfoRow(
                     label = stringResource(R.string.system_info_security_patch),
-                    value = systemInfo.securityPatch,
+                    value = info.securityPatch,
                     icon = Icons.Filled.Security
                 )
 
                 InfoRow(
                     label = stringResource(R.string.system_info_cpu_arch),
-                    value = systemInfo.cpuArch,
+                    value = info.cpuArch,
                     icon = Icons.Filled.Memory
                 )
 
                 InfoRow(
                     label = stringResource(R.string.system_info_memory),
-                    value = "${systemInfo.availableMemory} / ${systemInfo.totalMemory}",
+                    value = "${info.availableMemory} / ${info.totalMemory}",
                     icon = Icons.Filled.Storage
                 )
 
                 InfoRow(
                     label = stringResource(R.string.system_info_storage),
-                    value = "${systemInfo.availableStorage} / ${systemInfo.totalStorage}",
+                    value = "${info.availableStorage} / ${info.totalStorage}",
                     icon = Icons.Filled.SdCard
                 )
             } else {
@@ -1427,10 +1430,24 @@ private fun SystemInfoCard() {
 @Composable
 private fun QuickActionsCard() {
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
     val rebootConfirmDialog = rememberConfirmDialog()
     val recoveryConfirmDialog = rememberConfirmDialog()
     val bootloaderConfirmDialog = rememberConfirmDialog()
     val systemUiConfirmDialog = rememberConfirmDialog()
+
+    // Pre-resolve strings outside of non-composable contexts
+    val rebootTitle = stringResource(R.string.quick_action_reboot)
+    val rebootContent = stringResource(R.string.quick_action_reboot_confirm)
+    val recoveryTitle = stringResource(R.string.quick_action_reboot_recovery)
+    val recoveryContent = stringResource(R.string.quick_action_reboot_recovery_confirm)
+    val bootloaderTitle = stringResource(R.string.quick_action_reboot_bootloader)
+    val bootloaderContent = stringResource(R.string.quick_action_reboot_bootloader_confirm)
+    val systemUiTitle = stringResource(R.string.quick_action_restart_systemui)
+    val systemUiContent = stringResource(R.string.quick_action_restart_systemui_confirm)
+    val confirmText = stringResource(R.string.confirm)
+    val successText = stringResource(R.string.quick_action_success)
+    val failedText = stringResource(R.string.quick_action_failed)
 
     Card {
         Column(
@@ -1453,12 +1470,15 @@ private fun QuickActionsCard() {
                 // Reboot
                 FilledTonalButton(
                     onClick = {
-                        rebootConfirmDialog.showConfirm(
-                            title = stringResource(R.string.quick_action_reboot),
-                            content = stringResource(R.string.quick_action_reboot_confirm),
-                            confirm = stringResource(R.string.confirm)
-                        ) {
-                            reboot()
+                        coroutineScope.launch {
+                            val result = rebootConfirmDialog.awaitConfirm(
+                                title = rebootTitle,
+                                content = rebootContent,
+                                confirm = confirmText
+                            )
+                            if (result == ConfirmResult.Confirmed) {
+                                reboot()
+                            }
                         }
                     },
                     modifier = Modifier.weight(1f),
@@ -1474,7 +1494,7 @@ private fun QuickActionsCard() {
                     )
                     Spacer(Modifier.width(6.dp))
                     Text(
-                        text = stringResource(R.string.quick_action_reboot),
+                        text = rebootTitle,
                         style = MaterialTheme.typography.labelMedium
                     )
                 }
@@ -1482,12 +1502,15 @@ private fun QuickActionsCard() {
                 // Reboot to Recovery
                 FilledTonalButton(
                     onClick = {
-                        recoveryConfirmDialog.showConfirm(
-                            title = stringResource(R.string.quick_action_reboot_recovery),
-                            content = stringResource(R.string.quick_action_reboot_recovery_confirm),
-                            confirm = stringResource(R.string.confirm)
-                        ) {
-                            reboot("recovery")
+                        coroutineScope.launch {
+                            val result = recoveryConfirmDialog.awaitConfirm(
+                                title = recoveryTitle,
+                                content = recoveryContent,
+                                confirm = confirmText
+                            )
+                            if (result == ConfirmResult.Confirmed) {
+                                reboot("recovery")
+                            }
                         }
                     },
                     modifier = Modifier.weight(1f),
@@ -1503,7 +1526,7 @@ private fun QuickActionsCard() {
                     )
                     Spacer(Modifier.width(6.dp))
                     Text(
-                        text = stringResource(R.string.quick_action_reboot_recovery),
+                        text = recoveryTitle,
                         style = MaterialTheme.typography.labelMedium
                     )
                 }
@@ -1518,12 +1541,15 @@ private fun QuickActionsCard() {
                 // Reboot to Bootloader
                 FilledTonalButton(
                     onClick = {
-                        bootloaderConfirmDialog.showConfirm(
-                            title = stringResource(R.string.quick_action_reboot_bootloader),
-                            content = stringResource(R.string.quick_action_reboot_bootloader_confirm),
-                            confirm = stringResource(R.string.confirm)
-                        ) {
-                            reboot("bootloader")
+                        coroutineScope.launch {
+                            val result = bootloaderConfirmDialog.awaitConfirm(
+                                title = bootloaderTitle,
+                                content = bootloaderContent,
+                                confirm = confirmText
+                            )
+                            if (result == ConfirmResult.Confirmed) {
+                                reboot("bootloader")
+                            }
                         }
                     },
                     modifier = Modifier.weight(1f),
@@ -1539,7 +1565,7 @@ private fun QuickActionsCard() {
                     )
                     Spacer(Modifier.width(6.dp))
                     Text(
-                        text = stringResource(R.string.quick_action_reboot_bootloader),
+                        text = bootloaderTitle,
                         style = MaterialTheme.typography.labelMedium
                     )
                 }
@@ -1547,18 +1573,20 @@ private fun QuickActionsCard() {
                 // Restart SystemUI
                 FilledTonalButton(
                     onClick = {
-                        systemUiConfirmDialog.showConfirm(
-                            title = stringResource(R.string.quick_action_restart_systemui),
-                            content = stringResource(R.string.quick_action_restart_systemui_confirm),
-                            confirm = stringResource(R.string.confirm)
-                        ) {
-                            val success = ShellUtils.fastCmdResult("killall com.android.systemui")
-                            Toast.makeText(
-                                context,
-                                if (success) stringResource(R.string.quick_action_success)
-                                else stringResource(R.string.quick_action_failed),
-                                Toast.LENGTH_SHORT
-                            ).show()
+                        coroutineScope.launch {
+                            val result = systemUiConfirmDialog.awaitConfirm(
+                                title = systemUiTitle,
+                                content = systemUiContent,
+                                confirm = confirmText
+                            )
+                            if (result == ConfirmResult.Confirmed) {
+                                val success = ShellUtils.fastCmdResult("killall com.android.systemui")
+                                Toast.makeText(
+                                    context,
+                                    if (success) successText else failedText,
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
                         }
                     },
                     modifier = Modifier.weight(1f),
@@ -1574,7 +1602,7 @@ private fun QuickActionsCard() {
                     )
                     Spacer(Modifier.width(6.dp))
                     Text(
-                        text = stringResource(R.string.quick_action_restart_systemui),
+                        text = systemUiTitle,
                         style = MaterialTheme.typography.labelMedium
                     )
                 }
@@ -1723,7 +1751,7 @@ private fun ModuleSummaryCard() {
     }
 }
 
-private fun formatSize(bytes: Long): String {
+private fun formatSizeZtrsu(bytes: Long): String {
     return when {
         bytes >= 1 shl 30 -> "%.1f GB".format(bytes.toDouble() / (1 shl 30))
         bytes >= 1 shl 20 -> "%.0f MB".format(bytes.toDouble() / (1 shl 20))
