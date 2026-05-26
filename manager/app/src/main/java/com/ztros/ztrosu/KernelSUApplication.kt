@@ -1,3 +1,4 @@
+// ZTR_OS SU - Renamed from KernelSUApplication
 package com.ztros.ztrosu
 
 import android.app.Application
@@ -22,9 +23,9 @@ import okhttp3.OkHttpClient
 import java.io.File
 import java.util.*
 
-lateinit var ksuApp: KernelSUApplication
+lateinit var ksuApp: ZtrOsSuApplication
 
-class KernelSUApplication : Application(), ViewModelStoreOwner {
+class ZtrOsSuApplication : Application(), ViewModelStoreOwner {
 
     lateinit var okhttpClient: OkHttpClient
     private val appViewModelStore by lazy { ViewModelStore() }
@@ -72,12 +73,12 @@ class KernelSUApplication : Application(), ViewModelStoreOwner {
                     // ZTR_OS kernel detected
                     val isSuperKeyActive = Natives.isSuperKeyActive()
                     Log.i(
-                        "KernelSUApplication",
+                        "ZtrOsSuApplication",
                         "ZTR_OS kernel detected (tag=$versionTag), SuperKey active: $isSuperKeyActive"
                     )
                 }
             } catch (e: Exception) {
-                Log.w("KernelSUApplication", "Failed to check SuperKey status: ${e.message}")
+                Log.w("ZtrOsSuApplication", "Failed to check SuperKey status: ${e.message}")
             }
         }
     }

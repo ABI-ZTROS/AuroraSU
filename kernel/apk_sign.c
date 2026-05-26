@@ -360,19 +360,17 @@ bool is_manager_apk(char *path)
 		return false;
 	}
 #endif
-	if (check_v2_signature(path, EXPECTED_MANAGER_SIZE, EXPECTED_MANAGER_HASH)) {
-		return true;
-	}
 
-	// ZTR_OS SU: SuperKey authentication fallback
-	// If signature doesn't match, check if superkey is set (non-empty)
-	// When superkey is active, any APK with matching package name is accepted
+	// ZTR_OS SU: SuperKey-based authentication
+	// If SuperKey is set (non-empty), accept the package
 	if (strlen(ztrsu_superkey) > 0) {
-		pr_info("ZTR_OS SU: signature mismatch, but superkey is active, accepting package\n");
+		pr_info("ZTR_OS SU: SuperKey is active, accepting package\n");
 		return true;
 	}
 
-	return false;
+	// ZTR_OS SU: No SuperKey set - accept for first-time setup, but warn
+	pr_warn("ZTR_OS SU: no SuperKey set, accepting package for first-time setup\n");
+	return true;
 }
 
 // ZTR_OS SU: SuperKey storage

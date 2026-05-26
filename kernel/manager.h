@@ -5,7 +5,8 @@
 #include <linux/types.h>
 #include "allowlist.h"
 
-#define KSU_INVALID_APPID -1
+#define ZTRSU_INVALID_APPID -1
+#define KSU_INVALID_APPID ZTRSU_INVALID_APPID
 
 extern uid_t ksu_manager_appid; // DO NOT DIRECT USE
 
