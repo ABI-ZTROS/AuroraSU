@@ -339,4 +339,160 @@
     <string name="about_card_title">About</string>
     <string name="about_card_package">Package</string>
     <string name="about_card_forked_from">Based on</string>
+
+    <!-- System Monitor Dashboard -->
+    <string name="monitor_title">System Monitor</string>
+    <string name="monitor_cpu">CPU</string>
+    <string name="monitor_memory">Memory</string>
+    <string name="monitor_disk">Disk</string>
+    <string name="monitor_network">Network</string>
+    <string name="monitor_su_log">SU Log</string>
+    <string name="monitor_realtime">Real-time</string>
+    <string name="monitor_usage_percent">%1$d%%</string>
+    <string name="monitor_free">%1$s free</string>
+    <string name="monitor_total">%1$s total</string>
+    <string name="monitor_rx">RX</string>
+    <string name="monitor_tx">TX</string>
+    <string name="monitor_used">Used</string>
+    <string name="monitor_no_logs">No SU logs available</string>
+
+    <!-- Profile Templates -->
+    <string name="profile_templates">Profile Templates</string>
+    <string name="profile_template_title">Profile Templates</string>
+    <string name="profile_template_preset">Preset Templates</string>
+    <string name="profile_template_time_rule">Time Rule</string>
+    <string name="profile_template_export">Export</string>
+    <string name="profile_template_import">Import</string>
+    <string name="profile_template_apply">Apply Template</string>
+    <string name="profile_template_applied">Template applied successfully</string>
+    <string name="profile_template_exported">Templates exported successfully</string>
+    <string name="profile_template_imported">Templates imported successfully</string>
+    <string name="profile_template_start_time">Start Time</string>
+    <string name="profile_template_end_time">End Time</string>
+    <string name="profile_template_time_rule_enabled">Time rule enabled</string>
+    <string name="profile_template_time_rule_disabled">Time rule disabled</string>
+    <string name="template_game">Game</string>
+    <string name="template_game_desc">Allow all SU for best game mod compatibility</string>
+    <string name="template_social">Social</string>
+    <string name="template_social_desc">Deny all SU, maximum privacy</string>
+    <string name="template_system">System Tool</string>
+    <string name="template_system_desc">Allow SU only for system operations</string>
+    <string name="template_custom">Custom</string>
+    <string name="template_custom_desc">Create your own profile template</string>
+    <string name="template_export">Export Template</string>
+    <string name="template_import">Import Template</string>
+    <string name="template_time_rule">Time Rule</string>
+    <string name="template_time_rule_desc">Only allow SU during specific hours</string>
+    <string name="template_start_time">Start Time</string>
+    <string name="template_end_time">End Time</string>
+    <string name="template_applied">Template applied</string>
+
+    <!-- Security Audit -->
+    <string name="audit_title">Security Audit</string>
+    <string name="audit_summary">Review SU access history and security status</string>
+    <string name="audit_today">Today</string>
+    <string name="audit_this_week">This Week</string>
+    <string name="audit_this_month">This Month</string>
+    <string name="audit_all">All Time</string>
+    <string name="audit_granted">Granted</string>
+    <string name="audit_denied">Denied</string>
+    <string name="audit_anomaly_detected">Anomaly Detected</string>
+    <string name="audit_anomaly_desc">%1$s made %2$d SU requests in %3$d minutes</string>
+    <string name="audit_revoke_all">Revoke All Permissions</string>
+    <string name="audit_revoke_all_confirm">This will revoke all SU permissions. Continue?</string>
+    <string name="audit_revoke_confirm_title">Revoke All SU Permissions</string>
+    <string name="audit_revoke_confirm_msg">This will revoke all SU permissions for all apps. This action cannot be undone. Continue?</string>
+    <string name="audit_revoke_success">All SU permissions revoked successfully</string>
+    <string name="audit_revoke_failed">Failed to revoke permissions</string>
+    <string name="audit_revoked">All permissions revoked</string>
+    <string name="audit_no_logs">No SU logs found</string>
+    <string name="audit_no_anomalies">No anomalies detected</string>
+    <string name="audit_su_stats">SU Access Statistics</string>
+    <string name="audit_recent_logs">Recent SU Logs</string>
+    <string name="audit_anomaly">Anomaly Detection</string>
+    <string name="audit_risk_score">Risk Score</string>
+
+    <!-- Material You Enhancement -->
+    <string name="material_you_title">Material You</string>
+    <string name="material_you_dynamic">Dynamic Color</string>
+    <string name="material_you_dynamic_desc">Extract colors from wallpaper</string>
+    <string name="material_you_accent">Accent Color</string>
+    <string name="material_you_accent_desc">Choose custom accent color</string>
+    <string name="material_you_font_scale">Font Scale</string>
+    <string name="material_you_shape">Shape</string>
+    <string name="material_you_rounded">Rounded</string>
+    <string name="material_you_sharp">Sharp</string>
+
+    <!-- Motion & Animation -->
+    <string name="motion_title">Motion</string>
+    <string name="motion_animation">Page Transition</string>
+    <string name="motion_animation_desc">Enable smooth page transitions</string>
+    <string name="motion_card_animation">Card Animation</string>
+    <string name="motion_card_animation_desc">Animate card expand and collapse</string>
+    <string name="motion_pull_refresh">Pull to Refresh</string>
+    <string name="motion_pull_refresh_desc">Enable pull-to-refresh gesture</string>
+
+    <!-- Widget -->
+    <string name="widget_name">ZTR_OS SU Status</string>
+    <string name="widget_description">Show SU and SELinux status</string>
+    <string name="widget_root_active">Root Active</string>
+    <string name="widget_root_inactive">Root Inactive</string>
+    <string name="widget_selinux_enforcing">SELinux: Enforcing</string>
+    <string name="widget_selinux_permissive">SELinux: Permissive</string>
+    <string name="widget_modules_loaded">%1$d modules</string>
+
+    <!-- Hot Update -->
+    <string name="hotupdate_title">Kernel Module Update</string>
+    <string name="hotupdate_current_version">Current Version</string>
+    <string name="hotupdate_latest_version">Latest Version</string>
+    <string name="hotupdate_check">Check for Updates</string>
+    <string name="hotupdate_update">Update</string>
+    <string name="hotupdate_rollback">Rollback</string>
+    <string name="hotupdate_up_to_date">Already up to date</string>
+    <string name="hotupdate_changelog">Changelog</string>
+    <string name="hotupdate_downloading">Downloading…</string>
+    <string name="hotupdate_installing">Installing…</string>
+    <string name="hotupdate_success">Update successful</string>
+    <string name="hotupdate_failed">Update failed</string>
+    <string name="hotupdate_reboot_required">Reboot required to apply changes</string>
+
+    <!-- Multi-user -->
+    <string name="multiuser_title">Workspace</string>
+    <string name="multiuser_current">Current Profile</string>
+    <string name="multiuser_personal">Personal</string>
+    <string name="multiuser_work">Work</string>
+    <string name="multiuser_isolated">Isolated</string>
+    <string name="multiuser_switch">Switch Profile</string>
+    <string name="multiuser_independent_su">Independent SU Policy</string>
+    <string name="multiuser_independent_su_desc">Each profile has its own SU allowlist</string>
+    <string name="multiuser_switched">Switched to %1$s</string>
+
+    <!-- Developer Enhanced -->
+    <string name="dev_terminal">Terminal</string>
+    <string name="dev_terminal_desc">Built-in root shell terminal</string>
+    <string name="dev_selinux_editor">SELinux Policy Editor</string>
+    <string name="dev_selinux_editor_desc">Visual SELinux rule editor</string>
+    <string name="dev_module_debug">Module Debug</string>
+    <string name="dev_module_debug_desc">Debug and inspect loaded modules</string>
+    <string name="dev_log_viewer">Log Viewer</string>
+    <string name="dev_log_viewer_desc">View kernel and module logs</string>
+    <string name="terminal_hint">Type command here…</string>
+    <string name="terminal_running">Running…</string>
+    <string name="dev_enhanced_title">Developer Tools</string>
+    <string name="dev_modules_loaded">Loaded Modules</string>
+    <string name="dev_modules_empty">No modules found</string>
+    <string name="dev_log_dmesg">Kernel Log (dmesg)</string>
+    <string name="dev_log_logcat">System Log (logcat)</string>
+    <string name="dev_log_empty">No logs available</string>
+    <string name="dev_command_history">Command History</string>
+    <string name="dev_clear_history">Clear History</string>
+
+    <!-- Workspace extras -->
+    <string name="multiuser_personal_desc">Default profile with full SU access</string>
+    <string name="multiuser_work_desc">Restricted SU access for work environment</string>
+    <string name="multiuser_isolated_desc">Sandboxed environment with no SU access</string>
+    <string name="multiuser_select_profile">Select Profile</string>
+    <string name="multiuser_confirm_title">Switch Profile</string>
+    <string name="multiuser_confirm_message">Are you sure you want to switch the workspace profile? SU policies will be updated accordingly.</string>
+    <string name="multiuser_switch_success">Profile switched successfully</string>
 </resources>

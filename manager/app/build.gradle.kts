@@ -153,4 +153,8 @@ dependencies {
     implementation(libs.lsposed.cxx)
 
     implementation(libs.mmrl.ui)
+
+    implementation(libs.vico.compose.m3)
+    implementation(libs.glance.appwidget)
+    implementation(libs.glance.material3)
 }

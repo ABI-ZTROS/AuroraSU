@@ -470,13 +470,125 @@ private fun SecurityCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(8.dp))
-                    .clickable { navigator.navigate(DeveloperScreenDestination) },
+                    .clickable { navigator.navigate(DeveloperEnhancedScreenDestination) },
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                 leadingContent = { Icon(Icons.Filled.DeveloperBoard, null) },
                 headlineContent = {
                     Text(
                         text = stringResource(R.string.developer),
                         style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            )
+
+            // System Monitor
+            ListItem(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable { navigator.navigate(MonitorScreenDestination) },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                leadingContent = { Icon(Icons.Filled.MonitorHeart, null) },
+                headlineContent = {
+                    Text(
+                        text = stringResource(R.string.monitor_title),
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            )
+
+            // Security Audit
+            ListItem(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable { navigator.navigate(AuditScreenDestination) },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                leadingContent = { Icon(Icons.Filled.Security, null) },
+                headlineContent = {
+                    Text(
+                        text = stringResource(R.string.audit_title),
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            )
+
+            // Profile Templates
+            ListItem(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable { navigator.navigate(ProfileTemplateScreenDestination) },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                leadingContent = { Icon(Icons.Filled.Tune, null) },
+                headlineContent = {
+                    Text(
+                        text = stringResource(R.string.profile_templates),
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            )
+
+            // Material You
+            ListItem(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable { navigator.navigate(MaterialYouScreenDestination) },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                leadingContent = { Icon(Icons.Filled.AutoAwesome, null) },
+                headlineContent = {
+                    Text(
+                        text = stringResource(R.string.material_you_title),
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            )
+
+            // Motion Settings
+            ListItem(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable { navigator.navigate(MotionScreenDestination) },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                leadingContent = { Icon(Icons.Filled.Animation, null) },
+                headlineContent = {
+                    Text(
+                        text = stringResource(R.string.motion_title),
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            )
+
+            // Kernel Module Update
+            ListItem(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable { navigator.navigate(HotUpdateScreenDestination) },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                leadingContent = { Icon(Icons.Filled.SystemUpdate, null) },
+                headlineContent = {
+                    Text(
+                        text = stringResource(R.string.hotupdate_title),
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            )
+
+            // Workspace
+            ListItem(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable { navigator.navigate(WorkspaceScreenDestination) },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                leadingContent = { Icon(Icons.Filled.Workspaces, null) },
+                headlineContent = {
+                    Text(
+                        text = stringResource(R.string.multiuser_title),
                         fontWeight = FontWeight.SemiBold
                     )
                 }
