@@ -172,8 +172,7 @@ fun MotionScreen(navigator: DestinationsNavigator) {
                         Icon(imageVector = Icons.Filled.Speed, contentDescription = null)
                         Text(
                             text = animSpeedTitle,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
                         )
                         Text(
                             text = "%.1fx".format(animSpeed),
@@ -202,8 +201,7 @@ fun MotionScreen(navigator: DestinationsNavigator) {
                 ) {
                     Text(
                         text = animPreviewTitle,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                         modifier = Modifier.padding(start = 4.dp)
                     )
 
@@ -275,8 +273,7 @@ private fun TopBar(
         title = {
             Text(
                 text = stringResource(R.string.motion_title),
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Black
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Black)
             )
         },
         navigationIcon = {

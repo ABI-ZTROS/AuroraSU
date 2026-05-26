@@ -124,8 +124,7 @@ fun WorkspaceScreen(navigator: DestinationsNavigator) {
                         headlineContent = {
                             Text(
                                 text = currentLabel,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
                             )
                         },
                         leadingContent = {
@@ -154,8 +153,7 @@ fun WorkspaceScreen(navigator: DestinationsNavigator) {
                                     WorkspaceProfile.Work.key -> workName
                                     else -> isolatedName
                                 },
-                                style = MaterialTheme.typography.bodyLarge,
-                                fontWeight = FontWeight.Medium
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
                             )
                             Text(
                                 text = when (selectedProfile) {
@@ -179,8 +177,7 @@ fun WorkspaceScreen(navigator: DestinationsNavigator) {
                 ) {
                     Text(
                         text = selectProfile,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                         modifier = Modifier.padding(bottom = 4.dp)
                     )
 
@@ -251,8 +248,7 @@ fun WorkspaceScreen(navigator: DestinationsNavigator) {
             title = {
                 Text(
                     text = confirmTitle,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.SemiBold
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold)
                 )
             },
             text = { Text(text = confirmMsg) },
@@ -300,8 +296,7 @@ private fun ProfileOptionCard(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = name,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Medium
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
                 )
                 Text(
                     text = description,
@@ -330,8 +325,7 @@ private fun TopBar(
         title = {
             Text(
                 text = stringResource(R.string.multiuser_title),
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Black
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Black)
             )
         },
         navigationIcon = {

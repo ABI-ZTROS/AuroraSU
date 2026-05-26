@@ -137,8 +137,7 @@ fun MaterialYouScreen(navigator: DestinationsNavigator) {
                 ) {
                     Text(
                         text = accentColorTitle,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                         modifier = Modifier.padding(start = 4.dp)
                     )
                     Text(
@@ -214,8 +213,7 @@ fun MaterialYouScreen(navigator: DestinationsNavigator) {
                         Icon(imageVector = Icons.Filled.TextFields, contentDescription = null)
                         Text(
                             text = fontScaleTitle,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
                         )
                         Text(
                             text = "%.1fx".format(fontScale),
@@ -254,8 +252,7 @@ fun MaterialYouScreen(navigator: DestinationsNavigator) {
                         Icon(imageVector = Icons.Filled.RoundedCorner, contentDescription = null)
                         Text(
                             text = cornerRadiusTitle,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
                         )
                         Text(
                             text = "%.0fdp".format(cornerRadius),
@@ -309,8 +306,7 @@ private fun TopBar(
         title = {
             Text(
                 text = stringResource(R.string.material_you_title),
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Black
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Black)
             )
         },
         navigationIcon = {

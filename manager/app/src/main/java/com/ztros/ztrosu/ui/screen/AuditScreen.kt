@@ -210,8 +210,7 @@ fun AuditScreen(navigator: DestinationsNavigator) {
                     ) {
                         Text(
                             text = riskScoreLabel,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
                         )
                         Box(
                             modifier = Modifier.size(120.dp),
@@ -230,8 +229,7 @@ fun AuditScreen(navigator: DestinationsNavigator) {
                             )
                             Text(
                                 text = "${auditStats.riskScore}",
-                                style = MaterialTheme.typography.headlineMedium,
-                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
                                 color = when {
                                     auditStats.riskScore >= 80 -> MaterialTheme.colorScheme.error
                                     auditStats.riskScore >= 50 -> MaterialTheme.colorScheme.tertiary
@@ -253,8 +251,7 @@ fun AuditScreen(navigator: DestinationsNavigator) {
                             headlineContent = {
                                 Text(
                                     text = suStatsLabel,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.SemiBold
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
                                 )
                             },
                             leadingContent = {
@@ -268,8 +265,7 @@ fun AuditScreen(navigator: DestinationsNavigator) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text(
                                     text = "${auditStats.grantedCount}",
-                                    style = MaterialTheme.typography.headlineSmall,
-                                    fontWeight = FontWeight.Bold,
+                                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                                     color = MaterialTheme.colorScheme.primary
                                 )
                                 Text(
@@ -281,8 +277,7 @@ fun AuditScreen(navigator: DestinationsNavigator) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text(
                                     text = "${auditStats.deniedCount}",
-                                    style = MaterialTheme.typography.headlineSmall,
-                                    fontWeight = FontWeight.Bold,
+                                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                                     color = MaterialTheme.colorScheme.error
                                 )
                                 Text(
@@ -306,8 +301,7 @@ fun AuditScreen(navigator: DestinationsNavigator) {
                             headlineContent = {
                                 Text(
                                     text = anomalyLabel,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.SemiBold
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
                                 )
                             },
                             leadingContent = {
@@ -349,8 +343,7 @@ fun AuditScreen(navigator: DestinationsNavigator) {
                             headlineContent = {
                                 Text(
                                     text = recentLogsLabel,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.SemiBold
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
                                 )
                             },
                             leadingContent = {
@@ -411,8 +404,7 @@ private fun TopBar(
         title = {
             Text(
                 text = stringResource(R.string.audit_title),
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Black
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Black)
             )
         },
         navigationIcon = {

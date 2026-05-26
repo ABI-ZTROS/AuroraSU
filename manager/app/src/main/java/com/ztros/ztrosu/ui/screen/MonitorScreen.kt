@@ -221,8 +221,7 @@ fun MonitorScreen(navigator: DestinationsNavigator) {
                         headlineContent = {
                             Text(
                                 text = cpuLabel,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
                             )
                         },
                         leadingContent = {
@@ -271,8 +270,7 @@ fun MonitorScreen(navigator: DestinationsNavigator) {
                         headlineContent = {
                             Text(
                                 text = memoryLabel,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
                             )
                         },
                         leadingContent = {
@@ -310,8 +308,7 @@ fun MonitorScreen(navigator: DestinationsNavigator) {
                         headlineContent = {
                             Text(
                                 text = diskLabel,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
                             )
                         },
                         leadingContent = {
@@ -347,8 +344,7 @@ fun MonitorScreen(navigator: DestinationsNavigator) {
                         headlineContent = {
                             Text(
                                 text = networkLabel,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
                             )
                         },
                         leadingContent = {
@@ -384,8 +380,7 @@ fun MonitorScreen(navigator: DestinationsNavigator) {
                         headlineContent = {
                             Text(
                                 text = suLogLabel,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
                             )
                         },
                         leadingContent = {
@@ -422,8 +417,7 @@ private fun TopBar(
         title = {
             Text(
                 text = stringResource(R.string.monitor_title),
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Black
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Black)
             )
         },
         navigationIcon = {

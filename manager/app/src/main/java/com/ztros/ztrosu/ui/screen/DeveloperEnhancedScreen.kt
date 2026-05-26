@@ -170,7 +170,7 @@ fun DeveloperEnhancedScreen(navigator: DestinationsNavigator) {
                     ListItem(
                         colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surface),
                         headlineContent = {
-                            Text(terminalLabel, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                            Text(terminalLabel, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
                         },
                         supportingContent = { Text(terminalDesc) },
                         leadingContent = { Icon(Icons.Filled.Terminal, contentDescription = null) }
@@ -231,7 +231,7 @@ fun DeveloperEnhancedScreen(navigator: DestinationsNavigator) {
                     colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surface),
                     leadingContent = { Icon(Icons.Filled.Policy, contentDescription = null) },
                     headlineContent = {
-                        Text(selinuxLabel, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                        Text(selinuxLabel, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
                     },
                     supportingContent = { Text(selinuxDesc) },
                     trailingContent = { Icon(Icons.Filled.ArrowForward, contentDescription = null) }
@@ -247,7 +247,7 @@ fun DeveloperEnhancedScreen(navigator: DestinationsNavigator) {
                     ListItem(
                         colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surface),
                         headlineContent = {
-                            Text(moduleDebugLabel, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                            Text(moduleDebugLabel, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
                         },
                         supportingContent = { Text(moduleDebugDesc) },
                         leadingContent = { Icon(Icons.Filled.Extension, contentDescription = null) }
@@ -292,7 +292,7 @@ fun DeveloperEnhancedScreen(navigator: DestinationsNavigator) {
                     ListItem(
                         colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surface),
                         headlineContent = {
-                            Text(logViewerLabel, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                            Text(logViewerLabel, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
                         },
                         supportingContent = { Text(logViewerDesc) },
                         leadingContent = { Icon(Icons.Filled.Article, contentDescription = null) }
@@ -352,7 +352,7 @@ private fun LogViewDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text(text = title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+            Text(text = title, style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold))
         },
         text = {
             Surface(
@@ -392,8 +392,7 @@ private fun TopBar(
         title = {
             Text(
                 text = stringResource(R.string.dev_enhanced_title),
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Black
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Black)
             )
         },
         navigationIcon = {

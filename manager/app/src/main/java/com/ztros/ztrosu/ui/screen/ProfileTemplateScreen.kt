@@ -228,8 +228,7 @@ fun ProfileTemplateScreen(navigator: DestinationsNavigator) {
             // Preset Templates
             Text(
                 text = presetLabel,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
             )
 
             templates.forEach { template ->
@@ -243,8 +242,7 @@ fun ProfileTemplateScreen(navigator: DestinationsNavigator) {
                             headlineContent = {
                                 Text(
                                     text = template.name,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.SemiBold
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
                                 )
                             },
                             supportingContent = {
@@ -385,8 +383,7 @@ private fun TopBar(
         title = {
             Text(
                 text = stringResource(R.string.profile_template_title),
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Black
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Black)
             )
         },
         navigationIcon = {

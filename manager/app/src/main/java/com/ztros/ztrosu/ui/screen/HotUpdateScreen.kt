@@ -137,8 +137,7 @@ fun HotUpdateScreen(navigator: DestinationsNavigator) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = currentVersionTitle,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold
+                                style = MaterialTheme.typography.titleMedium
                             )
                             Text(
                                 text = currentVersion,
@@ -235,8 +234,7 @@ fun HotUpdateScreen(navigator: DestinationsNavigator) {
                         headlineContent = {
                             Text(
                                 text = changelogTitle,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
                             )
                         },
                         trailingContent = {
@@ -289,8 +287,7 @@ fun HotUpdateScreen(navigator: DestinationsNavigator) {
                 ) {
                     Text(
                         text = rollbackTitle,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                         modifier = Modifier.padding(start = 4.dp)
                     )
 
@@ -330,8 +327,7 @@ fun HotUpdateScreen(navigator: DestinationsNavigator) {
             title = {
                 Text(
                     text = rollbackTitle,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.SemiBold
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold)
                 )
             },
             text = {
@@ -380,8 +376,7 @@ private fun TopBar(
         title = {
             Text(
                 text = stringResource(R.string.hotupdate_title),
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Black
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Black)
             )
         },
         navigationIcon = {
