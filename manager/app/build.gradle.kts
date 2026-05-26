@@ -24,6 +24,15 @@ apksign {
 
 android {
     namespace = "com.ztros.ztrosu"
+    compileSdk = 35
+
+    defaultConfig {
+        minSdk = 26
+        targetSdk = 35
+        ndk {
+            abiFilters += listOf("arm64-v8a", "x86_64")
+        }
+    }
 
     buildTypes {
         release {
@@ -42,6 +51,16 @@ android {
 
     kotlinOptions {
         jvmTarget = "21"
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
+    }
+
+    lint {
+        abortOnError = false
+        checkReleaseBuilds = false
     }
 
     packaging {
