@@ -228,6 +228,7 @@ fun HomeScreen(navigator: DestinationsNavigator) {
             }
             ModuleSummaryCard()
             IssueReportCard()
+            AboutCard()
             Spacer(Modifier)
         }
     }
@@ -915,6 +916,25 @@ private fun InfoCard(autoExpand: Boolean = false) {
                 .fillMaxWidth()
                 .padding(start = 24.dp, top = 24.dp, end = 24.dp, bottom = 24.dp)
         ) {
+            // Brand identity header
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(bottom = 16.dp)
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.cannabis_24),
+                    contentDescription = null,
+                    modifier = Modifier.padding(end = 8.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = stringResource(R.string.brand_info),
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+
             @Composable
             fun InfoCardItem(label: String, content: String, icon: Any? = null) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1150,6 +1170,95 @@ fun IssueReportCard() {
                     Icon(
                         painter = painterResource(R.drawable.ic_telegram),
                         contentDescription = stringResource(R.string.issue_report_telegram),
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AboutCard() {
+    val context = LocalContext.current
+    val managerVersion = getManagerVersion(context)
+
+    Card {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.about_card_title),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+
+            Spacer(Modifier.height(12.dp))
+
+            // App name & version
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Filled.Info,
+                    contentDescription = null,
+                    modifier = Modifier.padding(end = 16.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Column {
+                    Text(
+                        text = stringResource(R.string.app_name),
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        text = "${managerVersion.first} (${managerVersion.second})",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            // Package name
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Filled.Package,
+                    contentDescription = null,
+                    modifier = Modifier.padding(end = 16.dp),
+                    tint = MaterialTheme.colorScheme.secondary
+                )
+                Column {
+                    Text(
+                        text = stringResource(R.string.about_card_package),
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        text = "com.ztros.ztrosu",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            // Based on
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Filled.AccountTree,
+                    contentDescription = null,
+                    modifier = Modifier.padding(end = 16.dp),
+                    tint = MaterialTheme.colorScheme.tertiary
+                )
+                Column {
+                    Text(
+                        text = stringResource(R.string.about_card_forked_from),
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        text = "Wild KSU + SukiSU Ultra + KSU Next",
+                        style = MaterialTheme.typography.bodySmall
                     )
                 }
             }

@@ -10,6 +10,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Contrast
+import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material.icons.filled.ViewCarousel
 import androidx.compose.material3.*
@@ -263,6 +264,73 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
                 supportingContent = { Text(currentLanguageDisplay) },
                 modifier = Modifier.clickable {
                     languageDialog.show()
+                }
+            )
+
+            // Theme style selection
+            val themeStyleTitle = stringResource(R.string.theme_style_title)
+            val themeStyleSummary = stringResource(R.string.theme_style_summary)
+
+            val themeStyles = listOf(
+                "wild" to stringResource(R.string.theme_style_wild),
+                "md3" to stringResource(R.string.theme_style_md3),
+                "miui_x" to stringResource(R.string.theme_style_miui_x)
+            )
+
+            val currentThemeStyle = prefs.getString("theme_style", "wild") ?: "wild"
+            val currentThemeDisplay = themeStyles.firstOrNull { it.first == currentThemeStyle }?.second
+                ?: themeStyles[0].second
+
+            val themeStyleDialog = rememberCustomDialog { dismiss ->
+                val options = themeStyles.map { (_, displayName) ->
+                    ListOption(
+                        titleText = displayName,
+                        selected = currentThemeStyle == themeStyles.first { it.second == displayName }.first
+                    )
+                }
+
+                var selectedIndex by remember {
+                    mutableIntStateOf(themeStyles.indexOfFirst { it.first == currentThemeStyle }.coerceAtLeast(0))
+                }
+
+                ListDialog(
+                    state = rememberUseCaseState(
+                        visible = true,
+                        onFinishedRequest = {
+                            if (selectedIndex >= 0 && selectedIndex < themeStyles.size) {
+                                val newStyle = themeStyles[selectedIndex].first
+                                prefs.edit { putString("theme_style", newStyle) }
+                                // Theme will be applied on next app restart
+                                refreshActivity(context)
+                            }
+                            dismiss()
+                        },
+                        onCloseRequest = {
+                            dismiss()
+                        }
+                    ),
+                    header = Header.Default(
+                        title = themeStyleTitle,
+                    ),
+                    selection = ListSelection.Single(
+                        showRadioButtons = true,
+                        options = options
+                    ) { index, _ ->
+                        selectedIndex = index
+                    }
+                )
+            }
+
+            ListItem(
+                leadingContent = { Icon(Icons.Filled.Palette, themeStyleTitle) },
+                headlineContent = { Text(
+                    text = themeStyleTitle,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                ) },
+                supportingContent = { Text(currentThemeDisplay) },
+                modifier = Modifier.clickable {
+                    themeStyleDialog.show()
                 }
             )
 
