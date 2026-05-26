@@ -76,7 +76,7 @@ fun HotUpdateScreen(navigator: DestinationsNavigator) {
     val downloadingText = stringResource(R.string.hotupdate_downloading)
 
     val currentVersion = remember {
-        runCatching { Natives.version }.getOrNull() ?: "Unknown"
+        runCatching { Natives.version.toString() }.getOrNull() ?: "Unknown"
     }
 
     var updateStatus by remember { mutableStateOf("") }
