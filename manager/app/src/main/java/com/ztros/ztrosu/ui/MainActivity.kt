@@ -205,8 +205,9 @@ class MainActivity : ComponentActivity() {
         try {
             val prefsBg = getSharedPreferences("settings", MODE_PRIVATE)
             if (prefsBg.getString("theme_preset", "default") == "ice_abyss") {
+                val isDark = (resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES
                 window.decorView.setBackgroundColor(
-                    if (isSystemInDarkTheme()) 0xFF0A1929.toInt() else 0xFFE6F4FA.toInt()
+                    if (isDark) 0xFF0A1929.toInt() else 0xFFE6F4FA.toInt()
                 )
             }
         } catch (_: Exception) {}
@@ -463,8 +464,9 @@ class MainActivity : ComponentActivity() {
         getSharedPreferences("settings", MODE_PRIVATE).edit { putString("theme_preset", preset) }
         // Update window background for Ice Abyss frosted glass effect
         if (preset == "ice_abyss") {
+            val isDark = (resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES
             window.decorView.setBackgroundColor(
-                if (isSystemInDarkTheme()) 0xFF0A1929.toInt() else 0xFFE6F4FA.toInt()
+                if (isDark) 0xFF0A1929.toInt() else 0xFFE6F4FA.toInt()
             )
         } else {
             window.decorView.setBackgroundColor(android.graphics.Color.TRANSPARENT)
