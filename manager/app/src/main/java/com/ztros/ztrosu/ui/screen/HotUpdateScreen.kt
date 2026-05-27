@@ -1,5 +1,7 @@
 package com.ztros.ztrosu.ui.screen
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -83,6 +85,11 @@ fun HotUpdateScreen(navigator: DestinationsNavigator) {
     var isUpdating by remember { mutableStateOf(false) }
     var showRollbackConfirm by remember { mutableStateOf(false) }
     var changelogExpanded by remember { mutableStateOf(false) }
+    var latestVersion by remember { mutableStateOf("") }
+    var changelog by remember { mutableStateOf("") }
+    var isDownloading by remember { mutableStateOf(false) }
+    var downloadProgress by remember { mutableFloatStateOf(0f) }
+    var canInstall by remember { mutableStateOf(false) }
 
     val changelogEntries = listOf(
         "v1.5.0 - Improved kernel module compatibility",
@@ -160,19 +167,32 @@ fun HotUpdateScreen(navigator: DestinationsNavigator) {
                         onClick = {
                             scope.launch {
                                 isUpdating = true
-                                val success = loadingDialog.withLoading {
-                                    withContext(Dispatchers.IO) {
-                                        delay(2000L)
-                                        runCatching {
-                                            ShellUtils.fastCmdResult("ksud module update --check 2>/dev/null")
-                                        }.getOrDefault(false)
-                                    }
+                                loadingDialog.show()
+                                val result = withContext(Dispatchers.IO) {
+                                    runCatching {
+                                        // 检查本地 ksud 版本
+                                        val localVersion = ShellUtils.fastCmd("ksud --version 2>/dev/null").trim()
+                                        // 检查 GitHub 最新 release
+                                        val apiResult = ShellUtils.fastCmd("curl -s --connect-timeout 10 https://api.github.com/repos/ABI-ZTROS/AuroraSU/releases/latest 2>/dev/null")
+                                        if (apiResult.contains("\"tag_name\"")) {
+                                            val tagName = apiResult.lines().firstOrNull { it.contains("\"tag_name\"") }
+                                                ?.split("\"tag_name\"")?.get(1)?.split("\"")?.get(1) ?: ""
+                                            val body = apiResult.lines().firstOrNull { it.contains("\"body\"") }
+                                                ?.substringAfter("\"body\"")?.split("\"")?.get(1) ?: ""
+                                            Triple(true, tagName, body)
+                                        } else {
+                                            Triple(false, "", "")
+                                        }
+                                    }.getOrDefault(Triple(false, "", ""))
                                 }
+                                loadingDialog.dismiss()
                                 isUpdating = false
-                                if (success) {
-                                    updateStatus = updateText
+                                if (result.first) {
+                                    latestVersion = result.second
+                                    changelog = result.third.ifBlank { "无更新说明" }
+                                    updateStatus = "发现新版本: ${result.second}"
                                 } else {
-                                    updateStatus = updateStatusUpToDate
+                                    updateStatus = "检查失败，请检查网络连接"
                                 }
                             }
                         },
@@ -276,6 +296,131 @@ fun HotUpdateScreen(navigator: DestinationsNavigator) {
                             }
                         )
                     }
+                }
+            }
+
+            // Download Update Card
+            if (latestVersion.isNotEmpty() && !isDownloading) {
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Filled.Download,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(Modifier.width(12.dp))
+                            Text(
+                                text = "下载更新",
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
+                            )
+                        }
+                        Text(
+                            text = "最新版本: $latestVersion",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        if (changelog.isNotEmpty()) {
+                            Text(
+                                text = changelog,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 5,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                        Button(
+                            onClick = {
+                                scope.launch {
+                                    isDownloading = true
+                                    downloadProgress = 0f
+                                    val success = withContext(Dispatchers.IO) {
+                                        runCatching {
+                                            // 获取下载链接
+                                            val assets = ShellUtils.fastCmd("curl -s https://api.github.com/repos/ABI-ZTROS/AuroraSU/releases/latest | grep \"browser_download_url.*arm64.*apk\" | head -1 | cut -d'\"' -f4")
+                                            if (assets.isNotBlank()) {
+                                                ShellUtils.fastCmd("curl -L -o /data/local/tmp/aurorasu_update.apk --progress-bar $assets 2>&1")
+                                                true
+                                            } else {
+                                                false
+                                            }
+                                        }.getOrDefault(false)
+                                    }
+                                    isDownloading = false
+                                    if (success) {
+                                        canInstall = true
+                                        updateStatus = "下载完成，可以安装"
+                                    } else {
+                                        updateStatus = "下载失败"
+                                    }
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Download,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text("开始下载")
+                        }
+                    }
+                }
+            }
+
+            // Downloading progress card
+            if (isDownloading) {
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(Modifier.width(12.dp))
+                            Text(
+                                text = "正在下载更新...",
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
+                            )
+                        }
+                        LinearProgressIndicator(
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+            }
+
+            // Install Update Button
+            if (canInstall) {
+                Button(
+                    onClick = {
+                        val intent = Intent(Intent.ACTION_VIEW).apply {
+                            setDataAndType(
+                                Uri.parse("file:///data/local/tmp/aurorasu_update.apk"),
+                                "application/vnd.android.package-archive"
+                            )
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        }
+                        context.startActivity(intent)
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.InstallMobile,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text("安装更新")
                 }
             }
 

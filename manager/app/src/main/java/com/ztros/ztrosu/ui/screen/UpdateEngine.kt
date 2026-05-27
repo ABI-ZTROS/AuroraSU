@@ -43,7 +43,12 @@ private data class UpdateEngineInfo(
     val progress: Float,            // 0.0 - 1.0
     val newPartitionSize: Long,     // Update package size in bytes
     val newVersion: String,         // New version string
-    val isRunning: Boolean          // Whether an update is in progress
+    val isRunning: Boolean,         // Whether an update is in progress
+    val bootPartitionOk: Boolean = true,
+    val systemPartitionOk: Boolean = true,
+    val vendorPartitionOk: Boolean = true,
+    val currentSlot: String = "_a",
+    val isDynamicPartition: Boolean = false,
 )
 
 /**
@@ -53,13 +58,34 @@ private suspend fun getUpdateEngineInfo(): UpdateEngineInfo = withContext(Dispat
     runCatching {
         val output = ShellUtils.fastCmd("dumpsys update_engine_client").trim()
         if (output.isBlank()) {
+            // Even if dumpsys returns empty, still check partition health
+            val partitionHealth = runCatching {
+                val bootSlot = ShellUtils.fastCmd("getprop ro.boot.slot_suffix 2>/dev/null").trim().ifEmpty { "_a" }
+                val bootInfo = ShellUtils.fastCmd("ls -la /dev/block/by-name/boot$bootSlot 2>/dev/null").trim()
+                val systemInfo = ShellUtils.fastCmd("ls -la /dev/block/by-name/system$bootSlot 2>/dev/null").trim()
+                val vendorInfo = ShellUtils.fastCmd("ls -la /dev/block/by-name/vendor$bootSlot 2>/dev/null").trim()
+                val superInfo = ShellUtils.fastCmd("ls -la /dev/block/mapper/super 2>/dev/null").trim()
+                mapOf(
+                    "boot" to bootInfo.isNotEmpty(),
+                    "system" to systemInfo.isNotEmpty(),
+                    "vendor" to vendorInfo.isNotEmpty(),
+                    "currentSlot" to bootSlot,
+                    "isDynamicPartition" to superInfo.isNotEmpty(),
+                )
+            }.getOrDefault(emptyMap())
+
             return@withContext UpdateEngineInfo(
                 currentOperation = "UNKNOWN",
                 lastCheckedTime = "N/A",
                 progress = 0f,
                 newPartitionSize = 0L,
                 newVersion = "N/A",
-                isRunning = false
+                isRunning = false,
+                bootPartitionOk = partitionHealth["boot"] as? Boolean ?: true,
+                systemPartitionOk = partitionHealth["system"] as? Boolean ?: true,
+                vendorPartitionOk = partitionHealth["vendor"] as? Boolean ?: true,
+                currentSlot = partitionHealth["currentSlot"] as? String ?: "_a",
+                isDynamicPartition = partitionHealth["isDynamicPartition"] as? Boolean ?: false,
             )
         }
 
@@ -104,13 +130,34 @@ private suspend fun getUpdateEngineInfo(): UpdateEngineInfo = withContext(Dispat
 
         val isRunning = currentOperation != "IDLE" && currentOperation != "ERROR" && currentOperation != "UPDATED_NEED_REBOOT"
 
+        // Check partition health
+        val partitionHealth = runCatching {
+            val bootSlot = ShellUtils.fastCmd("getprop ro.boot.slot_suffix 2>/dev/null").trim().ifEmpty { "_a" }
+            val bootInfo = ShellUtils.fastCmd("ls -la /dev/block/by-name/boot$bootSlot 2>/dev/null").trim()
+            val systemInfo = ShellUtils.fastCmd("ls -la /dev/block/by-name/system$bootSlot 2>/dev/null").trim()
+            val vendorInfo = ShellUtils.fastCmd("ls -la /dev/block/by-name/vendor$bootSlot 2>/dev/null").trim()
+            val superInfo = ShellUtils.fastCmd("ls -la /dev/block/mapper/super 2>/dev/null").trim()
+            mapOf(
+                "boot" to bootInfo.isNotEmpty(),
+                "system" to systemInfo.isNotEmpty(),
+                "vendor" to vendorInfo.isNotEmpty(),
+                "currentSlot" to bootSlot,
+                "isDynamicPartition" to superInfo.isNotEmpty(),
+            )
+        }.getOrDefault(emptyMap())
+
         UpdateEngineInfo(
             currentOperation = currentOperation,
             lastCheckedTime = lastCheckedTime,
             progress = progress,
             newPartitionSize = newPartitionSize,
             newVersion = newVersion,
-            isRunning = isRunning
+            isRunning = isRunning,
+            bootPartitionOk = partitionHealth["boot"] as? Boolean ?: true,
+            systemPartitionOk = partitionHealth["system"] as? Boolean ?: true,
+            vendorPartitionOk = partitionHealth["vendor"] as? Boolean ?: true,
+            currentSlot = partitionHealth["currentSlot"] as? String ?: "_a",
+            isDynamicPartition = partitionHealth["isDynamicPartition"] as? Boolean ?: false,
         )
     }.getOrDefault(
         UpdateEngineInfo(
@@ -186,6 +233,45 @@ private suspend fun resetUpdateEngine(): Boolean = withContext(Dispatchers.IO) {
     }.getOrDefault(false)
 }
 
+/**
+ * Repair partitions by checking slot, cleaning residual data,
+ * verifying partition table integrity, and restarting update_engine service.
+ */
+private suspend fun repairPartitions(): Boolean = withContext(Dispatchers.IO) {
+    runCatching {
+        // 1. Check current slot
+        val currentSlot = ShellUtils.fastCmd("getprop ro.boot.slot_suffix 2>/dev/null").trim().ifEmpty { "_a" }
+        val otherSlot = if (currentSlot == "_a") "_b" else "_a"
+
+        // 2. Cancel any pending update_engine operations
+        ShellUtils.fastCmd("update_engine_client --cancel 2>/dev/null")
+
+        // 3. Clean residual update data
+        ShellUtils.fastCmd("rm -rf /data/update_engine/payload 2>/dev/null")
+        ShellUtils.fastCmd("rm -rf /cache/update_engine 2>/dev/null")
+
+        // 4. Verify partition table integrity
+        val gptResult = ShellUtils.fastCmd("sgdisk --verify /dev/block/sda 2>/dev/null")
+        val gptOk = !gptResult.contains("Problem") && !gptResult.contains("Error")
+
+        // 5. Check super partition (dynamic partition device)
+        val superInfo = ShellUtils.fastCmd("ls -la /dev/block/mapper/super 2>/dev/null").trim()
+        val hasSuper = superInfo.isNotEmpty()
+
+        if (hasSuper) {
+            // Dynamic partitions: check sub-partitions in super
+            ShellUtils.fastCmd("dmctl list devices 2>/dev/null")
+        }
+
+        // 6. Restart update_engine service
+        ShellUtils.fastCmd("stop update_engine 2>/dev/null")
+        Thread.sleep(500)
+        ShellUtils.fastCmd("start update_engine 2>/dev/null")
+
+        true
+    }.getOrDefault(false)
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Destination<RootGraph>
 @Composable
@@ -202,6 +288,7 @@ fun UpdateEngineScreen(navigator: DestinationsNavigator) {
 
     var engineInfo by remember { mutableStateOf(UpdateEngineInfo("Loading...", "N/A", 0f, 0L, "N/A", false)) }
     var showResetConfirm by remember { mutableStateOf(false) }
+    var showRepairConfirm by remember { mutableStateOf(false) }
     var isRefreshing by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
@@ -272,8 +359,7 @@ fun UpdateEngineScreen(navigator: DestinationsNavigator) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = stringResource(R.string.update_engine_title),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
                             )
                             Text(
                                 text = stringResource(R.string.update_engine_status, engineInfo.currentOperation),
@@ -332,6 +418,91 @@ fun UpdateEngineScreen(navigator: DestinationsNavigator) {
                 }
             }
 
+            // Partition Health Card
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Storage,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = stringResource(R.string.update_engine_partition_health),
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
+                            )
+                            Text(
+                                text = stringResource(R.string.update_engine_current_slot, engineInfo.currentSlot),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        if (engineInfo.isDynamicPartition) {
+                            Surface(
+                                shape = RoundedCornerShape(20.dp),
+                                color = MaterialTheme.colorScheme.secondaryContainer
+                            ) {
+                                Text(
+                                    text = "Dynamic",
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                    style = MaterialTheme.typography.labelMedium
+                                )
+                            }
+                        }
+                    }
+
+                    HorizontalDivider()
+
+                    // Boot partition status
+                    PartitionStatusRow(
+                        name = "boot",
+                        isOk = engineInfo.bootPartitionOk,
+                        slot = engineInfo.currentSlot
+                    )
+
+                    // System partition status
+                    PartitionStatusRow(
+                        name = "system",
+                        isOk = engineInfo.systemPartitionOk,
+                        slot = engineInfo.currentSlot
+                    )
+
+                    // Vendor partition status
+                    PartitionStatusRow(
+                        name = "vendor",
+                        isOk = engineInfo.vendorPartitionOk,
+                        slot = engineInfo.currentSlot
+                    )
+
+                    HorizontalDivider()
+
+                    // Repair button
+                    OutlinedButton(
+                        onClick = { showRepairConfirm = true },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.tertiary
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Build,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.update_engine_repair_partitions))
+                    }
+                }
+            }
+
             // Reset Card
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(
@@ -340,8 +511,7 @@ fun UpdateEngineScreen(navigator: DestinationsNavigator) {
                 ) {
                     Text(
                         text = stringResource(R.string.update_engine_actions),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
                     )
 
                     Text(
@@ -406,8 +576,7 @@ fun UpdateEngineScreen(navigator: DestinationsNavigator) {
             title = {
                 Text(
                     text = stringResource(R.string.update_engine_reset),
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.SemiBold
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold)
                 )
             },
             text = {
@@ -442,6 +611,49 @@ fun UpdateEngineScreen(navigator: DestinationsNavigator) {
             }
         )
     }
+
+    // Repair confirmation dialog
+    if (showRepairConfirm) {
+        AlertDialog(
+            onDismissRequest = { showRepairConfirm = false },
+            title = {
+                Text(
+                    text = stringResource(R.string.update_engine_repair_partitions),
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold)
+                )
+            },
+            text = {
+                Text(text = stringResource(R.string.update_engine_repair_confirm))
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showRepairConfirm = false
+                    scope.launch {
+                        val success = loadingDialog.withLoading {
+                            repairPartitions()
+                        }
+                        if (success) {
+                            engineInfo = getUpdateEngineInfo()
+                            snackBarHost.showSnackbar(
+                                message = context.getString(R.string.update_engine_repair_success)
+                            )
+                        } else {
+                            snackBarHost.showSnackbar(
+                                message = context.getString(R.string.update_engine_repair_failed)
+                            )
+                        }
+                    }
+                }) {
+                    Text(text = stringResource(R.string.confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRepairConfirm = false }) {
+                    Text(text = stringResource(R.string.cancel))
+                }
+            }
+        )
+    }
 }
 
 @Composable
@@ -471,11 +683,36 @@ private fun InfoRow(label: String, value: String) {
         )
         Text(
             text = value,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Medium,
+            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f, fill = false)
+        )
+    }
+}
+
+@Composable
+private fun PartitionStatusRow(name: String, isOk: Boolean, slot: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Icon(
+            imageVector = if (isOk) Icons.Filled.CheckCircle else Icons.Filled.Error,
+            contentDescription = null,
+            tint = if (isOk) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+            modifier = Modifier.size(20.dp)
+        )
+        Text(
+            text = "$name$slot",
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.weight(1f)
+        )
+        Text(
+            text = if (isOk) "OK" else "Missing",
+            style = MaterialTheme.typography.labelMedium,
+            color = if (isOk) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
         )
     }
 }
@@ -490,8 +727,7 @@ private fun TopBar(
         title = {
             Text(
                 text = stringResource(R.string.update_engine_title),
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Black
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Black)
             )
         },
         navigationIcon = {

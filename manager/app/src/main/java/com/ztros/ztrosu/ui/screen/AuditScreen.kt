@@ -35,7 +35,10 @@ import kotlinx.coroutines.withContext
 private data class AuditStats(
     val grantedCount: Int = 0,
     val deniedCount: Int = 0,
+    val avcDenials: Int = 0,
+    val allowedApps: Int = 0,
     val riskScore: Int = 0,
+    val isAnomalous: Boolean = false,
     val recentLogs: List<String> = emptyList(),
     val anomalies: List<String> = emptyList()
 )
@@ -49,15 +52,27 @@ private data class LogEntry(
 
 private suspend fun fetchAuditStats(): AuditStats = withContext(Dispatchers.IO) {
     runCatching {
-        val rawLog = ShellUtils.fastCmd("cat /data/adb/ksu/sulog 2>/dev/null").trim()
-        val lines = rawLog.lines().filter { it.isNotBlank() }.takeLast(100)
+        // Read KernelSU log
+        val ksuLog = ShellUtils.fastCmd("cat /data/adb/ksu/sulog 2>/dev/null").trim()
+        val ksuLines = ksuLog.lines().filter { it.isNotBlank() }.takeLast(100)
 
+        // Read system audit log
+        val auditLog = ShellUtils.fastCmd("cat /proc/last_kmsg 2>/dev/null || dmesg 2>/dev/null").trim()
+        val auditLines = auditLog.lines()
+            .filter { it.contains("avc:", ignoreCase = true) || it.contains("selinux", ignoreCase = true) }
+            .takeLast(50)
+
+        // Read KernelSU allowlist
+        val allowlist = ShellUtils.fastCmd("cat /data/adb/ksu/.allowlist 2>/dev/null").trim()
+        val allowedApps = allowlist.lines().filter { it.isNotBlank() }.size
+
+        // Parse KSU log entries
+        val logEntries = mutableListOf<LogEntry>()
         var granted = 0
         var denied = 0
-        val logEntries = mutableListOf<LogEntry>()
         val anomalies = mutableListOf<String>()
 
-        lines.forEach { line ->
+        ksuLines.forEach { line ->
             val isGranted = !line.contains("deny", ignoreCase = true) &&
                 !line.contains("reject", ignoreCase = true)
             if (isGranted) granted++ else denied++
@@ -70,24 +85,33 @@ private suspend fun fetchAuditStats(): AuditStats = withContext(Dispatchers.IO) 
         }
 
         // Anomaly detection: rapid repeated denials
-        val recentDenials = lines.takeLast(20).count {
+        val recentDenied = ksuLines.takeLast(20).count {
             it.contains("deny", ignoreCase = true) || it.contains("reject", ignoreCase = true)
         }
-        if (recentDenials > 10) {
-            anomalies.add("High denial rate detected: $recentDenials denials in recent requests")
+        val isAnomalous = recentDenied > 5
+
+        if (recentDenied > 10) {
+            anomalies.add("High denial rate detected: $recentDenied denials in recent requests")
         }
 
         // Check for unknown packages
-        val unknownApps = lines.takeLast(50).count {
+        val unknownApps = ksuLines.takeLast(50).count {
             it.contains("unknown", ignoreCase = true) || it.contains("null", ignoreCase = true)
         }
         if (unknownApps > 5) {
             anomalies.add("Multiple requests from unidentified sources: $unknownApps")
         }
 
+        val avcDenials = auditLines.size
+
+        // Risk score
         val riskScore = when {
-            recentDenials > 10 -> 85
-            recentDenials > 5 -> 60
+            avcDenials > 100 -> 90
+            avcDenials > 50 -> 70
+            avcDenials > 20 -> 50
+            isAnomalous -> 60
+            recentDenied > 10 -> 85
+            recentDenied > 5 -> 60
             unknownApps > 5 -> 70
             anomalies.isNotEmpty() -> 50
             else -> 20
@@ -96,8 +120,17 @@ private suspend fun fetchAuditStats(): AuditStats = withContext(Dispatchers.IO) 
         AuditStats(
             grantedCount = granted,
             deniedCount = denied,
+            avcDenials = avcDenials,
+            allowedApps = allowedApps,
             riskScore = riskScore,
-            recentLogs = logEntries.takeLast(15).map { "[${it.timestamp}] ${it.app}: ${it.action}" },
+            isAnomalous = isAnomalous,
+            recentLogs = (ksuLines.takeLast(15).map { line ->
+                val parts = line.split(Regex("\\s+"), limit = 4)
+                val timestamp = if (parts.size >= 1) parts[0] else ""
+                val app = if (parts.size >= 2) parts[1] else "unknown"
+                val action = if (parts.size >= 3) parts[2] else ""
+                "[$timestamp] $app: $action"
+            } + auditLines).takeLast(30),
             anomalies = anomalies
         )
     }.getOrDefault(AuditStats())
@@ -126,6 +159,8 @@ fun AuditScreen(navigator: DestinationsNavigator) {
     val suStatsLabel = stringResource(R.string.audit_su_stats)
     val grantedLabel = stringResource(R.string.audit_granted)
     val deniedLabel = stringResource(R.string.audit_denied)
+    val avcDenialsLabel = stringResource(R.string.audit_avc_denials)
+    val allowedAppsLabel = stringResource(R.string.audit_allowed_apps)
     val recentLogsLabel = stringResource(R.string.audit_recent_logs)
     val anomalyLabel = stringResource(R.string.audit_anomaly)
     val revokeAllLabel = stringResource(R.string.audit_revoke_all)
@@ -282,6 +317,30 @@ fun AuditScreen(navigator: DestinationsNavigator) {
                                 )
                                 Text(
                                     text = deniedLabel,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    text = "${auditStats.avcDenials}",
+                                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.tertiary
+                                )
+                                Text(
+                                    text = avcDenialsLabel,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    text = "${auditStats.allowedApps}",
+                                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Text(
+                                    text = allowedAppsLabel,
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
