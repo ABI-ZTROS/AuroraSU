@@ -215,6 +215,8 @@ fun MaterialYouScreen(navigator: DestinationsNavigator) {
                     ) {
                         prefs.edit { putBoolean("material_you_dynamic_color", it) }
                         dynamicColorEnabled = it
+                        val activity = context as? com.ztros.ztrosu.ui.MainActivity
+                        activity?.setDynamicColor(it)
                     }
                 }
             }
@@ -268,6 +270,8 @@ fun MaterialYouScreen(navigator: DestinationsNavigator) {
                                         selectedAccentIndex = index
                                         prefs.edit { putInt("material_you_accent_color_index", index) }
                                         prefs.edit { putLong("material_you_accent_color", color.value.toLong()) }
+                                        val activity = context as? com.ztros.ztrosu.ui.MainActivity
+                                        activity?.setAccentColor(color.value.toLong())
                                     },
                                 contentAlignment = Alignment.Center
                             ) {
@@ -317,6 +321,8 @@ fun MaterialYouScreen(navigator: DestinationsNavigator) {
                         onValueChange = {
                             fontScale = it
                             prefs.edit { putFloat("material_you_font_scale", it) }
+                            val activity = context as? com.ztros.ztrosu.ui.MainActivity
+                            activity?.setFontScale(it)
                         },
                         valueRange = 0.8f..1.4f,
                         steps = 5
@@ -356,6 +362,8 @@ fun MaterialYouScreen(navigator: DestinationsNavigator) {
                         onValueChange = {
                             cornerRadius = it
                             prefs.edit { putFloat("material_you_corner_radius", it) }
+                            val activity = context as? com.ztros.ztrosu.ui.MainActivity
+                            activity?.setCornerRadius(it)
                         },
                         valueRange = 0f..28f,
                         steps = 13

@@ -155,6 +155,10 @@ class MainActivity : ComponentActivity() {
     var moduleActionId by mutableStateOf<String?>(null)
     var amoledModeState = mutableStateOf(false)
     var themePresetState = mutableStateOf("default")
+    var dynamicColorState = mutableStateOf(true)
+    var accentColorState = mutableStateOf(-1L)
+    var fontScaleState = mutableStateOf(1f)
+    var cornerRadiusState = mutableStateOf(16f)
     private val handler = Handler(Looper.getMainLooper())
 
     val moduleViewModel: ModuleViewModel by viewModels()
@@ -186,6 +190,10 @@ class MainActivity : ComponentActivity() {
             val prefsInit = getSharedPreferences("settings", MODE_PRIVATE)
             amoledModeState.value = prefsInit.getBoolean("enable_amoled", false)
             themePresetState.value = prefsInit.getString("theme_preset", "default") ?: "default"
+            dynamicColorState.value = prefsInit.getBoolean("material_you_dynamic_color", true)
+            accentColorState.value = prefsInit.getLong("material_you_accent_color", -1)
+            fontScaleState.value = prefsInit.getFloat("material_you_font_scale", 1f)
+            cornerRadiusState.value = prefsInit.getFloat("material_you_corner_radius", 16f)
         } catch (_: Exception) {}
 
         // Set window background for Ice Abyss theme frosted glass effect
@@ -208,7 +216,15 @@ class MainActivity : ComponentActivity() {
             handleIntent(intent)
 
         setContent {
-            KernelSUTheme(amoledMode = amoledModeState.value, themePreset = themePresetState.value) {
+            KernelSUTheme(
+                darkTheme = isSystemInDarkTheme(),
+                dynamicColor = dynamicColorState.value,
+                amoledMode = amoledModeState.value,
+                themePreset = themePresetState.value,
+                accentColor = accentColorState.value,
+                fontScale = fontScaleState.value,
+                cornerRadius = cornerRadiusState.value,
+            ) {
                 val navController = rememberNavController()
                 val snackBarHostState = remember { SnackbarHostState() }
                 val currentDestination = navController.currentBackStackEntryAsState().value?.destination
@@ -424,6 +440,26 @@ class MainActivity : ComponentActivity() {
         } else {
             window.decorView.setBackgroundColor(android.graphics.Color.TRANSPARENT)
         }
+    }
+
+    fun setDynamicColor(enabled: Boolean) {
+        dynamicColorState.value = enabled
+        getSharedPreferences("settings", MODE_PRIVATE).edit { putBoolean("material_you_dynamic_color", enabled) }
+    }
+
+    fun setAccentColor(color: Long) {
+        accentColorState.value = color
+        getSharedPreferences("settings", MODE_PRIVATE).edit { putLong("material_you_accent_color", color) }
+    }
+
+    fun setFontScale(scale: Float) {
+        fontScaleState.value = scale
+        getSharedPreferences("settings", MODE_PRIVATE).edit { putFloat("material_you_font_scale", scale) }
+    }
+
+    fun setCornerRadius(radius: Float) {
+        cornerRadiusState.value = radius
+        getSharedPreferences("settings", MODE_PRIVATE).edit { putFloat("material_you_corner_radius", radius) }
     }
 
     override fun onNewIntent(intent: Intent) {

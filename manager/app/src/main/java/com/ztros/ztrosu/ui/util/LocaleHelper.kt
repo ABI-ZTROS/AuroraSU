@@ -44,7 +44,7 @@ object LocaleHelper {
         }
         
         val prefs = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
-        val localeTag = prefs.getString("app_locale", "system") ?: "system"
+        val localeTag = prefs.getString("app_locale", "zh") ?: "zh"
         
         return if (localeTag == "system") {
             context
@@ -130,7 +130,7 @@ object LocaleHelper {
         } else {
             // Android < 13 - get from SharedPreferences
             val prefs = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
-            val localeTag = prefs.getString("app_locale", "system") ?: "system"
+            val localeTag = prefs.getString("app_locale", "zh") ?: "zh"
             if (localeTag == "system") {
                 null // System default
             } else {

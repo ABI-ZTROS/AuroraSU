@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -13,6 +14,7 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 
 private val DarkColorScheme = darkColorScheme(
     primary = PRIMARY,
@@ -74,6 +76,9 @@ fun KernelSUTheme(
     dynamicColor: Boolean = true,
     amoledMode: Boolean = false,
     themePreset: String = "default",  // "default", "ice_abyss"
+    accentColor: Long = -1,  // -1 表示使用默认
+    fontScale: Float = 1f,
+    cornerRadius: Float = 16f,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -112,14 +117,58 @@ fun KernelSUTheme(
         else -> LightColorScheme
     }
 
+    // 应用自定义强调色
+    val finalColorScheme = if (accentColor != -1L) {
+        val customPrimary = Color(accentColor.toULong())
+        colorScheme.copy(
+            primary = customPrimary,
+            onPrimary = Color.White,
+            primaryContainer = customPrimary.copy(alpha = 0.15f),
+            onPrimaryContainer = customPrimary,
+            secondary = customPrimary.copy(alpha = 0.7f),
+            onSecondary = Color.White,
+            secondaryContainer = customPrimary.copy(alpha = 0.15f),
+            tertiary = customPrimary.copy(alpha = 0.5f),
+        )
+    } else {
+        colorScheme
+    }
+
     SystemBarStyle(
         darkMode = darkTheme
     )
 
     CompositionLocalProvider(LocalThemePreset provides themePreset) {
         MaterialTheme(
-            colorScheme = colorScheme,
-            typography = Typography,
+            colorScheme = finalColorScheme,
+            typography = if (fontScale != 1f) {
+                Typography.copy(
+                    bodyLarge = Typography.bodyLarge.copy(fontSize = Typography.bodyLarge.fontSize * fontScale),
+                    bodyMedium = Typography.bodyMedium.copy(fontSize = Typography.bodyMedium.fontSize * fontScale),
+                    bodySmall = Typography.bodySmall.copy(fontSize = Typography.bodySmall.fontSize * fontScale),
+                    titleLarge = Typography.titleLarge.copy(fontSize = Typography.titleLarge.fontSize * fontScale),
+                    titleMedium = Typography.titleMedium.copy(fontSize = Typography.titleMedium.fontSize * fontScale),
+                    titleSmall = Typography.titleSmall.copy(fontSize = Typography.titleSmall.fontSize * fontScale),
+                    labelLarge = Typography.labelLarge.copy(fontSize = Typography.labelLarge.fontSize * fontScale),
+                    labelMedium = Typography.labelMedium.copy(fontSize = Typography.labelMedium.fontSize * fontScale),
+                    labelSmall = Typography.labelSmall.copy(fontSize = Typography.labelSmall.fontSize * fontScale),
+                    headlineLarge = Typography.headlineLarge.copy(fontSize = Typography.headlineLarge.fontSize * fontScale),
+                    headlineMedium = Typography.headlineMedium.copy(fontSize = Typography.headlineMedium.fontSize * fontScale),
+                    headlineSmall = Typography.headlineSmall.copy(fontSize = Typography.headlineSmall.fontSize * fontScale),
+                    displayLarge = Typography.displayLarge.copy(fontSize = Typography.displayLarge.fontSize * fontScale),
+                    displayMedium = Typography.displayMedium.copy(fontSize = Typography.displayMedium.fontSize * fontScale),
+                    displaySmall = Typography.displaySmall.copy(fontSize = Typography.displaySmall.fontSize * fontScale),
+                )
+            } else {
+                Typography
+            },
+            shapes = Shapes(
+                extraSmall = RoundedCornerShape(cornerRadius.dp * 0.4f),
+                small = RoundedCornerShape(cornerRadius.dp * 0.5f),
+                medium = RoundedCornerShape(cornerRadius.dp),
+                large = RoundedCornerShape(cornerRadius.dp * 1.2f),
+                extraLarge = RoundedCornerShape(cornerRadius.dp * 1.5f),
+            ),
             content = content
         )
     }

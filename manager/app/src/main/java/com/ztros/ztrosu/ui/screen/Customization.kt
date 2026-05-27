@@ -145,9 +145,7 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
                         
                         // Dynamically detect available locales by checking resource directories
                         val resourceDirs = listOf(
-                            "ar", "bg", "de", "fa", "fr", "hu", "in", "it", 
-                            "ja", "ko", "pl", "pt-rBR", "ru", "th", "tr", 
-                            "uk", "vi", "zh-rCN", "zh-rTW"
+                            "zh-rCN", "zh-rTW"
                         )
                         
                         resourceDirs.forEach { dir ->
