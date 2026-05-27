@@ -185,7 +185,7 @@ fun HotUpdateScreen(navigator: DestinationsNavigator) {
                                         }
                                     }.getOrDefault(Triple(false, "", ""))
                                 }
-                                loadingDialog.dismiss()
+                                loadingDialog.hide()
                                 isUpdating = false
                                 if (result.first) {
                                     latestVersion = result.second

@@ -437,6 +437,7 @@ fun SELinuxScreen(navigator: DestinationsNavigator) {
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
                     )
+                    val contextNotFoundStr = stringResource(R.string.selinux_context_not_found)
                     Button(
                         onClick = {
                             scope.launch {
@@ -449,12 +450,12 @@ fun SELinuxScreen(navigator: DestinationsNavigator) {
                                         if (pid > 0) {
                                             val ctx = getProcessContext(pid)
                                             if (ctx.isNotBlank()) "PID $pid: $ctx"
-                                            else stringResource(R.string.selinux_context_not_found)
-                                        } else stringResource(R.string.selinux_context_not_found)
+                                            else contextNotFoundStr
+                                        } else contextNotFoundStr
                                     } else {
                                         val ctx = getFileContext(input)
                                         if (ctx.isNotBlank()) ctx
-                                        else stringResource(R.string.selinux_context_not_found)
+                                        else contextNotFoundStr
                                     }
                                 }
                                 isContextLoading = false
