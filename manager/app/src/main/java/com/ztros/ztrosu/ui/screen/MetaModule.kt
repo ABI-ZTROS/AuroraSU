@@ -371,14 +371,14 @@ private fun MetaModuleCard(
                 val isDark = isSystemInDarkTheme()
                 val colorScheme = MaterialTheme.colorScheme
                 val amoledMode = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
-                    .getBoolean("amoled_mode", false)
+                    .getBoolean("enable_amoled", false)
                 val isDynamic = colorScheme.primary != colorScheme.secondary
 
                 val fadeColor = when {
                     amoledMode && isDark -> Color.Black
                     isDynamic -> colorScheme.surface
                     isDark -> Color(0xFF222222)
-                    else -> Color.White
+                    else -> colorScheme.background
                 }
 
                 Box(

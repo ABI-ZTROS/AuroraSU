@@ -28,6 +28,31 @@ private val LightColorScheme = lightColorScheme(
     tertiary = SECONDARY_LIGHT
 )
 
+private val IceAbyssDarkColorScheme = darkColorScheme(
+    primary = Color(0xFF00B4D8),
+    onPrimary = Color(0xFF003444),
+    primaryContainer = Color(0xFF004C66),
+    onPrimaryContainer = Color(0xFFC8F4FF),
+    secondary = Color(0xFF4A627A),
+    onSecondary = Color(0xFFDDE7F0),
+    secondaryContainer = Color(0xFF33485E),
+    onSecondaryContainer = Color(0xFFD8E3EC),
+    tertiary = Color(0xFF00B4D8),
+    background = Color(0xFF0A1929),
+    onBackground = Color(0xFFE0E8EF),
+    surface = Color(0xFF0F1F30),
+    onSurface = Color(0xFFE0E8EF),
+    surfaceVariant = Color(0xFF3E4A56),
+    onSurfaceVariant = Color(0xFFBFC9D2),
+    outline = Color(0xFF89939E),
+    outlineVariant = Color(0xFF3E4A56),
+    surfaceContainerLowest = Color(0xFF0A141E),
+    surfaceContainerLow = Color(0xFF111D2B),
+    surfaceContainer = Color(0xFF152235),
+    surfaceContainerHigh = Color(0xFF1A2A3D),
+    surfaceContainerHighest = Color(0xFF253548),
+)
+
 private val IceAbyssColorScheme = lightColorScheme(
     primary = ICE_ABYSS_PRIMARY,
     onPrimary = Color.White,
@@ -50,11 +75,11 @@ private val IceAbyssColorScheme = lightColorScheme(
     inverseSurface = Color(0xFF0A1929),
     inverseOnSurface = Color(0xFFE6F4FA),
     inversePrimary = Color(0xFF00B4D8),
-    surfaceContainerLowest = Color(0xF2FFFFFF), // 95% 白色
-    surfaceContainerLow = Color(0xE6FFFFFF),    // 90% 白色
-    surfaceContainer = Color(0xDDFFFFFF),       // 87% 白色
-    surfaceContainerHigh = Color(0xD4FFFFFF),    // 83% 白色
-    surfaceContainerHighest = Color(0xCCFFFFFF), // 80% 白色
+    surfaceContainerLowest = Color(0xE6FFFFFF), // 90% 白色 - 与 surface 相同
+    surfaceContainerLow = Color(0xDDFFFFFF),    // 87% 白色
+    surfaceContainer = Color(0xD4FFFFFF),       // 83% 白色
+    surfaceContainerHigh = Color(0xCCFFFFFF),    // 80% 白色
+    surfaceContainerHighest = Color(0xC4FFFFFF), // 77% 白色
 )
 
 val LocalThemePreset = compositionLocalOf { "default" }
@@ -82,7 +107,7 @@ fun KernelSUTheme(
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
-        themePreset == "ice_abyss" -> IceAbyssColorScheme
+        themePreset == "ice_abyss" -> if (darkTheme) IceAbyssDarkColorScheme else IceAbyssColorScheme
         amoledMode && darkTheme && dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
             val dynamicScheme = dynamicDarkColorScheme(context)
@@ -117,21 +142,22 @@ fun KernelSUTheme(
         else -> LightColorScheme
     }
 
-    // 应用自定义强调色
-    val finalColorScheme = if (accentColor != -1L) {
-        val customPrimary = Color(accentColor.toULong())
-        colorScheme.copy(
-            primary = customPrimary,
-            onPrimary = Color.White,
-            primaryContainer = customPrimary.copy(alpha = 0.15f),
-            onPrimaryContainer = customPrimary,
-            secondary = customPrimary.copy(alpha = 0.7f),
-            onSecondary = Color.White,
-            secondaryContainer = customPrimary.copy(alpha = 0.15f),
-            tertiary = customPrimary.copy(alpha = 0.5f),
-        )
-    } else {
-        colorScheme
+    // 应用自定义强调色（仅在默认预设且非动态取色时生效）
+    val finalColorScheme = when {
+        accentColor != -1L && themePreset == "default" && !dynamicColor -> {
+            val customPrimary = Color(accentColor.toULong())
+            colorScheme.copy(
+                primary = customPrimary,
+                onPrimary = Color.White,
+                primaryContainer = customPrimary.copy(alpha = 0.15f),
+                onPrimaryContainer = customPrimary,
+                secondary = customPrimary.copy(alpha = 0.7f),
+                onSecondary = Color.White,
+                secondaryContainer = customPrimary.copy(alpha = 0.15f),
+                tertiary = customPrimary.copy(alpha = 0.5f),
+            )
+        }
+        else -> colorScheme
     }
 
     SystemBarStyle(

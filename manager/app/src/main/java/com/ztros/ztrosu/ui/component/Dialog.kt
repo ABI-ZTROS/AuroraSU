@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.Saver
@@ -385,7 +384,7 @@ private fun LoadingDialog() {
         properties = DialogProperties(dismissOnClickOutside = false, dismissOnBackPress = false)
     ) {
         Surface(
-            modifier = Modifier.size(100.dp), shape = RoundedCornerShape(8.dp)
+            modifier = Modifier.size(100.dp), shape = MaterialTheme.shapes.medium
         ) {
             Box(
                 contentAlignment = Alignment.Center,

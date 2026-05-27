@@ -205,7 +205,9 @@ class MainActivity : ComponentActivity() {
         try {
             val prefsBg = getSharedPreferences("settings", MODE_PRIVATE)
             if (prefsBg.getString("theme_preset", "default") == "ice_abyss") {
-                window.decorView.setBackgroundColor(0xFFE6F4FA.toInt())
+                window.decorView.setBackgroundColor(
+                    if (isSystemInDarkTheme()) 0xFF0A1929.toInt() else 0xFFE6F4FA.toInt()
+                )
             }
         } catch (_: Exception) {}
 
@@ -461,7 +463,9 @@ class MainActivity : ComponentActivity() {
         getSharedPreferences("settings", MODE_PRIVATE).edit { putString("theme_preset", preset) }
         // Update window background for Ice Abyss frosted glass effect
         if (preset == "ice_abyss") {
-            window.decorView.setBackgroundColor(0xFFE6F4FA.toInt())
+            window.decorView.setBackgroundColor(
+                if (isSystemInDarkTheme()) 0xFF0A1929.toInt() else 0xFFE6F4FA.toInt()
+            )
         } else {
             window.decorView.setBackgroundColor(android.graphics.Color.TRANSPARENT)
         }
@@ -600,8 +604,7 @@ private fun BottomBar(
             Surface(
                 modifier = Modifier.wrapContentWidth(),
                 shape = MaterialTheme.shapes.large,
-                tonalElevation = 3.dp,
-                shadowElevation = 8.dp
+                tonalElevation = 3.dp
             ) {
                 val itemSize = 56.dp
                 val itemSpacing = 4.dp

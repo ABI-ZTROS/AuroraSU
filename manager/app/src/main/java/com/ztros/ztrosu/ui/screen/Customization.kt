@@ -399,6 +399,13 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
                         selectedPreset = "default"
                         prefs.edit { putString("theme_preset", "default") }
                         (context as? MainActivity)?.setThemePreset("default")
+                        (context as? MainActivity)?.setAccentColor(-1)
+                        (context as? MainActivity)?.setDynamicColor(false)
+                        prefs.edit {
+                            putLong("material_you_accent_color", -1)
+                            putInt("material_you_accent_color_index", -1)
+                            putBoolean("material_you_dynamic_color", false)
+                        }
                     }
                 ) {
                     Box(
@@ -422,6 +429,13 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
                         selectedPreset = "ice_abyss"
                         prefs.edit { putString("theme_preset", "ice_abyss") }
                         (context as? MainActivity)?.setThemePreset("ice_abyss")
+                        (context as? MainActivity)?.setAccentColor(-1)
+                        (context as? MainActivity)?.setDynamicColor(false)
+                        prefs.edit {
+                            putLong("material_you_accent_color", -1)
+                            putInt("material_you_accent_color_index", -1)
+                            putBoolean("material_you_dynamic_color", false)
+                        }
                     }
                 ) {
                     Box(

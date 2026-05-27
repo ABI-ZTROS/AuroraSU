@@ -141,6 +141,11 @@ fun MaterialYouScreen(navigator: DestinationsNavigator) {
                                 prefs.edit { putString("theme_preset", "default") }
                                 val activity = context as? com.ztros.ztrosu.ui.MainActivity
                                 activity?.setThemePreset("default")
+                                activity?.setAccentColor(-1)
+                                context.getSharedPreferences("settings", Context.MODE_PRIVATE).edit {
+                                    putLong("material_you_accent_color", -1)
+                                    putInt("material_you_accent_color_index", -1)
+                                }
                             }
                         ) {
                             Box(
@@ -171,6 +176,11 @@ fun MaterialYouScreen(navigator: DestinationsNavigator) {
                                 prefs.edit { putString("theme_preset", "ice_abyss") }
                                 val activity = context as? com.ztros.ztrosu.ui.MainActivity
                                 activity?.setThemePreset("ice_abyss")
+                                activity?.setAccentColor(-1)
+                                context.getSharedPreferences("settings", Context.MODE_PRIVATE).edit {
+                                    putLong("material_you_accent_color", -1)
+                                    putInt("material_you_accent_color_index", -1)
+                                }
                             }
                         ) {
                             Box(
@@ -217,6 +227,13 @@ fun MaterialYouScreen(navigator: DestinationsNavigator) {
                         dynamicColorEnabled = it
                         val activity = context as? com.ztros.ztrosu.ui.MainActivity
                         activity?.setDynamicColor(it)
+                        if (it) {
+                            activity?.setAccentColor(-1)
+                            context.getSharedPreferences("settings", Context.MODE_PRIVATE).edit {
+                                putLong("material_you_accent_color", -1)
+                                putInt("material_you_accent_color_index", -1)
+                            }
+                        }
                     }
                 }
             }
@@ -272,6 +289,12 @@ fun MaterialYouScreen(navigator: DestinationsNavigator) {
                                         prefs.edit { putLong("material_you_accent_color", color.value.toLong()) }
                                         val activity = context as? com.ztros.ztrosu.ui.MainActivity
                                         activity?.setAccentColor(color.value.toLong())
+                                        activity?.setDynamicColor(false)
+                                        activity?.setThemePreset("default")
+                                        context.getSharedPreferences("settings", Context.MODE_PRIVATE).edit {
+                                            putBoolean("material_you_dynamic_color", false)
+                                            putString("theme_preset", "default")
+                                        }
                                     },
                                 contentAlignment = Alignment.Center
                             ) {
