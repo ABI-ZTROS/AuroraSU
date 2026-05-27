@@ -35,7 +35,6 @@ import com.ztros.ztrosu.ui.rememberScrollConnection
 import com.ztros.ztrosu.ui.util.LocalSnackbarHost
 import com.topjohnwu.superuser.ShellUtils
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -91,13 +90,13 @@ fun HotUpdateScreen(navigator: DestinationsNavigator) {
     var downloadProgress by remember { mutableFloatStateOf(0f) }
     var canInstall by remember { mutableStateOf(false) }
 
-    val changelogEntries = listOf(
-        "v1.5.0 - Improved kernel module compatibility",
-        "v1.4.2 - Fixed SELinux policy loading issue",
-        "v1.4.1 - Fixed module mount on Android 15",
-        "v1.4.0 - Added hot update support for kernel modules",
-        "v1.3.0 - Performance optimizations for module loading"
-    )
+    val changelogEntries = remember(changelog) {
+        if (changelog.isNotBlank()) {
+            changelog.lines().filter { it.isNotBlank() }
+        } else {
+            emptyList()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -270,15 +269,24 @@ fun HotUpdateScreen(navigator: DestinationsNavigator) {
                     )
 
                     if (changelogExpanded) {
-                        changelogEntries.forEach { entry ->
+                        if (changelogEntries.isEmpty()) {
                             Text(
-                                text = entry,
+                                text = "暂无更新日志",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis,
                                 modifier = Modifier.padding(start = 16.dp, bottom = 4.dp)
                             )
+                        } else {
+                            changelogEntries.forEach { entry ->
+                                Text(
+                                    text = entry,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.padding(start = 16.dp, bottom = 4.dp)
+                                )
+                            }
                         }
                     }
 
@@ -484,7 +492,6 @@ fun HotUpdateScreen(navigator: DestinationsNavigator) {
                     scope.launch {
                         val success = loadingDialog.withLoading {
                             withContext(Dispatchers.IO) {
-                                delay(1500L)
                                 runCatching {
                                     ShellUtils.fastCmdResult("ksud module update --rollback 2>/dev/null")
                                 }.getOrDefault(false)

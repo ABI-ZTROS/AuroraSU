@@ -78,6 +78,7 @@ fun SettingScreen(navigator: DestinationsNavigator) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val prefs = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
+    val cardAnimationEnabled = prefs.getBoolean("motion_card_animation", true)
 
     val scrollState = LocalScrollState.current
     val isNavBarHidden = scrollState?.isScrollingDown?.value ?: false
@@ -153,26 +154,26 @@ fun SettingScreen(navigator: DestinationsNavigator) {
             val cardsVisible = remember { mutableStateOf(false) }
             LaunchedEffect(Unit) { cardsVisible.value = true }
 
-            SettingsAnimatedCard(visible = cardsVisible.value, index = 0) {
+            SettingsAnimatedCard(enabled = cardAnimationEnabled, visible = cardsVisible.value, index = 0) {
                 KernelFeaturesCard(
                     suCompatStatus = suCompatStatus,
                     kernelUmountStatus = kernelUmountStatus,
                     avcSpoofStatus = avcSpoofStatus
                 )
             }
-            SettingsAnimatedCard(visible = cardsVisible.value, index = 1) {
+            SettingsAnimatedCard(enabled = cardAnimationEnabled, visible = cardsVisible.value, index = 1) {
                 SecurityCard(
                     navigator = navigator,
                     loadingDialog = loadingDialog
                 )
             }
-            SettingsAnimatedCard(visible = cardsVisible.value, index = 2) {
+            SettingsAnimatedCard(enabled = cardAnimationEnabled, visible = cardsVisible.value, index = 2) {
                 ModuleMountCard(
                     prefs = prefs
                 )
             }
 
-            SettingsAnimatedCard(visible = cardsVisible.value, index = 3) {
+            SettingsAnimatedCard(enabled = cardAnimationEnabled, visible = cardsVisible.value, index = 3) {
                 AppSettingsCard(
                     navigator = navigator,
                     prefs = prefs,
@@ -195,10 +196,16 @@ fun SettingScreen(navigator: DestinationsNavigator) {
  */
 @Composable
 private fun SettingsAnimatedCard(
+    enabled: Boolean = true,
     visible: Boolean,
     index: Int,
     content: @Composable () -> Unit
 ) {
+    if (!enabled) {
+        content()
+        return
+    }
+
     val animationProgress by animateFloatAsState(
         targetValue = if (visible) 1f else 0f,
         animationSpec = tween(

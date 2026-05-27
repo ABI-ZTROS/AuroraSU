@@ -263,7 +263,12 @@ fun flashModule(
         file.outputStream().use { output ->
             this?.copyTo(output)
         }
-        val cmd = "module install ${file.absolutePath}"
+        // Read mount mode: install_mount_mode takes priority over default_mount_mode
+        val prefs = ksuApp.getSharedPreferences("settings", Context.MODE_PRIVATE)
+        val mountMode = prefs.getInt("install_mount_mode", -1)
+            .let { if (it == -1) prefs.getInt("default_mount_mode", 0) else it }
+        val mountModeArg = if (mountMode > 0) " --mount-mode $mountMode" else ""
+        val cmd = "module install $mountModeArg ${file.absolutePath}"
         val result = flashWithIO("${getKsuDaemonPath()} $cmd", onStdout, onStderr)
         Log.i("KernelSU", "install module $uri result: $result")
 

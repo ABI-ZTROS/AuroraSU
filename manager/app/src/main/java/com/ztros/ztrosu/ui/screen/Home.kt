@@ -111,6 +111,8 @@ fun HomeScreen(navigator: DestinationsNavigator) {
     val context = LocalContext.current
     val prefs = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
     val developerOptionsEnabled = prefs.getBoolean("enable_developer_options", false)
+    val cardAnimationEnabled = prefs.getBoolean("motion_card_animation", true)
+    val animSpeed = prefs.getFloat("motion_animation_speed", 1f)
     
     // Get scroll state for bottom bar tracking
     val bottomBarScrollState = LocalScrollState.current
@@ -165,7 +167,7 @@ fun HomeScreen(navigator: DestinationsNavigator) {
             val homeCardsVisible = remember { mutableStateOf(false) }
             LaunchedEffect(Unit) { homeCardsVisible.value = true }
 
-            HomeAnimatedCard(visible = homeCardsVisible.value, index = 0) {
+            HomeAnimatedCard(enabled = cardAnimationEnabled, speed = animSpeed, visible = homeCardsVisible.value, index = 0) {
                 StatusCard(kernelVersion, ksuVersion, ksuVersionTag = ksuVersionTag) {
                     navigator.navigate(InstallScreenDestination)
                 }
@@ -175,7 +177,7 @@ fun HomeScreen(navigator: DestinationsNavigator) {
             val startRoute = homeDestination?.direction?.route
 
             if (fullFeatured) {
-                HomeAnimatedCard(visible = homeCardsVisible.value, index = 1) {
+                HomeAnimatedCard(enabled = cardAnimationEnabled, speed = animSpeed, visible = homeCardsVisible.value, index = 1) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -214,7 +216,7 @@ fun HomeScreen(navigator: DestinationsNavigator) {
             }
 
             if (isManager && Natives.requireNewKernel()) {
-                HomeAnimatedCard(visible = homeCardsVisible.value, index = 2) {
+                HomeAnimatedCard(enabled = cardAnimationEnabled, speed = animSpeed, visible = homeCardsVisible.value, index = 2) {
                     WarningCard(
                         stringResource(id = R.string.require_kernel_version).format(
                             ksuVersion, Natives.MINIMAL_SUPPORTED_KERNEL
@@ -224,7 +226,7 @@ fun HomeScreen(navigator: DestinationsNavigator) {
             }
 
             if (ksuVersion != null && !rootAvailable()) {
-                HomeAnimatedCard(visible = homeCardsVisible.value, index = 3) {
+                HomeAnimatedCard(enabled = cardAnimationEnabled, speed = animSpeed, visible = homeCardsVisible.value, index = 3) {
                     WarningCard(
                         stringResource(id = R.string.grant_root_failed),
                         onClick = {
@@ -238,29 +240,29 @@ fun HomeScreen(navigator: DestinationsNavigator) {
                 LocalContext.current.getSharedPreferences("settings", Context.MODE_PRIVATE)
                     .getBoolean("check_update", true)
             if (checkUpdate) {
-                HomeAnimatedCard(visible = homeCardsVisible.value, index = 4) {
+                HomeAnimatedCard(enabled = cardAnimationEnabled, speed = animSpeed, visible = homeCardsVisible.value, index = 4) {
                     UpdateCard()
                 }
             }
 
-            HomeAnimatedCard(visible = homeCardsVisible.value, index = 5) {
+            HomeAnimatedCard(enabled = cardAnimationEnabled, speed = animSpeed, visible = homeCardsVisible.value, index = 5) {
                 InfoCard(autoExpand = developerOptionsEnabled)
             }
-            HomeAnimatedCard(visible = homeCardsVisible.value, index = 6) {
+            HomeAnimatedCard(enabled = cardAnimationEnabled, speed = animSpeed, visible = homeCardsVisible.value, index = 6) {
                 SystemInfoCard()
             }
             if (fullFeatured) {
-                HomeAnimatedCard(visible = homeCardsVisible.value, index = 7) {
+                HomeAnimatedCard(enabled = cardAnimationEnabled, speed = animSpeed, visible = homeCardsVisible.value, index = 7) {
                     QuickActionsCard()
                 }
             }
-            HomeAnimatedCard(visible = homeCardsVisible.value, index = 8) {
+            HomeAnimatedCard(enabled = cardAnimationEnabled, speed = animSpeed, visible = homeCardsVisible.value, index = 8) {
                 ModuleSummaryCard()
             }
-            HomeAnimatedCard(visible = homeCardsVisible.value, index = 9) {
+            HomeAnimatedCard(enabled = cardAnimationEnabled, speed = animSpeed, visible = homeCardsVisible.value, index = 9) {
                 IssueReportCard()
             }
-            HomeAnimatedCard(visible = homeCardsVisible.value, index = 10) {
+            HomeAnimatedCard(enabled = cardAnimationEnabled, speed = animSpeed, visible = homeCardsVisible.value, index = 10) {
                 AboutCard()
             }
             Spacer(Modifier)
@@ -274,10 +276,20 @@ fun HomeScreen(navigator: DestinationsNavigator) {
  */
 @Composable
 private fun HomeAnimatedCard(
+    enabled: Boolean = true,
+    speed: Float = 1f,
     visible: Boolean,
     index: Int,
     content: @Composable () -> Unit
 ) {
+    if (!enabled) {
+        content()
+        return
+    }
+
+    val duration = (500 * speed).toInt().coerceAtLeast(50)
+    val delay = (index * 60 * speed).toInt()
+
     val animationProgress by animateFloatAsState(
         targetValue = if (visible) 1f else 0f,
         animationSpec = spring(
@@ -291,20 +303,20 @@ private fun HomeAnimatedCard(
         visible = visible,
         enter = fadeIn(
             animationSpec = tween(
-                durationMillis = 500,
-                delayMillis = index * 60
+                durationMillis = duration,
+                delayMillis = delay
             )
         ) + slideInVertically(
             initialOffsetY = { 40 },
             animationSpec = tween(
-                durationMillis = 500,
-                delayMillis = index * 60
+                durationMillis = duration,
+                delayMillis = delay
             )
         ) + scaleIn(
             initialScale = 0.95f,
             animationSpec = tween(
-                durationMillis = 500,
-                delayMillis = index * 60
+                durationMillis = duration,
+                delayMillis = delay
             )
         )
     ) {

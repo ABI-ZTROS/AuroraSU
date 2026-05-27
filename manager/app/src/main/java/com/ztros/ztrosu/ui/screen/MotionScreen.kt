@@ -124,6 +124,8 @@ fun MotionScreen(navigator: DestinationsNavigator) {
                     ) {
                         prefs.edit { putBoolean("motion_page_transition", it) }
                         pageTransitionEnabled = it
+                        val activity = context as? com.ztros.ztrosu.ui.MainActivity
+                        activity?.setPageTransition(it)
                     }
 
                     var cardAnimationEnabled by rememberSaveable {
@@ -186,6 +188,8 @@ fun MotionScreen(navigator: DestinationsNavigator) {
                         onValueChange = {
                             animSpeed = it
                             prefs.edit { putFloat("motion_animation_speed", it) }
+                            val activity = context as? com.ztros.ztrosu.ui.MainActivity
+                            activity?.setAnimationSpeed(it)
                         },
                         valueRange = 0.5f..2.0f,
                         steps = 14

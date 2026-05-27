@@ -1,6 +1,7 @@
 package com.ztros.ztrosu.ui.screen
 
 import android.content.Context
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -99,8 +100,22 @@ fun DeveloperEnhancedScreen(navigator: DestinationsNavigator) {
     // Log viewer state
     var logDialogContent by remember { mutableStateOf<Pair<String, String>?>(null) }
 
+    // SELinux policy state
+    var showSePolicyDialog by remember { mutableStateOf(false) }
+    var selinuxVersion by remember { mutableStateOf("") }
+    var policyLoadTime by remember { mutableStateOf("") }
+
     LaunchedEffect(devEnabled) {
-        if (devEnabled) loadedModules = getLoadedModules()
+        if (devEnabled) {
+            loadedModules = getLoadedModules()
+            val sestatus = withContext(Dispatchers.IO) {
+                runCatching { ShellUtils.fastCmd("sestatus 2>/dev/null").trim() }.getOrDefault("")
+            }
+            selinuxVersion = sestatus.lines().firstOrNull { it.contains("SELinux version") }
+                ?.substringAfter(":")?.trim() ?: "未知"
+            policyLoadTime = sestatus.lines().firstOrNull { it.contains("Policy loaded") }
+                ?.substringAfter(":")?.trim() ?: "未知"
+        }
     }
 
     Scaffold(
@@ -228,6 +243,7 @@ fun DeveloperEnhancedScreen(navigator: DestinationsNavigator) {
             // SELinux Policy Editor entry
             Card(modifier = Modifier.fillMaxWidth()) {
                 ListItem(
+                    modifier = Modifier.clickable { showSePolicyDialog = true },
                     colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surface),
                     leadingContent = { Icon(Icons.Filled.Policy, contentDescription = null) },
                     headlineContent = {
@@ -337,6 +353,55 @@ fun DeveloperEnhancedScreen(navigator: DestinationsNavigator) {
             emptyLabel = logEmptyLabel,
             cancelLabel = cancelLabel,
             onDismiss = { logDialogContent = null }
+        )
+    }
+
+    // SELinux policy dialog
+    if (showSePolicyDialog) {
+        AlertDialog(
+            onDismissRequest = { showSePolicyDialog = false },
+            title = {
+                Text(
+                    text = "SELinux 策略信息",
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold)
+                )
+            },
+            text = {
+                Column {
+                    Text(
+                        text = "当前版本: $selinuxVersion",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = "策略加载时间: $policyLoadTime",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = "可执行操作:",
+                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold)
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = "• seinfo -t: 查看所有类型",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Text(
+                        text = "• sesearch: 搜索规则",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Text(
+                        text = "• seinfo -a: 查看所有属性",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showSePolicyDialog = false }) {
+                    Text("关闭")
+                }
+            }
         )
     }
 }
