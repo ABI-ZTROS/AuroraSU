@@ -435,8 +435,8 @@ private fun WorkspaceUserItem(
             if (user.isManagedProfile) {
                 SwitchItem(
                     icon = Icons.Filled.AdminPanelSettings,
-                    title = suPolicyTitle,
-                    summary = suPolicyDesc,
+                    title = "独立SU策略",
+                    summary = "为此工作空间使用独立的SU授权策略",
                     checked = independentSu,
                     modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)),
                     colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surface)
