@@ -301,6 +301,9 @@
     <string name="update_engine_finalizing">完成中</string>
     <string name="update_engine_need_reboot">需要重启</string>
     <string name="update_engine_error">错误</string>
+    <string name="update_engine_ab_device">A/B设备</string>
+    <string name="update_engine_not_supported">不支持</string>
+    <string name="update_engine_unknown">未知</string>
     <string name="update_engine_last_checked">上次检查</string>
     <string name="update_engine_new_version">新版本</string>
     <string name="update_engine_package_size">包大小</string>

@@ -52,40 +52,92 @@ private data class UpdateEngineInfo(
 )
 
 /**
+ * Get partition path using multiple possible locations
+ */
+private fun getPartitionPath(name: String, slot: String): String? {
+    val possiblePaths = listOf(
+        "/dev/block/by-name/$name$slot",
+        "/dev/block/bootdevice/by-name/$name$slot",
+        "/dev/block/platform/*/by-name/$name$slot",
+        "/dev/block/mapper/$name$slot",
+        "/dev/block/$name$slot"
+    )
+    
+    for (path in possiblePaths) {
+        // Try glob expansion for paths with *
+        if (path.contains("*")) {
+            val expanded = ShellUtils.fastCmd("ls $path 2>/dev/null").trim()
+            if (expanded.isNotEmpty() && !expanded.contains("No such")) {
+                return expanded.split("\n").firstOrNull()?.trim()
+            }
+        } else {
+            val check = ShellUtils.fastCmd("ls -la $path 2>/dev/null").trim()
+            if (check.isNotEmpty() && !check.contains("No such")) {
+                return path
+            }
+        }
+    }
+    return null
+}
+
+/**
+ * Check if partition is healthy by reading its first block
+ */
+private fun isPartitionHealthy(path: String?): Boolean {
+    if (path.isNullOrEmpty()) return false
+    return runCatching {
+        // Try to read first 4KB of partition
+        val result = ShellUtils.fastCmd("dd if=$path of=/dev/null bs=4096 count=1 2>&1 && echo SUCCESS").trim()
+        result.contains("SUCCESS") || result.contains("1+0 records")
+    }.getOrDefault(false)
+}
+
+/**
  * Parse update engine status from dumpsys output
  */
 private suspend fun getUpdateEngineInfo(): UpdateEngineInfo = withContext(Dispatchers.IO) {
     runCatching {
-        val output = ShellUtils.fastCmd("dumpsys update_engine_client").trim()
-        if (output.isBlank()) {
-            // Even if dumpsys returns empty, still check partition health
-            val partitionHealth = runCatching {
-                val bootSlot = ShellUtils.fastCmd("getprop ro.boot.slot_suffix 2>/dev/null").trim().ifEmpty { "_a" }
-                val bootInfo = ShellUtils.fastCmd("ls -la /dev/block/by-name/boot$bootSlot 2>/dev/null").trim()
-                val systemInfo = ShellUtils.fastCmd("ls -la /dev/block/by-name/system$bootSlot 2>/dev/null").trim()
-                val vendorInfo = ShellUtils.fastCmd("ls -la /dev/block/by-name/vendor$bootSlot 2>/dev/null").trim()
-                val superInfo = ShellUtils.fastCmd("ls -la /dev/block/mapper/super 2>/dev/null").trim()
-                mapOf(
-                    "boot" to bootInfo.isNotEmpty(),
-                    "system" to systemInfo.isNotEmpty(),
-                    "vendor" to vendorInfo.isNotEmpty(),
-                    "currentSlot" to bootSlot,
-                    "isDynamicPartition" to superInfo.isNotEmpty(),
-                )
-            }.getOrDefault(emptyMap())
-
+        // Get current slot
+        val currentSlot = ShellUtils.fastCmd("getprop ro.boot.slot_suffix 2>/dev/null").trim()
+            .ifEmpty { ShellUtils.fastCmd("getprop ro.boot.slot 2>/dev/null").trim() }
+            .ifEmpty { "_a" }
+        
+        // Check if A/B device
+        val isAbDevice = ShellUtils.fastCmd("getprop ro.build.ab_update 2>/dev/null").trim()
+            .toBoolean() || currentSlot.isNotEmpty()
+        
+        // Detect dynamic partitions
+        val hasSuper = ShellUtils.fastCmd("ls -la /dev/block/mapper/super 2>/dev/null || ls -la /dev/block/by-name/super 2>/dev/null").trim().isNotEmpty()
+        
+        // Check partition health using multiple methods
+        val bootPath = getPartitionPath("boot", currentSlot)
+        val systemPath = getPartitionPath("system", currentSlot)
+        val vendorPath = getPartitionPath("vendor", currentSlot)
+        
+        // Also check init_boot for Android 13+
+        val initBootPath = getPartitionPath("init_boot", currentSlot)
+        
+        val bootOk = isPartitionHealthy(bootPath) || isPartitionHealthy(initBootPath)
+        val systemOk = isPartitionHealthy(systemPath)
+        val vendorOk = isPartitionHealthy(vendorPath) || !hasSuper // vendor may be in super
+        
+        // Try to get update engine status
+        val output = ShellUtils.fastCmd("dumpsys update_engine_client 2>/dev/null || dumpsys update_engine 2>/dev/null").trim()
+        
+        if (output.isBlank() || output.contains("Can't find service")) {
+            // Update engine not available, return partition info only
             return@withContext UpdateEngineInfo(
-                currentOperation = "UNKNOWN",
+                currentOperation = if (isAbDevice) "AB_DEVICE" else "NOT_SUPPORTED",
                 lastCheckedTime = "N/A",
                 progress = 0f,
                 newPartitionSize = 0L,
                 newVersion = "N/A",
                 isRunning = false,
-                bootPartitionOk = partitionHealth["boot"] as? Boolean ?: true,
-                systemPartitionOk = partitionHealth["system"] as? Boolean ?: true,
-                vendorPartitionOk = partitionHealth["vendor"] as? Boolean ?: true,
-                currentSlot = partitionHealth["currentSlot"] as? String ?: "_a",
-                isDynamicPartition = partitionHealth["isDynamicPartition"] as? Boolean ?: false,
+                bootPartitionOk = bootOk,
+                systemPartitionOk = systemOk,
+                vendorPartitionOk = vendorOk,
+                currentSlot = currentSlot,
+                isDynamicPartition = hasSuper,
             )
         }
 
@@ -98,53 +150,52 @@ private suspend fun getUpdateEngineInfo(): UpdateEngineInfo = withContext(Dispat
         for (line in output.lines()) {
             val trimmed = line.trim()
             when {
-                trimmed.contains("CURRENT_OP", ignoreCase = true) -> {
+                trimmed.contains("CURRENT_OP", ignoreCase = true) || 
+                trimmed.contains("current_operation", ignoreCase = true) -> {
                     val op = trimmed.substringAfter(":").trim()
+                        .substringAfter("=").trim()
                     currentOperation = parseOperation(op)
                 }
                 trimmed.contains("LAST_CHECKED_TIME", ignoreCase = true) ||
-                trimmed.contains("last_checked_time", ignoreCase = true) -> {
-                    val time = trimmed.substringAfter(":").trim().toLongOrNull()
+                trimmed.contains("last_checked_time", ignoreCase = true) ||
+                trimmed.contains("last_check_time", ignoreCase = true) -> {
+                    val timeStr = trimmed.substringAfter(":").trim()
+                        .substringAfter("=").trim()
+                    val time = timeStr.toLongOrNull()
                     lastCheckedTime = if (time != null && time > 0) {
                         formatTimestamp(time)
                     } else {
-                        "N/A"
+                        timeStr.takeIf { it.isNotBlank() } ?: "N/A"
                     }
                 }
                 trimmed.contains("PROGRESS", ignoreCase = true) -> {
-                    val p = trimmed.substringAfter(":").trim().toFloatOrNull()
-                    if (p != null) progress = p
+                    val p = trimmed.substringAfter(":").trim()
+                        .substringAfter("=").trim()
+                        .toFloatOrNull()
+                    if (p != null) progress = p.coerceIn(0f, 1f)
                 }
                 trimmed.contains("NEW_PARTITION_SIZE", ignoreCase = true) ||
-                trimmed.contains("new_partition_size", ignoreCase = true) -> {
-                    val size = trimmed.substringAfter(":").trim().toLongOrNull()
-                    if (size != null) newPartitionSize = size
+                trimmed.contains("new_partition_size", ignoreCase = true) ||
+                trimmed.contains("payload_size", ignoreCase = true) -> {
+                    val size = trimmed.substringAfter(":").trim()
+                        .substringAfter("=").trim()
+                        .toLongOrNull()
+                    if (size != null && size > 0) newPartitionSize = size
                 }
                 trimmed.contains("NEW_VERSION", ignoreCase = true) ||
-                trimmed.contains("new_version", ignoreCase = true) -> {
+                trimmed.contains("new_version", ignoreCase = true) ||
+                trimmed.contains("target_version", ignoreCase = true) -> {
                     val ver = trimmed.substringAfter(":").trim()
-                    if (ver.isNotBlank()) newVersion = ver
+                        .substringAfter("=").trim()
+                    if (ver.isNotBlank() && ver != "0") newVersion = ver
                 }
             }
         }
 
-        val isRunning = currentOperation != "IDLE" && currentOperation != "ERROR" && currentOperation != "UPDATED_NEED_REBOOT"
-
-        // Check partition health
-        val partitionHealth = runCatching {
-            val bootSlot = ShellUtils.fastCmd("getprop ro.boot.slot_suffix 2>/dev/null").trim().ifEmpty { "_a" }
-            val bootInfo = ShellUtils.fastCmd("ls -la /dev/block/by-name/boot$bootSlot 2>/dev/null").trim()
-            val systemInfo = ShellUtils.fastCmd("ls -la /dev/block/by-name/system$bootSlot 2>/dev/null").trim()
-            val vendorInfo = ShellUtils.fastCmd("ls -la /dev/block/by-name/vendor$bootSlot 2>/dev/null").trim()
-            val superInfo = ShellUtils.fastCmd("ls -la /dev/block/mapper/super 2>/dev/null").trim()
-            mapOf(
-                "boot" to bootInfo.isNotEmpty(),
-                "system" to systemInfo.isNotEmpty(),
-                "vendor" to vendorInfo.isNotEmpty(),
-                "currentSlot" to bootSlot,
-                "isDynamicPartition" to superInfo.isNotEmpty(),
-            )
-        }.getOrDefault(emptyMap())
+        val isRunning = currentOperation != "IDLE" && 
+                       currentOperation != "ERROR" && 
+                       currentOperation != "UPDATED_NEED_REBOOT" &&
+                       currentOperation != "NOT_SUPPORTED"
 
         UpdateEngineInfo(
             currentOperation = currentOperation,
@@ -153,11 +204,11 @@ private suspend fun getUpdateEngineInfo(): UpdateEngineInfo = withContext(Dispat
             newPartitionSize = newPartitionSize,
             newVersion = newVersion,
             isRunning = isRunning,
-            bootPartitionOk = partitionHealth["boot"] as? Boolean ?: true,
-            systemPartitionOk = partitionHealth["system"] as? Boolean ?: true,
-            vendorPartitionOk = partitionHealth["vendor"] as? Boolean ?: true,
-            currentSlot = partitionHealth["currentSlot"] as? String ?: "_a",
-            isDynamicPartition = partitionHealth["isDynamicPartition"] as? Boolean ?: false,
+            bootPartitionOk = bootOk,
+            systemPartitionOk = systemOk,
+            vendorPartitionOk = vendorOk,
+            currentSlot = currentSlot,
+            isDynamicPartition = hasSuper,
         )
     }.getOrDefault(
         UpdateEngineInfo(
@@ -666,6 +717,9 @@ private fun getLocalizedStatus(status: String): String {
         "FINALIZING" -> context.getString(R.string.update_engine_finalizing)
         "UPDATED_NEED_REBOOT" -> context.getString(R.string.update_engine_need_reboot)
         "ERROR" -> context.getString(R.string.update_engine_error)
+        "AB_DEVICE" -> context.getString(R.string.update_engine_ab_device)
+        "NOT_SUPPORTED" -> context.getString(R.string.update_engine_not_supported)
+        "UNKNOWN" -> context.getString(R.string.update_engine_unknown)
         else -> status
     }
 }
