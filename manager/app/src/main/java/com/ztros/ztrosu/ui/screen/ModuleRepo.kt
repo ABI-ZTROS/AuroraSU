@@ -676,7 +676,7 @@ private fun ModuleRepoCard(
                 val fadeColor = when {
                     amoledMode && isDark -> Color.Black
                     isDynamic -> colorScheme.surface
-                    isDark -> Color(0xFF222222)
+                    isDark -> colorScheme.surfaceVariant  // 使用主题颜色
                     else -> colorScheme.background
                 }
 

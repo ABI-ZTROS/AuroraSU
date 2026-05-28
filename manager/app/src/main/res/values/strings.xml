@@ -363,6 +363,12 @@
     <string name="theme_preset_summary">选择预设颜色主题</string>
     <string name="theme_preset_default">默认</string>
     <string name="theme_preset_ice_abyss">冰渊</string>
+    <string name="theme_preset_blood_moon">血月</string>
+    <string name="theme_preset_heavenly_palace">天宫</string>
+    <string name="theme_preset_azure_sky">苍穹</string>
+    <string name="theme_preset_fresh_lemon">清新柠檬</string>
+    <string name="theme_preset_dragon_fruit">火龙果</string>
+    <string name="theme_preset_divine_yellow">神域黄</string>
     <string name="brand_info">由 ZTR_OS SU 驱动</string>
     <string name="about_card_title">关于</string>
     <string name="about_card_package">包名</string>
@@ -505,4 +511,15 @@
     <string name="multiuser_confirm_title">切换配置</string>
     <string name="multiuser_confirm_message">您确定要切换工作空间配置吗？SU 策略将相应更新。</string>
     <string name="multiuser_switch_success">配置切换成功</string>
+    <!-- New UI Settings Strings -->
+    <string name="dark_mode_title">深色模式</string>
+    <string name="dark_mode_light">亮色</string>
+    <string name="dark_mode_dark">深色</string>
+    <string name="dark_mode_system">跟随系统</string>
+    <string name="blur_enabled_title">背景模糊效果</string>
+    <string name="blur_enabled_summary">启用界面背景毛玻璃效果</string>
+    <string name="card_elevation_title">卡片阴影</string>
+    <string name="vibration_enabled_title">振动反馈</string>
+    <string name="vibration_enabled_summary">按钮点击时触发振动</string>
+    <string name="density_scale_title">界面密度</string>
 </resources>

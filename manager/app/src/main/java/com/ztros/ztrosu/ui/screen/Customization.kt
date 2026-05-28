@@ -18,10 +18,22 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AcUnit
+import androidx.compose.material.icons.filled.BlurOn
+import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.Contrast
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.Eco
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.Shadow
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Translate
+import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material.icons.filled.ViewCarousel
+import androidx.compose.material.icons.filled.Whatshot
+import androidx.compose.material.icons.filled.WbSunny
+import androidx.compose.material.icons.filled.ZoomOutMap
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -57,6 +69,7 @@ import com.ztros.ztrosu.ui.component.rememberCustomDialog
 import com.ztros.ztrosu.ui.util.refreshActivity
 import com.ztros.ztrosu.ui.util.LocalSnackbarHost
 import com.ztros.ztrosu.ui.util.LocaleHelper
+import com.ztros.ztrosu.ui.util.VibrationHelper
 
 /**
  * @author twj
@@ -391,6 +404,66 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
                     animationSpec = tween(300),
                     label = "iceBorderColor"
                 )
+                val bloodMoonBorderWidth by animateFloatAsState(
+                    targetValue = if (selectedPreset == "blood_moon") 2.5f else 1f,
+                    animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+                    label = "bloodMoonBorderWidth"
+                )
+                val bloodMoonBorderColor by animateColorAsState(
+                    targetValue = if (selectedPreset == "blood_moon") Color(0xFFC44536) else Color.Gray.copy(alpha = 0.3f),
+                    animationSpec = tween(300),
+                    label = "bloodMoonBorderColor"
+                )
+                val heavenlyPalaceBorderWidth by animateFloatAsState(
+                    targetValue = if (selectedPreset == "heavenly_palace") 2.5f else 1f,
+                    animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+                    label = "heavenlyPalaceBorderWidth"
+                )
+                val heavenlyPalaceBorderColor by animateColorAsState(
+                    targetValue = if (selectedPreset == "heavenly_palace") Color(0xFFD4A017) else Color.Gray.copy(alpha = 0.3f),
+                    animationSpec = tween(300),
+                    label = "heavenlyPalaceBorderColor"
+                )
+                val azureSkyBorderWidth by animateFloatAsState(
+                    targetValue = if (selectedPreset == "azure_sky") 2.5f else 1f,
+                    animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+                    label = "azureSkyBorderWidth"
+                )
+                val azureSkyBorderColor by animateColorAsState(
+                    targetValue = if (selectedPreset == "azure_sky") Color(0xFF4A90D9) else Color.Gray.copy(alpha = 0.3f),
+                    animationSpec = tween(300),
+                    label = "azureSkyBorderColor"
+                )
+                val freshLemonBorderWidth by animateFloatAsState(
+                    targetValue = if (selectedPreset == "fresh_lemon") 2.5f else 1f,
+                    animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+                    label = "freshLemonBorderWidth"
+                )
+                val freshLemonBorderColor by animateColorAsState(
+                    targetValue = if (selectedPreset == "fresh_lemon") Color(0xFFA8D830) else Color.Gray.copy(alpha = 0.3f),
+                    animationSpec = tween(300),
+                    label = "freshLemonBorderColor"
+                )
+                val dragonFruitBorderWidth by animateFloatAsState(
+                    targetValue = if (selectedPreset == "dragon_fruit") 2.5f else 1f,
+                    animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+                    label = "dragonFruitBorderWidth"
+                )
+                val dragonFruitBorderColor by animateColorAsState(
+                    targetValue = if (selectedPreset == "dragon_fruit") Color(0xFFE070B0) else Color.Gray.copy(alpha = 0.3f),
+                    animationSpec = tween(300),
+                    label = "dragonFruitBorderColor"
+                )
+                val divineYellowBorderWidth by animateFloatAsState(
+                    targetValue = if (selectedPreset == "divine_yellow") 2.5f else 1f,
+                    animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+                    label = "divineYellowBorderWidth"
+                )
+                val divineYellowBorderColor by animateColorAsState(
+                    targetValue = if (selectedPreset == "divine_yellow") Color(0xFFE8B820) else Color.Gray.copy(alpha = 0.3f),
+                    animationSpec = tween(300),
+                    label = "divineYellowBorderColor"
+                )
 
                 // Default preset
                 Column(
@@ -451,6 +524,186 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
                     Spacer(Modifier.height(6.dp))
                     Text(stringResource(R.string.theme_preset_ice_abyss), style = MaterialTheme.typography.labelMedium)
                 }
+
+                // Blood Moon preset
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.clickable {
+                        selectedPreset = "blood_moon"
+                        prefs.edit { putString("theme_preset", "blood_moon") }
+                        (context as? MainActivity)?.setThemePreset("blood_moon")
+                        (context as? MainActivity)?.setAccentColor(-1)
+                        (context as? MainActivity)?.setDynamicColor(false)
+                        prefs.edit {
+                            putLong("material_you_accent_color", -1)
+                            putInt("material_you_accent_color_index", -1)
+                            putBoolean("material_you_dynamic_color", false)
+                        }
+                    }
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(56.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(Color(0xFFFFF8F5))
+                            .border(bloodMoonBorderWidth.dp, bloodMoonBorderColor, RoundedCornerShape(16.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Filled.Whatshot, contentDescription = null, tint = Color(0xFFC44536), modifier = Modifier.size(24.dp))
+                    }
+                    Spacer(Modifier.height(6.dp))
+                    Text(stringResource(R.string.theme_preset_blood_moon), style = MaterialTheme.typography.labelMedium)
+                }
+
+                // Heavenly Palace preset
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.clickable {
+                        selectedPreset = "heavenly_palace"
+                        prefs.edit { putString("theme_preset", "heavenly_palace") }
+                        (context as? MainActivity)?.setThemePreset("heavenly_palace")
+                        (context as? MainActivity)?.setAccentColor(-1)
+                        (context as? MainActivity)?.setDynamicColor(false)
+                        prefs.edit {
+                            putLong("material_you_accent_color", -1)
+                            putInt("material_you_accent_color_index", -1)
+                            putBoolean("material_you_dynamic_color", false)
+                        }
+                    }
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(56.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(Color(0xFFFFFAF0))
+                            .border(heavenlyPalaceBorderWidth.dp, heavenlyPalaceBorderColor, RoundedCornerShape(16.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Filled.Star, contentDescription = null, tint = Color(0xFFD4A017), modifier = Modifier.size(24.dp))
+                    }
+                    Spacer(Modifier.height(6.dp))
+                    Text(stringResource(R.string.theme_preset_heavenly_palace), style = MaterialTheme.typography.labelMedium)
+                }
+
+                // Azure Sky preset
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.clickable {
+                        selectedPreset = "azure_sky"
+                        prefs.edit { putString("theme_preset", "azure_sky") }
+                        (context as? MainActivity)?.setThemePreset("azure_sky")
+                        (context as? MainActivity)?.setAccentColor(-1)
+                        (context as? MainActivity)?.setDynamicColor(false)
+                        prefs.edit {
+                            putLong("material_you_accent_color", -1)
+                            putInt("material_you_accent_color_index", -1)
+                            putBoolean("material_you_dynamic_color", false)
+                        }
+                    }
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(56.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(Color(0xFFF5FAFF))
+                            .border(azureSkyBorderWidth.dp, azureSkyBorderColor, RoundedCornerShape(16.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Filled.Cloud, contentDescription = null, tint = Color(0xFF4A90D9), modifier = Modifier.size(24.dp))
+                    }
+                    Spacer(Modifier.height(6.dp))
+                    Text(stringResource(R.string.theme_preset_azure_sky), style = MaterialTheme.typography.labelMedium)
+                }
+
+                // Fresh Lemon preset
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.clickable {
+                        selectedPreset = "fresh_lemon"
+                        prefs.edit { putString("theme_preset", "fresh_lemon") }
+                        (context as? MainActivity)?.setThemePreset("fresh_lemon")
+                        (context as? MainActivity)?.setAccentColor(-1)
+                        (context as? MainActivity)?.setDynamicColor(false)
+                        prefs.edit {
+                            putLong("material_you_accent_color", -1)
+                            putInt("material_you_accent_color_index", -1)
+                            putBoolean("material_you_dynamic_color", false)
+                        }
+                    }
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(56.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(Color(0xFFFFFEF8))
+                            .border(freshLemonBorderWidth.dp, freshLemonBorderColor, RoundedCornerShape(16.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Filled.Eco, contentDescription = null, tint = Color(0xFFA8D830), modifier = Modifier.size(24.dp))
+                    }
+                    Spacer(Modifier.height(6.dp))
+                    Text(stringResource(R.string.theme_preset_fresh_lemon), style = MaterialTheme.typography.labelMedium)
+                }
+
+                // Dragon Fruit preset
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.clickable {
+                        selectedPreset = "dragon_fruit"
+                        prefs.edit { putString("theme_preset", "dragon_fruit") }
+                        (context as? MainActivity)?.setThemePreset("dragon_fruit")
+                        (context as? MainActivity)?.setAccentColor(-1)
+                        (context as? MainActivity)?.setDynamicColor(false)
+                        prefs.edit {
+                            putLong("material_you_accent_color", -1)
+                            putInt("material_you_accent_color_index", -1)
+                            putBoolean("material_you_dynamic_color", false)
+                        }
+                    }
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(56.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(Color(0xFFFFFAF8))
+                            .border(dragonFruitBorderWidth.dp, dragonFruitBorderColor, RoundedCornerShape(16.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Filled.Favorite, contentDescription = null, tint = Color(0xFFE070B0), modifier = Modifier.size(24.dp))
+                    }
+                    Spacer(Modifier.height(6.dp))
+                    Text(stringResource(R.string.theme_preset_dragon_fruit), style = MaterialTheme.typography.labelMedium)
+                }
+
+                // Divine Yellow preset
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.clickable {
+                        selectedPreset = "divine_yellow"
+                        prefs.edit { putString("theme_preset", "divine_yellow") }
+                        (context as? MainActivity)?.setThemePreset("divine_yellow")
+                        (context as? MainActivity)?.setAccentColor(-1)
+                        (context as? MainActivity)?.setDynamicColor(false)
+                        prefs.edit {
+                            putLong("material_you_accent_color", -1)
+                            putInt("material_you_accent_color_index", -1)
+                            putBoolean("material_you_dynamic_color", false)
+                        }
+                    }
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(56.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(Color(0xFFFFFEF8))
+                            .border(divineYellowBorderWidth.dp, divineYellowBorderColor, RoundedCornerShape(16.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Filled.WbSunny, contentDescription = null, tint = Color(0xFFE8B820), modifier = Modifier.size(24.dp))
+                    }
+                    Spacer(Modifier.height(6.dp))
+                    Text(stringResource(R.string.theme_preset_divine_yellow), style = MaterialTheme.typography.labelMedium)
+                }
             }
 
             Spacer(Modifier.height(16.dp))
@@ -489,6 +742,251 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
                     enableAmoled = checked
                 }
             }
+
+            // === Dark Mode Independent Control ===
+            Spacer(Modifier.height(16.dp))
+            
+            var darkMode by rememberSaveable {
+                mutableStateOf(
+                    prefs.getString("dark_mode", "system") ?: "system"
+                )
+            }
+            
+            val darkModeTitle = stringResource(R.string.dark_mode_title)
+            Text(
+                text = darkModeTitle,
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+            Spacer(Modifier.height(8.dp))
+            
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.Start),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                val activity = LocalContext.current as? MainActivity
+                
+                // Light mode
+                val lightBorderWidth by animateFloatAsState(
+                    targetValue = if (darkMode == "light") 2.5f else 1f,
+                    animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+                    label = "lightBorderWidth"
+                )
+                val lightBorderColor by animateColorAsState(
+                    targetValue = if (darkMode == "light") MaterialTheme.colorScheme.primary else Color.Gray.copy(alpha = 0.3f),
+                    animationSpec = tween(300),
+                    label = "lightBorderColor"
+                )
+                
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.clickable {
+                        VibrationHelper.vibrateClick(context, prefs.getBoolean("vibration_enabled", false))
+                        darkMode = "light"
+                        prefs.edit { putString("dark_mode", "light") }
+                        activity?.setDarkMode("light")
+                    }
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                            .border(lightBorderWidth.dp, lightBorderColor, RoundedCornerShape(12.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Filled.LightMode, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    Text(stringResource(R.string.dark_mode_light), style = MaterialTheme.typography.labelMedium)
+                }
+                
+                // Dark mode
+                val darkBorderWidth by animateFloatAsState(
+                    targetValue = if (darkMode == "dark") 2.5f else 1f,
+                    animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+                    label = "darkBorderWidth"
+                )
+                val darkBorderColor by animateColorAsState(
+                    targetValue = if (darkMode == "dark") MaterialTheme.colorScheme.primary else Color.Gray.copy(alpha = 0.3f),
+                    animationSpec = tween(300),
+                    label = "darkBorderColor"
+                )
+                
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.clickable {
+                        VibrationHelper.vibrateClick(context, prefs.getBoolean("vibration_enabled", false))
+                        darkMode = "dark"
+                        prefs.edit { putString("dark_mode", "dark") }
+                        activity?.setDarkMode("dark")
+                    }
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                            .border(darkBorderWidth.dp, darkBorderColor, RoundedCornerShape(12.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Filled.DarkMode, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    Text(stringResource(R.string.dark_mode_dark), style = MaterialTheme.typography.labelMedium)
+                }
+                
+                // System (follow system)
+                val systemBorderWidth by animateFloatAsState(
+                    targetValue = if (darkMode == "system") 2.5f else 1f,
+                    animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+                    label = "systemBorderWidth"
+                )
+                val systemBorderColor by animateColorAsState(
+                    targetValue = if (darkMode == "system") MaterialTheme.colorScheme.primary else Color.Gray.copy(alpha = 0.3f),
+                    animationSpec = tween(300),
+                    label = "systemBorderColor"
+                )
+                
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.clickable {
+                        VibrationHelper.vibrateClick(context, prefs.getBoolean("vibration_enabled", false))
+                        darkMode = "system"
+                        prefs.edit { putString("dark_mode", "system") }
+                        activity?.setDarkMode("system")
+                    }
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                            .border(systemBorderWidth.dp, systemBorderColor, RoundedCornerShape(12.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Filled.Contrast, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    Text(stringResource(R.string.dark_mode_system), style = MaterialTheme.typography.labelMedium)
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            // === Blur Effect Switch ===
+            var blurEnabled by rememberSaveable {
+                mutableStateOf(
+                    prefs.getBoolean("blur_enabled", false)
+                )
+            }
+            SwitchItem(
+                icon = Icons.Filled.BlurOn,
+                title = stringResource(R.string.blur_enabled_title),
+                summary = stringResource(R.string.blur_enabled_summary),
+                checked = blurEnabled
+            ) { enabled ->
+                VibrationHelper.vibrate(context, prefs.getBoolean("vibration_enabled", false))
+                prefs.edit { putBoolean("blur_enabled", enabled) }
+                (context as? MainActivity)?.setBlurEnabled(enabled)
+                blurEnabled = enabled
+            }
+
+            Spacer(Modifier.height(8.dp))
+
+            // === Card Elevation Slider ===
+            var elevationValue by rememberSaveable {
+                mutableStateOf(
+                    prefs.getFloat("card_elevation", 1f)
+                )
+            }
+            
+            ListItem(
+                leadingContent = { Icon(Icons.Filled.Shadow, contentDescription = null) },
+                headlineContent = { 
+                    Text(
+                        text = stringResource(R.string.card_elevation_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                },
+                supportingContent = { Text("${elevationValue.toInt()}dp") }
+            )
+            Slider(
+                value = elevationValue,
+                onValueChange = { 
+                    VibrationHelper.vibrate(context, prefs.getBoolean("vibration_enabled", false))
+                    elevationValue = it
+                },
+                onValueChangeFinished = {
+                    prefs.edit { putFloat("card_elevation", elevationValue) }
+                    (context as? MainActivity)?.setElevation(elevationValue)
+                },
+                valueRange = 0f..12f,
+                steps = 12,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+
+            Spacer(Modifier.height(8.dp))
+
+            // === Vibration Feedback Switch ===
+            var vibrationEnabled by rememberSaveable {
+                mutableStateOf(
+                    prefs.getBoolean("vibration_enabled", false)
+                )
+            }
+            SwitchItem(
+                icon = Icons.Filled.Vibration,
+                title = stringResource(R.string.vibration_enabled_title),
+                summary = stringResource(R.string.vibration_enabled_summary),
+                checked = vibrationEnabled
+            ) { enabled ->
+                // Trigger vibration to demonstrate the effect when enabling
+                if (enabled) {
+                    VibrationHelper.vibrateClick(context, true)
+                }
+                prefs.edit { putBoolean("vibration_enabled", enabled) }
+                (context as? MainActivity)?.setVibrationEnabled(enabled)
+                vibrationEnabled = enabled
+            }
+
+            Spacer(Modifier.height(8.dp))
+
+            // === UI Density Scale Slider ===
+            var densityScale by rememberSaveable {
+                mutableStateOf(
+                    prefs.getFloat("density_scale", 1f)
+                )
+            }
+            
+            ListItem(
+                leadingContent = { Icon(Icons.Filled.ZoomOutMap, contentDescription = null) },
+                headlineContent = { 
+                    Text(
+                        text = stringResource(R.string.density_scale_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                },
+                supportingContent = { Text(String.format("%.1fx", densityScale)) }
+            )
+            Slider(
+                value = densityScale,
+                onValueChange = { 
+                    VibrationHelper.vibrate(context, prefs.getBoolean("vibration_enabled", false))
+                    densityScale = it
+                },
+                onValueChangeFinished = {
+                    prefs.edit { putFloat("density_scale", densityScale) }
+                    (context as? MainActivity)?.setDensityScale(densityScale)
+                },
+                valueRange = 0.8f..1.4f,
+                steps = 6,  // 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
         }
     }
 }

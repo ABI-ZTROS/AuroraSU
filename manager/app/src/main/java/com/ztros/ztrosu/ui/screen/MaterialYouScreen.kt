@@ -202,6 +202,216 @@ fun MaterialYouScreen(navigator: DestinationsNavigator) {
                             Spacer(Modifier.height(4.dp))
                             Text("冰渊", style = MaterialTheme.typography.labelSmall)
                         }
+
+                        // Blood Moon preset
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.clickable {
+                                selectedPreset = "blood_moon"
+                                prefs.edit { putString("theme_preset", "blood_moon") }
+                                val activity = context as? com.ztros.ztrosu.ui.MainActivity
+                                activity?.setThemePreset("blood_moon")
+                                activity?.setAccentColor(-1)
+                                context.getSharedPreferences("settings", Context.MODE_PRIVATE).edit {
+                                    putLong("material_you_accent_color", -1)
+                                    putInt("material_you_accent_color_index", -1)
+                                }
+                            }
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(Color(0xFFFFF8F5))
+                                    .then(
+                                        if (selectedPreset == "blood_moon") {
+                                            Modifier.border(2.dp, Color(0xFFC44536), RoundedCornerShape(12.dp))
+                                        } else {
+                                            Modifier.border(1.dp, Color.Gray.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+                                        }
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Filled.Whatshot, contentDescription = null, tint = Color(0xFFC44536), modifier = Modifier.size(24.dp))
+                            }
+                            Spacer(Modifier.height(4.dp))
+                            Text("血月", style = MaterialTheme.typography.labelSmall)
+                        }
+
+                        // Heavenly Palace preset
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.clickable {
+                                selectedPreset = "heavenly_palace"
+                                prefs.edit { putString("theme_preset", "heavenly_palace") }
+                                val activity = context as? com.ztros.ztrosu.ui.MainActivity
+                                activity?.setThemePreset("heavenly_palace")
+                                activity?.setAccentColor(-1)
+                                context.getSharedPreferences("settings", Context.MODE_PRIVATE).edit {
+                                    putLong("material_you_accent_color", -1)
+                                    putInt("material_you_accent_color_index", -1)
+                                }
+                            }
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(Color(0xFFFFFAF0))
+                                    .then(
+                                        if (selectedPreset == "heavenly_palace") {
+                                            Modifier.border(2.dp, Color(0xFFD4A017), RoundedCornerShape(12.dp))
+                                        } else {
+                                            Modifier.border(1.dp, Color.Gray.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+                                        }
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Filled.Star, contentDescription = null, tint = Color(0xFFD4A017), modifier = Modifier.size(24.dp))
+                            }
+                            Spacer(Modifier.height(4.dp))
+                            Text("天宫", style = MaterialTheme.typography.labelSmall)
+                        }
+
+                        // Azure Sky preset
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.clickable {
+                                selectedPreset = "azure_sky"
+                                prefs.edit { putString("theme_preset", "azure_sky") }
+                                val activity = context as? com.ztros.ztrosu.ui.MainActivity
+                                activity?.setThemePreset("azure_sky")
+                                activity?.setAccentColor(-1)
+                                context.getSharedPreferences("settings", Context.MODE_PRIVATE).edit {
+                                    putLong("material_you_accent_color", -1)
+                                    putInt("material_you_accent_color_index", -1)
+                                }
+                            }
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(Color(0xFFF5FAFF))
+                                    .then(
+                                        if (selectedPreset == "azure_sky") {
+                                            Modifier.border(2.dp, Color(0xFF4A90D9), RoundedCornerShape(12.dp))
+                                        } else {
+                                            Modifier.border(1.dp, Color.Gray.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+                                        }
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Filled.Cloud, contentDescription = null, tint = Color(0xFF4A90D9), modifier = Modifier.size(24.dp))
+                            }
+                            Spacer(Modifier.height(4.dp))
+                            Text("苍穹", style = MaterialTheme.typography.labelSmall)
+                        }
+
+                        // Fresh Lemon preset
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.clickable {
+                                selectedPreset = "fresh_lemon"
+                                prefs.edit { putString("theme_preset", "fresh_lemon") }
+                                val activity = context as? com.ztros.ztrosu.ui.MainActivity
+                                activity?.setThemePreset("fresh_lemon")
+                                activity?.setAccentColor(-1)
+                                context.getSharedPreferences("settings", Context.MODE_PRIVATE).edit {
+                                    putLong("material_you_accent_color", -1)
+                                    putInt("material_you_accent_color_index", -1)
+                                }
+                            }
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(Color(0xFFFFFEF8))
+                                    .then(
+                                        if (selectedPreset == "fresh_lemon") {
+                                            Modifier.border(2.dp, Color(0xFFA8D830), RoundedCornerShape(12.dp))
+                                        } else {
+                                            Modifier.border(1.dp, Color.Gray.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+                                        }
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Filled.Eco, contentDescription = null, tint = Color(0xFFA8D830), modifier = Modifier.size(24.dp))
+                            }
+                            Spacer(Modifier.height(4.dp))
+                            Text("清新柠檬", style = MaterialTheme.typography.labelSmall)
+                        }
+
+                        // Dragon Fruit preset
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.clickable {
+                                selectedPreset = "dragon_fruit"
+                                prefs.edit { putString("theme_preset", "dragon_fruit") }
+                                val activity = context as? com.ztros.ztrosu.ui.MainActivity
+                                activity?.setThemePreset("dragon_fruit")
+                                activity?.setAccentColor(-1)
+                                context.getSharedPreferences("settings", Context.MODE_PRIVATE).edit {
+                                    putLong("material_you_accent_color", -1)
+                                    putInt("material_you_accent_color_index", -1)
+                                }
+                            }
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(Color(0xFFFFFAF8))
+                                    .then(
+                                        if (selectedPreset == "dragon_fruit") {
+                                            Modifier.border(2.dp, Color(0xFFE070B0), RoundedCornerShape(12.dp))
+                                        } else {
+                                            Modifier.border(1.dp, Color.Gray.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+                                        }
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Filled.Favorite, contentDescription = null, tint = Color(0xFFE070B0), modifier = Modifier.size(24.dp))
+                            }
+                            Spacer(Modifier.height(4.dp))
+                            Text("火龙果", style = MaterialTheme.typography.labelSmall)
+                        }
+
+                        // Divine Yellow preset
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.clickable {
+                                selectedPreset = "divine_yellow"
+                                prefs.edit { putString("theme_preset", "divine_yellow") }
+                                val activity = context as? com.ztros.ztrosu.ui.MainActivity
+                                activity?.setThemePreset("divine_yellow")
+                                activity?.setAccentColor(-1)
+                                context.getSharedPreferences("settings", Context.MODE_PRIVATE).edit {
+                                    putLong("material_you_accent_color", -1)
+                                    putInt("material_you_accent_color_index", -1)
+                                }
+                            }
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(Color(0xFFFFFEF8))
+                                    .then(
+                                        if (selectedPreset == "divine_yellow") {
+                                            Modifier.border(2.dp, Color(0xFFE8B820), RoundedCornerShape(12.dp))
+                                        } else {
+                                            Modifier.border(1.dp, Color.Gray.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+                                        }
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Filled.WbSunny, contentDescription = null, tint = Color(0xFFE8B820), modifier = Modifier.size(24.dp))
+                            }
+                            Spacer(Modifier.height(4.dp))
+                            Text("神域黄", style = MaterialTheme.typography.labelSmall)
+                        }
                     }
                 }
             }

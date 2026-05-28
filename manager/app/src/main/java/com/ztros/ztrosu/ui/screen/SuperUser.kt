@@ -273,7 +273,7 @@ fun LabelText(label: String) {
         modifier = Modifier
             .padding(top = 4.dp, end = 4.dp)
             .background(
-                Color.Black,
+                MaterialTheme.colorScheme.surfaceVariant,
                 shape = RoundedCornerShape(4.dp)
             )
     ) {
@@ -282,7 +282,7 @@ fun LabelText(label: String) {
             modifier = Modifier.padding(vertical = 2.dp, horizontal = 5.dp),
             style = TextStyle(
                 fontSize = 8.sp,
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         )
     }

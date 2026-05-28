@@ -251,7 +251,7 @@ fun MonitorScreen(navigator: DestinationsNavigator) {
                             }
                             drawPath(
                                 path = path,
-                                color = Color(0xFF4CAF50),
+                                color = MaterialTheme.colorScheme.primary,
                                 style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round)
                             )
                         }

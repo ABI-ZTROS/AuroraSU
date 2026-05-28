@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.activity.viewModels
 import androidx.navigation.NavBackStackEntry
@@ -162,6 +163,12 @@ class MainActivity : ComponentActivity() {
     var cornerRadiusState = mutableStateOf(16f)
     var pageTransitionState = mutableStateOf(true)
     var animationSpeedState = mutableStateOf(1f)
+    // New UI settings states
+    var darkModeState = mutableStateOf("system")  // "light", "dark", "system"
+    var blurEnabledState = mutableStateOf(false)
+    var elevationState = mutableStateOf(1f)
+    var vibrationEnabledState = mutableStateOf(false)
+    var densityScaleState = mutableStateOf(1f)
     private val handler = Handler(Looper.getMainLooper())
 
     val moduleViewModel: ModuleViewModel by viewModels()
@@ -199,17 +206,30 @@ class MainActivity : ComponentActivity() {
             cornerRadiusState.value = prefsInit.getFloat("material_you_corner_radius", 16f)
             pageTransitionState.value = prefsInit.getBoolean("motion_page_transition", true)
             animationSpeedState.value = prefsInit.getFloat("motion_animation_speed", 1f)
+            // Read new UI settings
+            darkModeState.value = prefsInit.getString("dark_mode", "system") ?: "system"
+            blurEnabledState.value = prefsInit.getBoolean("blur_enabled", false)
+            elevationState.value = prefsInit.getFloat("card_elevation", 1f)
+            vibrationEnabledState.value = prefsInit.getBoolean("vibration_enabled", false)
+            densityScaleState.value = prefsInit.getFloat("density_scale", 1f)
         } catch (_: Exception) {}
 
-        // Set window background for Ice Abyss theme frosted glass effect
+        // Set window background for theme presets
         try {
             val prefsBg = getSharedPreferences("settings", MODE_PRIVATE)
-            if (prefsBg.getString("theme_preset", "default") == "ice_abyss") {
-                val isDark = (resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES
-                window.decorView.setBackgroundColor(
-                    if (isDark) 0xFF0A1929.toInt() else 0xFFE6F4FA.toInt()
-                )
+            val themePreset = prefsBg.getString("theme_preset", "default") ?: "default"
+            val isDark = (resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES
+            val bgColor = when (themePreset) {
+                "ice_abyss" -> if (isDark) 0xFF0A1929.toInt() else 0xFFE6F4FA.toInt()
+                "blood_moon" -> if (isDark) 0xFF1A0A0A.toInt() else 0xFFFFF8F5.toInt()
+                "heavenly_palace" -> if (isDark) 0xFF0A0A14.toInt() else 0xFFFFFAF0.toInt()
+                "azure_sky" -> if (isDark) 0xFF0A1020.toInt() else 0xFFF5FAFF.toInt()
+                "fresh_lemon" -> if (isDark) 0xFF0A1408.toInt() else 0xFFFFFEF8.toInt()
+                "dragon_fruit" -> if (isDark) 0xFF140A14.toInt() else 0xFFFFFAF8.toInt()
+                "divine_yellow" -> if (isDark) 0xFF0A0A08.toInt() else 0xFFFFFEF8.toInt()
+                else -> android.graphics.Color.TRANSPARENT
             }
+            window.decorView.setBackgroundColor(bgColor)
         } catch (_: Exception) {}
 
         val isManager = Natives.isManager
@@ -224,15 +244,30 @@ class MainActivity : ComponentActivity() {
             handleIntent(intent)
 
         setContent {
-            KernelSUTheme(
-                darkTheme = isSystemInDarkTheme(),
-                dynamicColor = dynamicColorState.value,
-                amoledMode = amoledModeState.value,
-                themePreset = themePresetState.value,
-                accentColor = accentColorState.value,
-                fontScale = fontScaleState.value,
-                cornerRadius = cornerRadiusState.value,
+            // Calculate effective dark theme based on user preference
+            val effectiveDarkTheme = when (darkModeState.value) {
+                "light" -> false
+                "dark" -> true
+                else -> isSystemInDarkTheme()  // "system"
+            }
+            
+            // Apply density scaling with CompositionLocalProvider
+            CompositionLocalProvider(
+                LocalDensity provides Density(
+                    density = densityScaleState.value,
+                    fontScale = fontScaleState.value
+                )
             ) {
+                KernelSUTheme(
+                    darkTheme = effectiveDarkTheme,
+                    dynamicColor = dynamicColorState.value,
+                    amoledMode = amoledModeState.value,
+                    themePreset = themePresetState.value,
+                    accentColor = accentColorState.value,
+                    fontScale = fontScaleState.value,
+                    cornerRadius = cornerRadiusState.value,
+                    cardElevation = elevationState.value,
+                ) {
                 val navController = rememberNavController()
                 val snackBarHostState = remember { SnackbarHostState() }
                 val currentDestination = navController.currentBackStackEntryAsState().value?.destination
@@ -462,15 +497,19 @@ class MainActivity : ComponentActivity() {
     fun setThemePreset(preset: String) {
         themePresetState.value = preset
         getSharedPreferences("settings", MODE_PRIVATE).edit { putString("theme_preset", preset) }
-        // Update window background for Ice Abyss frosted glass effect
-        if (preset == "ice_abyss") {
-            val isDark = (resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES
-            window.decorView.setBackgroundColor(
-                if (isDark) 0xFF0A1929.toInt() else 0xFFE6F4FA.toInt()
-            )
-        } else {
-            window.decorView.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+        // Update window background for theme presets
+        val isDark = (resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES
+        val bgColor = when (preset) {
+            "ice_abyss" -> if (isDark) 0xFF0A1929.toInt() else 0xFFE6F4FA.toInt()
+            "blood_moon" -> if (isDark) 0xFF1A0A0A.toInt() else 0xFFFFF8F5.toInt()
+            "heavenly_palace" -> if (isDark) 0xFF0A0A14.toInt() else 0xFFFFFAF0.toInt()
+            "azure_sky" -> if (isDark) 0xFF0A1020.toInt() else 0xFFF5FAFF.toInt()
+            "fresh_lemon" -> if (isDark) 0xFF0A1408.toInt() else 0xFFFFFEF8.toInt()
+            "dragon_fruit" -> if (isDark) 0xFF140A14.toInt() else 0xFFFFFAF8.toInt()
+            "divine_yellow" -> if (isDark) 0xFF0A0A08.toInt() else 0xFFFFFEF8.toInt()
+            else -> android.graphics.Color.TRANSPARENT
         }
+        window.decorView.setBackgroundColor(bgColor)
     }
 
     fun setDynamicColor(enabled: Boolean) {
@@ -501,6 +540,32 @@ class MainActivity : ComponentActivity() {
     fun setAnimationSpeed(speed: Float) {
         animationSpeedState.value = speed
         getSharedPreferences("settings", MODE_PRIVATE).edit { putFloat("motion_animation_speed", speed) }
+    }
+
+    // New UI settings setter methods
+    fun setDarkMode(mode: String) {
+        darkModeState.value = mode
+        getSharedPreferences("settings", MODE_PRIVATE).edit { putString("dark_mode", mode) }
+    }
+
+    fun setBlurEnabled(enabled: Boolean) {
+        blurEnabledState.value = enabled
+        getSharedPreferences("settings", MODE_PRIVATE).edit { putBoolean("blur_enabled", enabled) }
+    }
+
+    fun setElevation(value: Float) {
+        elevationState.value = value
+        getSharedPreferences("settings", MODE_PRIVATE).edit { putFloat("card_elevation", value) }
+    }
+
+    fun setVibrationEnabled(enabled: Boolean) {
+        vibrationEnabledState.value = enabled
+        getSharedPreferences("settings", MODE_PRIVATE).edit { putBoolean("vibration_enabled", enabled) }
+    }
+
+    fun setDensityScale(scale: Float) {
+        densityScaleState.value = scale
+        getSharedPreferences("settings", MODE_PRIVATE).edit { putFloat("density_scale", scale) }
     }
 
     override fun onNewIntent(intent: Intent) {
