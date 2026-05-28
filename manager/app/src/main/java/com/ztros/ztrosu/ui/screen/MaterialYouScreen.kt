@@ -128,10 +128,11 @@ fun MaterialYouScreen(navigator: DestinationsNavigator) {
                         mutableStateOf(prefs.getString("theme_preset", "default") ?: "default")
                     }
 
-                    Row(
+                    FlowRow(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly,
-                        verticalAlignment = Alignment.CenterVertically
+                        horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.Start),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        maxItemsInEachRow = 4
                     ) {
                         // Default preset
                         Column(
@@ -470,10 +471,11 @@ fun MaterialYouScreen(navigator: DestinationsNavigator) {
                         mutableIntStateOf(prefs.getInt("material_you_accent_color_index", 0))
                     }
 
-                    Row(
+                    FlowRow(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly,
-                        verticalAlignment = Alignment.CenterVertically
+                        horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.Start),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        maxItemsInEachRow = 4
                     ) {
                         accentColors.forEachIndexed { index, color ->
                             val isSelected = selectedAccentIndex == index
