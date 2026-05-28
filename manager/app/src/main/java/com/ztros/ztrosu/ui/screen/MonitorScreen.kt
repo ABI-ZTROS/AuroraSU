@@ -236,6 +236,7 @@ fun MonitorScreen(navigator: DestinationsNavigator) {
                             )
                         }
                     )
+                    val chartColor = MaterialTheme.colorScheme.primary
                     Canvas(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -251,7 +252,7 @@ fun MonitorScreen(navigator: DestinationsNavigator) {
                             }
                             drawPath(
                                 path = path,
-                                color = MaterialTheme.colorScheme.primary,
+                                color = chartColor,
                                 style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round)
                             )
                         }
