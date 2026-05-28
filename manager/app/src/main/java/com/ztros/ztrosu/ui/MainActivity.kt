@@ -252,9 +252,11 @@ class MainActivity : ComponentActivity() {
             }
             
             // Apply density scaling with CompositionLocalProvider
+            // Get system density and apply user scaling factor
+            val systemDensity = LocalDensity.current.density
             CompositionLocalProvider(
                 LocalDensity provides Density(
-                    density = densityScaleState.value,
+                    density = systemDensity * densityScaleState.value,
                     fontScale = fontScaleState.value
                 )
             ) {
