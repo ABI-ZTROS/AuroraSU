@@ -375,9 +375,9 @@ private fun MetaModuleCard(
                 val isDynamic = colorScheme.primary != colorScheme.secondary
 
                 val fadeColor = when {
-                    amoledMode && isDark -> Color.Black
+                    amoledMode && isDark -> colorScheme.surface
                     isDynamic -> colorScheme.surface
-                    isDark -> colorScheme.surfaceVariant  // 使用主题颜色
+                    isDark -> colorScheme.surfaceVariant
                     else -> colorScheme.background
                 }
 

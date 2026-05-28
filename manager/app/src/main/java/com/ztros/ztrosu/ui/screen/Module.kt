@@ -967,9 +967,9 @@ fun ModuleItem(
                 val isDynamic = colorScheme.primary != colorScheme.secondary
 
                 val fadeColor = when {
-                    amoledMode && isDark -> Color.Black
+                    amoledMode && isDark -> colorScheme.surface
                     isDynamic -> colorScheme.surface
-                    isDark -> Color(0xFF222222)
+                    isDark -> colorScheme.surfaceVariant
                     else -> colorScheme.background
                 }
 
