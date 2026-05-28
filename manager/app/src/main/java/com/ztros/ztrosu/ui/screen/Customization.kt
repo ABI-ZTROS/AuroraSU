@@ -26,7 +26,7 @@ import androidx.compose.material.icons.filled.Eco
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Palette
-import androidx.compose.material.icons.filled.Shadow
+import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material.icons.filled.Vibration
@@ -905,7 +905,7 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
             }
             
             ListItem(
-                leadingContent = { Icon(Icons.Filled.Shadow, contentDescription = null) },
+                leadingContent = { Icon(Icons.Filled.Layers, contentDescription = null) },
                 headlineContent = { 
                     Text(
                         text = stringResource(R.string.card_elevation_title),
