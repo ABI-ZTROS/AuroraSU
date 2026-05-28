@@ -485,6 +485,7 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+    }
 
     fun setAmoledMode(enabled: Boolean) {
         try {
@@ -598,7 +599,6 @@ class MainActivity : ComponentActivity() {
             else -> { /* ignore other actions */ }
         }
     }
-}
 
 @Composable
 private fun BottomBar(
@@ -777,4 +777,5 @@ private fun BottomBar(
             }
         }
     }
+}
 }
