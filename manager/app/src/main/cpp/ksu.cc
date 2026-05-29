@@ -11,6 +11,7 @@
 #include <android/log.h>
 #include <dirent.h>
 #include <cstdlib>
+#include <cerrno>
 
 #include <unistd.h>
 #include <climits>
