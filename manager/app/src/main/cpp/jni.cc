@@ -83,8 +83,26 @@ Java_com_ztros_ztrosu_Natives_isSafeMode(JNIEnv *env, jclass clazz) {
 
 extern "C"
 JNIEXPORT jboolean JNICALL
+Java_com_ztros_ztrosu_Natives_isLkmMode(JNIEnv *env, jclass clazz) {
+    return is_lkm_mode();
+}
+
+extern "C"
+JNIEXPORT jboolean JNICALL
+Java_com_ztros_ztrosu_Natives_isLateLoadMode(JNIEnv *env, jclass clazz) {
+    return is_late_load_mode();
+}
+
+extern "C"
+JNIEXPORT jboolean JNICALL
 Java_com_ztros_ztrosu_Natives_isManager(JNIEnv *env, jclass clazz) {
     return is_manager();
+}
+
+extern "C"
+JNIEXPORT jboolean JNICALL
+Java_com_ztros_ztrosu_Natives_isPrBuild(JNIEnv *env, jclass clazz) {
+    return is_pr_build();
 }
 
 static void fillIntArray(JNIEnv *env, jobject list, int *data, int count) {
@@ -372,6 +390,18 @@ Java_com_ztros_ztrosu_Natives_setAvcSpoofEnabled(JNIEnv *env, jobject thiz, jboo
 }
 
 extern "C"
+JNIEXPORT jboolean JNICALL
+Java_com_ztros_ztrosu_Natives_isSelinuxHideEnabled(JNIEnv *env, jobject thiz) {
+    return is_selinux_hide_enabled();
+}
+
+extern "C"
+JNIEXPORT jint JNICALL
+Java_com_ztros_ztrosu_Natives_setSelinuxHideEnabled(JNIEnv *env, jobject thiz, jboolean enabled) {
+    return set_selinux_hide_enabled(enabled);
+}
+
+extern "C"
 JNIEXPORT jstring JNICALL
 Java_com_ztros_ztrosu_Natives_getUserName(JNIEnv *env, jobject thiz, jint uid) {
     struct passwd *pw = getpwuid((uid_t) uid);
@@ -426,4 +456,25 @@ Java_com_ztros_ztrosu_Natives_isSuperKeyActive(JNIEnv *env, jobject thiz) {
     int result = superkey_syscall(ZTRSU_SUPERKEY_GET_STATUS, SUPERKEY_CMD_STATUS, nullptr);
     LOGD("isSuperKeyActive result: %d", result);
     return result == 0;
+}
+
+// Custom
+extern "C"
+JNIEXPORT jstring JNICALL
+Java_com_ztros_ztrosu_Natives_getFullVersion(JNIEnv *env, jobject) {
+    char buff[255] = {};
+    if (get_full_version(buff)) {
+        return env->NewStringUTF(buff);
+    }
+    return nullptr;
+}
+
+extern "C"
+JNIEXPORT jstring JNICALL
+Java_com_ztros_ztrosu_Natives_getHookType(JNIEnv *env, jobject) {
+    char hook_type[32] = {};
+    if (get_hook_type(hook_type)) {
+        return env->NewStringUTF(hook_type);
+    }
+    return nullptr;
 }

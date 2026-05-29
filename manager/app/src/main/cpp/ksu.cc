@@ -98,12 +98,36 @@ bool is_safe_mode() {
     return cmd.in_safe_mode;
 }
 
+bool is_lkm_mode() {
+    auto info = get_info();
+    if (info.version > 0) {
+        return (info.flags & KSU_GET_INFO_FLAG_LKM) != 0;
+    }
+    return (legacy_get_info().second & KSU_GET_INFO_FLAG_LKM) != 0;
+}
+
+bool is_late_load_mode() {
+    auto info = get_info();
+    if (info.version > 0) {
+        return (info.flags & KSU_GET_INFO_FLAG_LATE_LOAD) != 0;
+    }
+    return false;
+}
+
 bool is_manager() {
     auto info = get_info();
     if (info.version > 0) {
         return (info.flags & KSU_GET_INFO_FLAG_MANAGER) != 0;
     }
     return legacy_get_info().first > 0;
+}
+
+bool is_pr_build() {
+    auto info = get_info();
+    if (info.version > 0) {
+        return (info.flags & KSU_GET_INFO_FLAG_PR_BUILD) != 0;
+    }
+    return false;
 }
 
 bool uid_should_umount(int uid) {
@@ -162,6 +186,25 @@ bool is_avc_spoof_enabled() {
         return false;
     }
     return cmd.value != 0;
+}
+
+int set_selinux_hide_enabled(bool enabled) {
+    if (!set_feature(KSU_FEATURE_SELINUX_HIDE, enabled ? 1 : 0)) {
+        return -errno;
+    }
+    return 0;
+}
+
+bool is_selinux_hide_enabled() {
+    uint64_t value = 0;
+    bool supported = false;
+    if (!get_feature(KSU_FEATURE_SELINUX_HIDE, &value, &supported)) {
+        return false;
+    }
+    if (!supported) {
+        return false;
+    }
+    return value != 0;
 }
 
 static inline bool get_feature(uint32_t feature_id, uint64_t *out_value, bool *out_supported) {
@@ -231,3 +274,7 @@ const char* get_version_tag(void)
 bool is_zygisk_enabled() {
     return !!getenv("ZYGISK_ENABLED");
 }
+
+// Custom
+DEFINE_CACHED_GETTER(full_version, KSU_IOCTL_GET_FULL_VERSION, ksu_get_full_version_cmd, version_full, 255)
+DEFINE_CACHED_GETTER(hook_type, KSU_IOCTL_HOOK_TYPE, ksu_hook_type_cmd, hook_type, 32)

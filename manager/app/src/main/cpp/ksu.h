@@ -7,6 +7,7 @@
 
 #include <cstdint>
 #include <sys/ioctl.h>
+#include <sys/prctl.h>
 #include <utility>
 
 uint32_t get_version();
@@ -15,7 +16,13 @@ bool uid_should_umount(int uid);
 
 bool is_safe_mode();
 
+bool is_lkm_mode();
+
+bool is_late_load_mode();
+
 bool is_manager();
+
+bool is_pr_build();
 
 #define KSU_APP_PROFILE_VER 2
 #define KSU_MAX_PACKAGE_NAME 256
@@ -189,6 +196,16 @@ bool set_avc_spoof_enabled(bool enabled);
 
 bool is_avc_spoof_enabled();
 
+// SELinux hide
+int set_selinux_hide_enabled(bool enabled);
+
+bool is_selinux_hide_enabled();
+
+bool get_allow_list(struct ksu_new_get_allow_list_cmd *);
+
+bool get_full_version(char* buff);
+bool get_hook_type(char *buff);
+
 // IOCTL command definitions
 #define KSU_IOCTL_GRANT_ROOT _IOC(_IOC_NONE, 'K', 1, 0)
 #define KSU_IOCTL_GET_INFO _IOC(_IOC_READ, 'K', 2, 0)
@@ -206,6 +223,45 @@ bool is_avc_spoof_enabled();
 #define KSU_IOCTL_SET_FEATURE _IOC(_IOC_WRITE, 'K', 14, 0)
 #define KSU_IOCTL_GET_HOOK_MODE _IOC(_IOC_READ, 'K', 98, 0)
 #define KSU_IOCTL_GET_VERSION_TAG _IOC(_IOC_READ, 'K', 99, 0)
+// Other IOCTL command definitions
+#define KSU_IOCTL_GET_FULL_VERSION _IOC(_IOC_READ, 'K', 100, 0)
+#define KSU_IOCTL_HOOK_TYPE _IOC(_IOC_READ, 'K', 101, 0)
+
+// Info flags
+#define KSU_GET_INFO_FLAG_LKM (1U << 0)
+#define KSU_GET_INFO_FLAG_MANAGER (1U << 1)
+#define KSU_GET_INFO_FLAG_LATE_LOAD (1U << 2)
+#define KSU_GET_INFO_FLAG_PR_BUILD (1U << 3)
+
+// Feature IDs
+#define KSU_FEATURE_SELINUX_HIDE 4
+
+// Command structures
+struct ksu_get_full_version_cmd {
+    char version_full[255]; // Output: full version string
+};
+
+struct ksu_hook_type_cmd {
+    char hook_type[32]; // Output: hook type string
+};
+
+#define DEFINE_CACHED_GETTER(name, ioctl, cmd_type, field, size) \
+    static char g_##name[size] = {0}; \
+    bool get_##name(char *buff) { \
+        if (g_##name[0] == '\0') { \
+            struct cmd_type cmd = {0}; \
+            if (ksuctl(ioctl, &cmd) == 0) { \
+                strncpy(g_##name, cmd.field, sizeof(g_##name) - 1); \
+                g_##name[sizeof(g_##name) - 1] = '\0'; \
+            } \
+        } \
+        if (g_##name[0] != '\0') { \
+            strncpy(buff, g_##name, size - 1); \
+            buff[size - 1] = '\0'; \
+            return true; \
+        } \
+        return false; \
+    }
 
 bool get_allow_list(struct ksu_new_get_allow_list_cmd *);
 

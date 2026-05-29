@@ -22,10 +22,32 @@ object Natives {
     // 33075: add set_init_pgrp ioctl
     const val MINIMAL_SUPPORTED_KERNEL = 33075
 
+    // Get full version
+    external fun getFullVersion(): String
+    const val MINIMAL_SUPPORTED_KERNEL_FULL = "v4.0.0"
+
     const val KERNEL_SU_DOMAIN = "u:r:su:s0"
 
     const val ROOT_UID = 0
     const val ROOT_GID = 0
+
+    fun isVersionLessThan(v1Full: String, v2Full: String): Boolean {
+        fun extractVersionParts(version: String): List<Int> {
+            val match = Regex("""v\d+(\.\d+)*""").find(version)
+            val simpleVersion = match?.value ?: version
+            return simpleVersion.trimStart('v').split('.').map { it.toIntOrNull() ?: 0 }
+        }
+
+        val v1Parts = extractVersionParts(v1Full)
+        val v2Parts = extractVersionParts(v2Full)
+        val maxLength = maxOf(v1Parts.size, v2Parts.size)
+        for (i in 0 until maxLength) {
+            val num1 = v1Parts.getOrElse(i) { 0 }
+            val num2 = v2Parts.getOrElse(i) { 0 }
+            if (num1 != num2) return num1 < num2
+        }
+        return false
+    }
 
     init {
         System.loadLibrary("kernelsu")
@@ -42,7 +64,16 @@ object Natives {
     val isSafeMode: Boolean
         external get
 
+    val isLkmMode: Boolean
+        external get
+
+    val isLateLoadMode: Boolean
+        external get
+
     val isManager: Boolean
+        external get
+
+    val isPrBuild: Boolean
         external get
 
     external fun uidShouldUmount(uid: Int): Boolean
@@ -113,7 +144,18 @@ object Natives {
     external fun isAvcSpoofEnabled(): Boolean
     external fun setAvcSpoofEnabled(enabled: Boolean): Boolean
 
+    /**
+     * SELinux hide can be disabled temporarily.
+     *  0: disabled
+     *  1: enabled
+     *  negative : error
+     */
+    external fun isSelinuxHideEnabled(): Boolean
+    external fun setSelinuxHideEnabled(enabled: Boolean): Int
+
     external fun getSuperuserCount(): Int
+
+    external fun getHookType(): String
 
     private const val NON_ROOT_DEFAULT_PROFILE_KEY = "$"
     private const val NOBODY_UID = 9999
@@ -136,7 +178,8 @@ object Natives {
     }
 
     fun requireNewKernel(): Boolean {
-        return version != -1 && version < MINIMAL_SUPPORTED_KERNEL
+        if (version != -1 && version < MINIMAL_SUPPORTED_KERNEL) return true
+        return isVersionLessThan(getFullVersion(), MINIMAL_SUPPORTED_KERNEL_FULL)
     }
 
     // ZTR_OS SU: SuperKey support
