@@ -6,11 +6,11 @@
 #include <linux/types.h>
 #include <linux/version.h>
 
-#include "allowlist.h"
-#include "manager/apk_sign.h"
-#include "klog.h" // IWYU pragma: keep
-#include "manager/manager_identity.h"
-#include "manager/throne_tracker.h"
+#include "../allowlist.h"
+#include "apk_sign.h"
+#include "../klog.h"
+#include "manager_identity.h"
+#include "throne_tracker.h"
 
 uid_t ksu_manager_appid = KSU_INVALID_APPID;
 

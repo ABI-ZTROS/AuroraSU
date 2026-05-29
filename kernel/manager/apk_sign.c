@@ -17,9 +17,9 @@
 #include <linux/hex.h>
 #endif
 
-#include "manager/apk_sign.h"
-#include "app_profile.h"
-#include "klog.h" // IWYU pragma: keep
+#include "apk_sign.h"
+#include "../app_profile.h"
+#include "../klog.h"
 
 struct sdesc {
 	struct shash_desc shash;
@@ -290,7 +290,7 @@ clean:
 
 int ksu_debug_manager_appid = -1;
 
-#include "manager/manager_identity.h"
+#include "manager_identity.h"
 
 static int set_expected_size(const char *val, const struct kernel_param *kp)
 {
