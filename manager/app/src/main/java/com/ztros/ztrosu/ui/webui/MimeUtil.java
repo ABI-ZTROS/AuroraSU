@@ -45,7 +45,7 @@ class MimeUtil {
     // like word docs so feel free to filter out where necessary.
     private static String guessHardcodedMime(String fileName) {
         int finalFullStop = fileName.lastIndexOf('.');
-        if (finalFullStop == -1) {
+        if (finalFullStop == -1 || finalFullStop + 1 >= fileName.length()) {
             return null;
         }
 

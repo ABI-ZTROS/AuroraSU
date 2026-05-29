@@ -314,12 +314,12 @@ class WebUIActivity : ComponentActivity() {
     }
 
     private fun extractMimeTypeAndBase64Data(dataUrl: String): Pair<String, String>? {
-        if (!dataUrl.startsWith("data:")) return null
+        if (!dataUrl.startsWith("data:") || dataUrl.length < 6) return null
         val commaIndex = dataUrl.indexOf(',')
         if (commaIndex == -1) return null
 
         val header = dataUrl.substring(5, commaIndex)
-        val data = dataUrl.substring(commaIndex + 1)
+        val data = if (commaIndex + 1 <= dataUrl.length) dataUrl.substring(commaIndex + 1) else ""
         val mimeType = header.substringBefore(';').ifEmpty {
             "application/octet-stream"
         }

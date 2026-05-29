@@ -165,19 +165,27 @@ static void fillArrayWithList(JNIEnv *env, jobject list, int *data, int count) {
 extern "C"
 JNIEXPORT jobject JNICALL
 Java_com_ztros_ztrosu_Natives_getAppProfile(JNIEnv *env, jobject, jstring pkg, jint uid) {
+    if (pkg == nullptr) {
+        return nullptr;
+    }
     if (env->GetStringLength(pkg) > KSU_MAX_PACKAGE_NAME) {
         return nullptr;
     }
 
     p_key_t key = {};
     auto cpkg = env->GetStringUTFChars(pkg, nullptr);
-    strcpy(key, cpkg);
+    if (cpkg == nullptr) {
+        return nullptr;
+    }
+    strncpy(key, cpkg, KSU_MAX_PACKAGE_NAME - 1);
+    key[KSU_MAX_PACKAGE_NAME - 1] = '\0';
     env->ReleaseStringUTFChars(pkg, cpkg);
 
     app_profile profile = {};
     profile.version = KSU_APP_PROFILE_VER;
 
-    strcpy(profile.key, key);
+    strncpy(profile.key, key, KSU_MAX_PACKAGE_NAME - 1);
+    profile.key[KSU_MAX_PACKAGE_NAME - 1] = '\0';
     profile.current_uid = uid;
 
     bool useDefaultProfile = get_app_profile(&profile) != 0;
@@ -261,6 +269,9 @@ Java_com_ztros_ztrosu_Natives_getAppProfile(JNIEnv *env, jobject, jstring pkg, j
 extern "C"
 JNIEXPORT jboolean JNICALL
 Java_com_ztros_ztrosu_Natives_setAppProfile(JNIEnv *env, jobject clazz, jobject profile) {
+    if (profile == nullptr) {
+        return false;
+    }
     auto cls = env->FindClass("com/ztros/ztrosu/Natives$Profile");
 
     auto keyField = env->GetFieldID(cls, "name", "Ljava/lang/String;");
@@ -289,8 +300,12 @@ Java_com_ztros_ztrosu_Natives_setAppProfile(JNIEnv *env, jobject clazz, jobject 
     }
 
     auto cpkg = env->GetStringUTFChars((jstring) key, nullptr);
+    if (cpkg == nullptr) {
+        return false;
+    }
     p_key_t p_key = {};
-    strcpy(p_key, cpkg);
+    strncpy(p_key, cpkg, KSU_MAX_PACKAGE_NAME - 1);
+    p_key[KSU_MAX_PACKAGE_NAME - 1] = '\0';
     env->ReleaseStringUTFChars((jstring) key, cpkg);
 
     auto currentUid = env->GetIntField(profile, currentUidField);
@@ -306,7 +321,8 @@ Java_com_ztros_ztrosu_Natives_setAppProfile(JNIEnv *env, jobject clazz, jobject 
     app_profile p = {};
     p.version = KSU_APP_PROFILE_VER;
 
-    strcpy(p.key, p_key);
+    strncpy(p.key, p_key, KSU_MAX_PACKAGE_NAME - 1);
+    p.key[KSU_MAX_PACKAGE_NAME - 1] = '\0';
     p.allow_su = allowSu;
     p.current_uid = currentUid;
 
@@ -315,8 +331,11 @@ Java_com_ztros_ztrosu_Natives_setAppProfile(JNIEnv *env, jobject clazz, jobject 
         auto templateName = env->GetObjectField(profile, rootTemplateField);
         if (templateName) {
             auto ctemplateName = env->GetStringUTFChars((jstring) templateName, nullptr);
-            strcpy(p.rp_config.template_name, ctemplateName);
-            env->ReleaseStringUTFChars((jstring) templateName, ctemplateName);
+            if (ctemplateName) {
+                strncpy(p.rp_config.template_name, ctemplateName, KSU_MAX_PACKAGE_NAME - 1);
+                p.rp_config.template_name[KSU_MAX_PACKAGE_NAME - 1] = '\0';
+                env->ReleaseStringUTFChars((jstring) templateName, ctemplateName);
+            }
         }
 
         p.rp_config.profile.uid = uid;
@@ -333,8 +352,11 @@ Java_com_ztros_ztrosu_Natives_setAppProfile(JNIEnv *env, jobject clazz, jobject 
         p.rp_config.profile.capabilities.effective = capListToBits(env, capabilities);
 
         auto cdomain = env->GetStringUTFChars((jstring) domain, nullptr);
-        strcpy(p.rp_config.profile.selinux_domain, cdomain);
-        env->ReleaseStringUTFChars((jstring) domain, cdomain);
+        if (cdomain) {
+            strncpy(p.rp_config.profile.selinux_domain, cdomain, KSU_SELINUX_DOMAIN - 1);
+            p.rp_config.profile.selinux_domain[KSU_SELINUX_DOMAIN - 1] = '\0';
+            env->ReleaseStringUTFChars((jstring) domain, cdomain);
+        }
 
         p.rp_config.profile.namespaces = env->GetIntField(profile, namespacesField);
     } else {

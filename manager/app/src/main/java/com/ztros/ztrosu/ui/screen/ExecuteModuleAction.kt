@@ -75,8 +75,8 @@ fun ExecuteModuleActionScreen(navigator: DestinationsNavigator, moduleId: String
                 moduleId = moduleId,
                 onStdout = {
                     tempText = "$it\n"
-                    if (tempText.startsWith("[H[J")) { // clear command
-                        text = tempText.substring(6)
+                    if (tempText.startsWith("[H[J")) { // clear command
+                        text = if (tempText.length > 6) tempText.substring(6) else ""
                     } else {
                         text += tempText
                     }

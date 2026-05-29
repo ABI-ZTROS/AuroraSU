@@ -7,6 +7,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -212,7 +213,7 @@ class MainActivity : ComponentActivity() {
             elevationState.value = prefsInit.getFloat("card_elevation", 1f)
             vibrationEnabledState.value = prefsInit.getBoolean("vibration_enabled", false)
             densityScaleState.value = prefsInit.getFloat("density_scale", 1f)
-        } catch (_: Exception) {}
+        } catch (e: Exception) { Log.w("MainActivity", "Error: ${e.message}") }
 
         // Set window background for theme presets
         try {
@@ -230,7 +231,7 @@ class MainActivity : ComponentActivity() {
                 else -> android.graphics.Color.TRANSPARENT
             }
             window.decorView.setBackgroundColor(bgColor)
-        } catch (_: Exception) {}
+        } catch (e: Exception) { Log.w("MainActivity", "Error: ${e.message}") }
 
         val isManager = Natives.isManager
         if (isManager) install()
@@ -310,12 +311,12 @@ class MainActivity : ComponentActivity() {
 
                 LaunchedEffect(zipUri, navigateLoc, moduleActionId) {
                     if (moduleActionId != null) {
-                        navigator.navigate(ExecuteModuleActionScreenDestination(moduleActionId!!))
+                        navigator.navigate(ExecuteModuleActionScreenDestination(moduleActionId))
                         moduleActionId = null
                     }
 
                     if (!zipUri.isNullOrEmpty()) {
-                        val uris = zipUri!!
+                        val uris = zipUri
                         val component = intent?.component?.className
                         val flashIt = when {
                             component?.endsWith("FlashAnyKernel") == true -> FlashIt.FlashAnyKernel(uris.first())
@@ -493,7 +494,7 @@ class MainActivity : ComponentActivity() {
         try {
             val prefs = getSharedPreferences("settings", MODE_PRIVATE)
             prefs.edit().putBoolean("enable_amoled", enabled).apply()
-        } catch (_: Exception) {}
+        } catch (e: Exception) { Log.w("MainActivity", "Error: ${e.message}") }
         amoledModeState.value = enabled
     }
 

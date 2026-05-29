@@ -28,7 +28,7 @@ class KsuService : RootService() {
 
     private fun getUserIds(): List<Int> {
         val result = ArrayList<Int>()
-        val um = getSystemService(USER_SERVICE) as UserManager
+        val um = getSystemService(USER_SERVICE) as? UserManager ?: return emptyList()
         val userProfiles = um.userProfiles
         for (userProfile: UserHandle in userProfiles) {
             result.add(userProfile.hashCode())

@@ -182,10 +182,10 @@ fun FlashScreen(
         if (!confirmed || pendingFlashIt == null || text.isNotEmpty() || hasFlashed) return@LaunchedEffect
         hasFlashed = true
         withContext(Dispatchers.IO) {
-            flashIt(pendingFlashIt!!, onStdout = {
+            flashIt(pendingFlashIt ?: return@withContext, onStdout = {
                 tempText = "$it\n"
-                if (tempText.startsWith("[H[J")) { // clear command
-                    text = tempText.substring(6)
+                if (tempText.startsWith("[H[J")) { // clear command
+                    text = if (tempText.length > 6) tempText.substring(6) else ""
                 } else {
                     text += tempText
                 }

@@ -166,10 +166,16 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
                                 val locale = when {
                                     dir.contains("-r") -> {
                                         val parts = dir.split("-r")
-                                        java.util.Locale.Builder()
-                                            .setLanguage(parts[0])
-                                            .setRegion(parts[1])
-                                            .build()
+                                        if (parts.size >= 2) {
+                                            java.util.Locale.Builder()
+                                                .setLanguage(parts[0])
+                                                .setRegion(parts[1])
+                                                .build()
+                                        } else {
+                                            java.util.Locale.Builder()
+                                                .setLanguage(dir)
+                                                .build()
+                                        }
                                     }
                                     else -> java.util.Locale.Builder()
                                         .setLanguage(dir)

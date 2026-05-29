@@ -235,8 +235,8 @@ private fun parseCpuMask(mask: String, maxCores: Int): Int {
         for (part in parts) {
             if (part.contains("-")) {
                 val range = part.split("-")
-                val start = range[0].toIntOrNull() ?: 0
-                val end = range[1].toIntOrNull() ?: 0
+                val start = range.getOrElse(0) { "0" }.toIntOrNull() ?: 0
+                val end = range.getOrElse(1) { "0" }.toIntOrNull() ?: 0
                 count += (end - start + 1)
             } else {
                 count += 1

@@ -258,10 +258,10 @@ fun flashModule(
     onStderr: (String) -> Unit
 ): FlashResult {
     val resolver = ksuApp.contentResolver
-    with(resolver.openInputStream(uri)) {
+    resolver.openInputStream(uri)?.use { input ->
         val file = File(ksuApp.cacheDir, "module.zip")
         file.outputStream().use { output ->
-            this?.copyTo(output)
+            input.copyTo(output)
         }
         // Read mount mode: install_mount_mode takes priority over default_mount_mode
         val prefs = ksuApp.getSharedPreferences("settings", Context.MODE_PRIVATE)
@@ -276,6 +276,7 @@ fun flashModule(
 
         return FlashResult(result)
     }
+    return FlashResult(Shell.Result(1, listOf("Failed to open input stream for $uri"), false))
 }
 
 fun runModuleAction(
@@ -374,7 +375,8 @@ fun flashAnyKernelZip(
                     sh.newJob().add("rm -rf '$destDir' '$destZip'").exec()
                 }
             }
-        } catch (_: Throwable) {
+        } catch (e: Throwable) {
+            Log.e(TAG, "Error cleaning up flash temp files: ${e.message}")
         }
     }
 }
@@ -503,7 +505,7 @@ fun getZygiskImplementation(property: String): String {
         val propFile = SuFile.open("$modulesPath/$moduleId/module.prop")
         if (!propFile.isFile) continue
 
-        val prop = Properties().apply { load(propFile.newInputStream()) }
+        val prop = Properties().apply { propFile.newInputStream().use { load(it) } }
         prop.getProperty(property)?.let {
             Log.i(TAG, "Zygisk $property: $it")
             return it

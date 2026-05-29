@@ -57,7 +57,7 @@ class SuperUserViewModel : ViewModel() {
         val packageName: String
             get() = packageInfo.packageName
         val uid: Int
-            get() = packageInfo.applicationInfo!!.uid
+            get() = packageInfo.applicationInfo?.uid ?: 0
 
         val allowSu: Boolean
             get() = profile != null && profile.allowSu
@@ -75,7 +75,7 @@ class SuperUserViewModel : ViewModel() {
             }
     }
 
-    private val prefs = ksuApp.getSharedPreferences("settings", Context.MODE_PRIVATE)!!
+    private val prefs = ksuApp.getSharedPreferences("settings", Context.MODE_PRIVATE)
 
     var search by mutableStateOf("")
     var showSystemApps by mutableStateOf(prefs.getBoolean("show_system_apps", false))
@@ -114,7 +114,7 @@ class SuperUserViewModel : ViewModel() {
                 .toPinyinString(it.label).contains(search, true)
         }.filter {
             it.uid == 2000 // Always show shell
-                    || showSystemApps || it.packageInfo.applicationInfo!!.flags.and(ApplicationInfo.FLAG_SYSTEM) == 0
+                    || showSystemApps || it.packageInfo.applicationInfo?.flags?.and(ApplicationInfo.FLAG_SYSTEM) != true
         }
     }
 
@@ -176,7 +176,7 @@ class SuperUserViewModel : ViewModel() {
 
                 apps = packages.map {
                     val appInfo = it.applicationInfo
-                    val uid = appInfo!!.uid
+                    val uid = appInfo?.uid ?: continue
                     val profile = Natives.getAppProfile(it.packageName, uid)
                     AppInfo(
                         label = appInfo.loadLabel(pm).toString(),

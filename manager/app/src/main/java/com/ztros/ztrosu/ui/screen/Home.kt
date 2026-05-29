@@ -1401,7 +1401,7 @@ private fun SystemInfoCard() {
             val securityPatch = ShellUtils.fastCmd("getprop ro.build.version.security_patch").trim().ifEmpty { "Unknown" }
             val cpuArch = ShellUtils.fastCmd("getprop ro.product.cpu.abi").trim().ifEmpty { Build.SUPPORTED_ABIS.firstOrNull() ?: "Unknown" }
 
-            val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+            val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager ?: return null
             val memInfo = ActivityManager.MemoryInfo()
             activityManager.getMemoryInfo(memInfo)
             val totalMemory = formatSizeZtrsu(memInfo.totalMem)
@@ -1441,7 +1441,7 @@ private fun SystemInfoCard() {
             Spacer(Modifier.height(16.dp))
 
             if (systemInfo != null) {
-                val info = systemInfo!!
+                val info = systemInfo ?: return
                 @Composable
                 fun InfoRow(label: String, value: String, icon: ImageVector) {
                     Row(
@@ -1894,9 +1894,9 @@ fun handleDynamicShortcuts(context: Context, moduleConfigs: List <Pair<ModuleVie
 }
 
 fun getManagerVersion(context: Context): Pair<String, Long> {
-    val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)!!
+    val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0) ?: return Pair("unknown", 0L)
     val versionCode = PackageInfoCompat.getLongVersionCode(packageInfo)
-    return Pair(packageInfo.versionName!!, versionCode)
+    return Pair(packageInfo.versionName ?: "unknown", versionCode)
 }
 
 @Preview

@@ -5,7 +5,10 @@
 #include "linux/version.h"
 #include "linux/cred.h"
 
-// TODO: rename to "ksu"
+// NOTE: ZTRSU_DOMAIN is intentionally set to "su" for compatibility with existing
+// SELinux policies. Changing to "ksu" would require updating all sepolicy rules
+// in rules.c, ksud.c exec contexts, and allowlist.c default domain, and would
+// break compatibility with existing installations. Do not change without a migration plan.
 #define ZTRSU_DOMAIN "su"
 #define ZTRSU_FILE "ksu_file"
 #define ZTRSU_CONTEXT "u:r:" ZTRSU_DOMAIN ":s0"

@@ -57,7 +57,7 @@ fun KernelVersion.isKernel510(): Boolean {
 
 fun parseKernelVersion(version: String): KernelVersion {
     val find = "(\\d+)\\.(\\d+)\\.(\\d+)".toRegex().find(version)
-    return if (find != null) {
+    return if (find != null && find.groupValues.size >= 4) {
         KernelVersion(find.groupValues[1].toInt(), find.groupValues[2].toInt(), find.groupValues[3].toInt())
     } else {
         KernelVersion(-1, -1, -1)

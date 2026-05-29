@@ -9,6 +9,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
@@ -29,6 +30,7 @@ import com.ztros.ztrosu.profile.Capabilities
 import com.ztros.ztrosu.profile.Groups
 import com.ztros.ztrosu.ui.component.rememberCustomDialog
 import com.ztros.ztrosu.ui.util.isSepolicyValid
+import android.widget.Toast
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -224,11 +226,12 @@ fun GroupsPanel(selected: List<Groups>, closeSelection: (selection: Set<Groups>)
                 .padding(16.dp)
         ) {
             Text(stringResource(R.string.profile_groups))
+            val context = LocalContext.current
             FlowRow {
                 selected.forEach { group ->
                     AssistChip(
                         modifier = Modifier.padding(3.dp),
-                        onClick = { /*TODO*/ },
+                        onClick = { Toast.makeText(context, "Group selection coming soon", Toast.LENGTH_SHORT).show() },
                         label = { Text(group.display) })
                 }
             }
@@ -295,11 +298,12 @@ fun CapsPanel(
                 .padding(16.dp)
         ) {
             Text(stringResource(R.string.profile_capabilities))
+            val capContext = LocalContext.current
             FlowRow {
                 selected.forEach { group ->
                     AssistChip(
                         modifier = Modifier.padding(3.dp),
-                        onClick = { /*TODO*/ },
+                        onClick = { Toast.makeText(capContext, "Capability selection coming soon", Toast.LENGTH_SHORT).show() },
                         label = { Text(group.display) })
                 }
             }
