@@ -764,7 +764,7 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.Start),
+                horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.Start),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 val activity = LocalContext.current as? MainActivity
@@ -800,7 +800,7 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
                     ) {
                         Icon(Icons.Filled.LightMode, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
                     }
-                    Spacer(Modifier.height(4.dp))
+                    Spacer(Modifier.height(6.dp))
                     Text(stringResource(R.string.dark_mode_light), style = MaterialTheme.typography.labelMedium)
                 }
                 
@@ -835,7 +835,7 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
                     ) {
                         Icon(Icons.Filled.DarkMode, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
                     }
-                    Spacer(Modifier.height(4.dp))
+                    Spacer(Modifier.height(6.dp))
                     Text(stringResource(R.string.dark_mode_dark), style = MaterialTheme.typography.labelMedium)
                 }
                 
@@ -870,7 +870,7 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
                     ) {
                         Icon(Icons.Filled.Contrast, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
                     }
-                    Spacer(Modifier.height(4.dp))
+                    Spacer(Modifier.height(6.dp))
                     Text(stringResource(R.string.dark_mode_system), style = MaterialTheme.typography.labelMedium)
                 }
             }
