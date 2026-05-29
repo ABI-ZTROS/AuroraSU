@@ -114,7 +114,7 @@ class SuperUserViewModel : ViewModel() {
                 .toPinyinString(it.label).contains(search, true)
         }.filter {
             it.uid == 2000 // Always show shell
-                    || showSystemApps || it.packageInfo.applicationInfo?.flags?.and(ApplicationInfo.FLAG_SYSTEM) != true
+                    || showSystemApps || it.packageInfo.applicationInfo?.flags?.and(ApplicationInfo.FLAG_SYSTEM) == 0
         }
     }
 
@@ -174,9 +174,9 @@ class SuperUserViewModel : ViewModel() {
 
                 val packages = allPackages.list
 
-                apps = packages.map {
+                apps = packages.mapNotNull {
                     val appInfo = it.applicationInfo
-                    val uid = appInfo?.uid ?: continue
+                    val uid = appInfo?.uid ?: return@mapNotNull null
                     val profile = Natives.getAppProfile(it.packageName, uid)
                     AppInfo(
                         label = appInfo.loadLabel(pm).toString(),

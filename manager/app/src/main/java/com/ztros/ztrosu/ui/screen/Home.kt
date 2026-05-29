@@ -1401,7 +1401,10 @@ private fun SystemInfoCard() {
             val securityPatch = ShellUtils.fastCmd("getprop ro.build.version.security_patch").trim().ifEmpty { "Unknown" }
             val cpuArch = ShellUtils.fastCmd("getprop ro.product.cpu.abi").trim().ifEmpty { Build.SUPPORTED_ABIS.firstOrNull() ?: "Unknown" }
 
-            val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager ?: return null
+            val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
+            if (activityManager == null) {
+                return@withContext null
+            }
             val memInfo = ActivityManager.MemoryInfo()
             activityManager.getMemoryInfo(memInfo)
             val totalMemory = formatSizeZtrsu(memInfo.totalMem)
@@ -1440,8 +1443,8 @@ private fun SystemInfoCard() {
 
             Spacer(Modifier.height(16.dp))
 
-            if (systemInfo != null) {
-                val info = systemInfo ?: return
+            val info = systemInfo
+            if (info != null) {
                 @Composable
                 fun InfoRow(label: String, value: String, icon: ImageVector) {
                     Row(

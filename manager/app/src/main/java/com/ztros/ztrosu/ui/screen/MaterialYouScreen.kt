@@ -146,10 +146,12 @@ fun MaterialYouScreen(navigator: DestinationsNavigator) {
     val cornerRadiusTitle = stringResource(R.string.material_you_shape)
     val previewText = stringResource(R.string.material_you_rounded)
 
-    // Theme presets list
-    val themePresets = remember {
+    // Theme presets list - use remembered colors outside remember block
+    val defaultSurface = MaterialTheme.colorScheme.surface
+    val defaultPrimary = MaterialTheme.colorScheme.primary
+    val themePresets = remember(defaultSurface, defaultPrimary) {
         listOf(
-            ThemePreset("default", "默认", MaterialTheme.colorScheme.surface, MaterialTheme.colorScheme.primary, Icons.Filled.Palette, MaterialTheme.colorScheme.primary),
+            ThemePreset("default", "默认", defaultSurface, defaultPrimary, Icons.Filled.Palette, defaultPrimary),
             ThemePreset("ice_abyss", "冰渊", Color(0xFFE6F4FA), Color(0xFF00B4D8), Icons.Filled.AcUnit, Color(0xFF00B4D8)),
             ThemePreset("blood_moon", "血月", Color(0xFFFFF8F5), Color(0xFFC44536), Icons.Filled.Whatshot, Color(0xFFC44536)),
             ThemePreset("heavenly_palace", "天宫", Color(0xFFFFFAF0), Color(0xFFD4A017), Icons.Filled.Star, Color(0xFFD4A017)),

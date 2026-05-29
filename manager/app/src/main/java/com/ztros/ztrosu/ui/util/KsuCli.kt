@@ -276,7 +276,12 @@ fun flashModule(
 
         return FlashResult(result)
     }
-    return FlashResult(Shell.Result(1, listOf("Failed to open input stream for $uri"), false))
+    return FlashResult(object : Shell.Result() {
+        override fun getExitCode() = 1
+        override fun getOut() = listOf("Failed to open input stream for $uri")
+        override fun getErr() = emptyList<String>()
+        override fun isSuccess() = false
+    })
 }
 
 fun runModuleAction(

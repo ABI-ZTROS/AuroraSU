@@ -310,13 +310,14 @@ class MainActivity : ComponentActivity() {
                 val lastValidNavbarSelection = remember { mutableStateOf(0) }
 
                 LaunchedEffect(zipUri, navigateLoc, moduleActionId) {
-                    if (moduleActionId != null) {
-                        navigator.navigate(ExecuteModuleActionScreenDestination(moduleActionId))
+                    val actionId = moduleActionId
+                    if (actionId != null) {
+                        navigator.navigate(ExecuteModuleActionScreenDestination(actionId))
                         moduleActionId = null
                     }
 
-                    if (!zipUri.isNullOrEmpty()) {
-                        val uris = zipUri
+                    val uris = zipUri
+                    if (!uris.isNullOrEmpty()) {
                         val component = intent?.component?.className
                         val flashIt = when {
                             component?.endsWith("FlashAnyKernel") == true -> FlashIt.FlashAnyKernel(uris.first())
