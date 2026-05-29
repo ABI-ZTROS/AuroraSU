@@ -1,12 +1,11 @@
 kernelsu-objs := ksu.o
 kernelsu-objs += allowlist.o
 kernelsu-objs += app_profile.o
-kernelsu-objs += apk_sign.o
-kernelsu-objs += sucompat.o
+kernelsu-objs += manager/apk_sign.o
+kernelsu-objs += manager/throne_tracker.o
 kernelsu-objs += sucompat.o
 # syscall_hook_manager replaced by upstream-style `hook/lsm_hook.c` unity include in ksu.c
 kernelsu-objs += tp_marker.o
-kernelsu-objs += throne_tracker.o
 kernelsu-objs += pkg_observer.o
 kernelsu-objs += setuid_hook.o
 kernelsu-objs += kernel_umount.o
@@ -17,6 +16,11 @@ kernelsu-objs += ksud.o
 kernelsu-objs += seccomp_cache.o
 kernelsu-objs += file_wrapper.o
 kernelsu-objs += extras.o
+
+# New subsystems
+kernelsu-objs += kpm/kpm.o
+kernelsu-objs += feature/uts_spoof.o
+kernelsu-objs += sulog/fd.o
 
 kernelsu-objs += selinux/selinux.o
 kernelsu-objs += selinux/sepolicy.o

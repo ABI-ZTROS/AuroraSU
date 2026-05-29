@@ -18,6 +18,7 @@
 #include <linux/poll.h>
 #include <linux/sched.h>
 #include <linux/uaccess.h>
+#include <linux/version.h>
 #include "event.h"
 #include "../klog.h"
 
@@ -207,7 +208,11 @@ int ksu_handle_get_sulog_fd(void __user *arg)
     /* Copy fd to userspace */
     if (put_user(fd, user_fd)) {
         /* Failed to copy to userspace, close the fd */
-        sys_close(fd);
+        #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
+            ksys_close(fd);
+        #else
+            sys_close(fd);
+        #endif
         return -EFAULT;
     }
 
