@@ -76,7 +76,7 @@ private fun ThemePresetButton(
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
-            .width(72.dp)
+            .widthIn(min = 56.dp, max = 80.dp)
             .clip(RoundedCornerShape(12.dp))
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
@@ -211,8 +211,7 @@ fun MaterialYouScreen(navigator: DestinationsNavigator) {
                     FlowRow(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                        maxItemsInEachRow = 4
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         themePresets.forEach { preset ->
                             ThemePresetButton(
@@ -249,7 +248,7 @@ fun MaterialYouScreen(navigator: DestinationsNavigator) {
                         title = dynamicColorTitle,
                         summary = dynamicColorSummary,
                         checked = dynamicColorEnabled,
-                        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)),
+                        modifier = Modifier.fillMaxWidth(),
                         colors = ListItemDefaults.colors(containerColor = Color.Transparent)
                     ) {
                         prefs.edit { putBoolean("material_you_dynamic_color", it) }
@@ -442,7 +441,7 @@ fun MaterialYouScreen(navigator: DestinationsNavigator) {
                 }
             }
 
-            Spacer(Modifier)
+            Spacer(Modifier.height(16.dp))
         }
     }
 }
