@@ -6,11 +6,11 @@ use anyhow::Result;
 use crate::utils;
 
 /// Check if the device supports A/B partitions by reading ro.build.ab_update
-pub fn is_ab_device() -> Result<bool> {
+pub fn is_ab_device() -> Result<()> {
     let val = utils::getprop("ro.build.ab_update").unwrap_or_default();
     let is_ab = val.trim().to_lowercase() == "true";
     println!("{}", if is_ab { "true" } else { "false" });
-    Ok(is_ab)
+    Ok(())
 }
 
 /// Get the current slot suffix (e.g. "_a" or "_b"), optionally toggled for OTA
@@ -26,11 +26,11 @@ pub fn get_slot_suffix(ota: bool) -> Result<String> {
     }
 
     println!("{slot_suffix}");
-    Ok(slot_suffix)
+    Ok(())
 }
 
 /// Detect the default boot partition (boot or init_boot) based on kernel release and device
-pub fn get_default_partition() -> Result<String> {
+pub fn get_default_partition() -> Result<()> {
     let slot_suffix = get_slot_suffix_raw(false);
 
     // Check kernel release to determine if init_boot is relevant
@@ -43,11 +43,10 @@ pub fn get_default_partition() -> Result<String> {
     // If init_boot partition exists and kernel doesn't require skipping it, prefer init_boot
     if !skip_init_boot && Path::new(&init_boot_path).exists() {
         println!("init_boot");
-        Ok("init_boot".to_string())
     } else {
         println!("boot");
-        Ok("boot".to_string())
     }
+    Ok(())
 }
 
 /// List available boot partitions (boot, init_boot, vendor_boot) for the current slot

@@ -568,8 +568,8 @@ pub fn run() -> Result<()> {
         },
 
         Commands::BootInfo { command } => match command {
-            BootInfo::IsAbDevice => boot_info::is_ab_device().map(|_| ()),
-            BootInfo::DefaultPartition => boot_info::get_default_partition().map(|_| ()),
+            BootInfo::IsAbDevice => boot_info::is_ab_device(),
+            BootInfo::DefaultPartition => boot_info::get_default_partition(),
             BootInfo::SlotSuffix { ota } => boot_info::get_slot_suffix(ota),
             BootInfo::AvailablePartitions => {
                 boot_info::list_available_partitions().map(|_| ())
