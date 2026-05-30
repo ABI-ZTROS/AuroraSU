@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use android_logger::Config;
 use log::{LevelFilter, info};
 
-use crate::{apk_sign, assets, debug, defs, init_event, ksucalls, module, module_config, utils};
+use crate::{apk_sign, assets, boot_info, debug, defs, init_event, ksucalls, module, module_config, utils};
 
 /// ZTR_OS SU userspace cli
 #[derive(Parser, Debug)]
@@ -56,6 +56,12 @@ enum Commands {
         command: Feature,
     },
 
+    /// Show boot information
+    BootInfo {
+        #[command(subcommand)]
+        command: BootInfo,
+    },
+
     /// For developers
     Debug {
         #[command(subcommand)]
@@ -78,6 +84,25 @@ enum Commands {
     /// Emulate soft reboot (ksud; zygote)
     #[command(name = "soft-reboot")]
     SoftReboot,
+}
+
+#[derive(clap::Subcommand, Debug)]
+enum BootInfo {
+    /// Check if device is A/B capable
+    IsAbDevice,
+
+    /// Show auto-selected boot partition name
+    DefaultPartition,
+
+    /// List available partitions for current slot
+    AvailablePartitions,
+
+    /// Show slot suffix for current or OTA toggled slot
+    SlotSuffix {
+        /// Toggle to another slot
+        #[arg(short, long, default_value_t = false)]
+        ota: bool,
+    },
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -540,6 +565,15 @@ pub fn run() -> Result<()> {
             Feature::Check { id } => crate::feature::check_feature(&id),
             Feature::Load => crate::feature::load_config_and_apply(),
             Feature::Save => crate::feature::save_config(),
+        },
+
+        Commands::BootInfo { command } => match command {
+            BootInfo::IsAbDevice => boot_info::is_ab_device(),
+            BootInfo::DefaultPartition => boot_info::get_default_partition(),
+            BootInfo::SlotSuffix { ota } => boot_info::get_slot_suffix(ota),
+            BootInfo::AvailablePartitions => {
+                boot_info::list_available_partitions().map(|_| ())
+            }
         },
 
         Commands::Debug { command } => match command {

@@ -122,10 +122,46 @@ void ksu_avc_spoof_late_init()
 	}
 }
 
+// SELinux hide: controls whether su-related SELinux markers are hidden.
+// When enabled, su domain AVC denials are suppressed to avoid detection.
+// Default: enabled.
+static bool ksu_selinux_hide_enabled = true;
+
+static int selinux_hide_feature_get(u64 *value)
+{
+	*value = ksu_selinux_hide_enabled ? 1 : 0;
+	return 0;
+}
+
+static int selinux_hide_feature_set(u64 value)
+{
+	bool enable = value != 0;
+
+	if (enable == ksu_selinux_hide_enabled) {
+		pr_info("selinux_hide: no need to change\n");
+		return 0;
+	}
+
+	ksu_selinux_hide_enabled = enable;
+	pr_info("selinux_hide: set to %d\n", enable);
+
+	return 0;
+}
+
+static const struct ksu_feature_handler selinux_hide_handler = {
+	.feature_id = KSU_FEATURE_SELINUX_HIDE,
+	.name = "selinux_hide",
+	.get_handler = selinux_hide_feature_get,
+	.set_handler = selinux_hide_feature_set,
+};
+
 void ksu_avc_spoof_init()
 {
 	if (ksu_register_feature_handler(&avc_spoof_handler)) {
 		pr_err("Failed to register avc spoof feature handler\n");
+	}
+	if (ksu_register_feature_handler(&selinux_hide_handler)) {
+		pr_err("Failed to register selinux_hide feature handler\n");
 	}
 }
 
@@ -135,4 +171,5 @@ void ksu_avc_spoof_exit()
 		ksu_avc_spoof_disable();
 	}
 	ksu_unregister_feature_handler(KSU_FEATURE_AVC_SPOOF);
+	ksu_unregister_feature_handler(KSU_FEATURE_SELINUX_HIDE);
 }

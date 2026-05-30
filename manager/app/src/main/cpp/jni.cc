@@ -436,6 +436,8 @@ Java_com_ztros_ztrosu_Natives_getUserName(JNIEnv *env, jobject thiz, jint uid) {
 // ============================================================================
 // ZTR_OS SU: SuperKey support via sys_reboot magic2 commands
 // ============================================================================
+// ZTRSU_SUPERKEY_SET, ZTRSU_SUPERKEY_VERIFY, ZTRSU_SUPERKEY_GET_STATUS
+// Must be kept in sync with uapi/supercall.h
 #define ZTRSU_SUPERKEY_SET       10020
 #define ZTRSU_SUPERKEY_VERIFY    10021
 #define ZTRSU_SUPERKEY_GET_STATUS 10022

@@ -56,11 +56,6 @@ object Natives {
     val version: Int
         external get
 
-    // deprecated
-    // get the uid list of allowed su processes.
-    val allowList: IntArray
-        external get
-
     val isSafeMode: Boolean
         external get
 

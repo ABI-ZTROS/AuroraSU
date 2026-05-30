@@ -33,9 +33,12 @@
 
 /*
  * KPM IOCTL Commands
+ * NOTE: Command numbers 100/101 are used by KSU_IOCTL_GET_FULL_VERSION and
+ * KSU_IOCTL_HOOK_TYPE in the manager. KPM uses 102 and 200 to avoid conflicts,
+ * matching the SukiSU-Ultra/KernelPatch specification.
  */
-#define KSU_IOCTL_ENABLE_KPM    _IOW('K', 100, bool)
-#define KSU_IOCTL_KPM           _IOWR('K', 101, struct ksu_kpm_cmd)
+#define KSU_IOCTL_ENABLE_KPM    _IOW('K', 102, bool)
+#define KSU_IOCTL_KPM           _IOWR('K', 200, struct ksu_kpm_cmd)
 
 /*
  * KPM command structure for ioctl
@@ -62,8 +65,10 @@ struct ksu_kpm_info {
 
 /*
  * Version Spoofing IOCTL
+ * NOTE: Uses command number 42 to match SukiSU-Ultra specification.
+ * Command number 102 is used by KSU_IOCTL_ENABLE_KPM.
  */
-#define KSU_IOCTL_SET_SPOOF_VERSION _IOW('K', 102, struct ksu_spoof_version_cmd)
+#define KSU_IOCTL_SET_SPOOF_VERSION _IOW('K', 42, struct ksu_spoof_version_cmd)
 
 /*
  * Version spoofing command structure
@@ -75,8 +80,9 @@ struct ksu_spoof_version_cmd {
 
 /*
  * Sulog IOCTL Commands
+ * NOTE: Uses command number 20 to match SukiSU-Ultra specification.
  */
-#define KSU_IOCTL_GET_SULOG_FD  _IOR('K', 103, int)
+#define KSU_IOCTL_GET_SULOG_FD  _IOR('K', 20, int)
 
 /*
  * Sulog event types

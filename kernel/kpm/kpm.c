@@ -41,9 +41,6 @@
 #include "kpm.h"
 #include "../klog.h"
 
-#define KPM_NAME_LEN 32
-#define KPM_ARGS_LEN 1024
-
 #ifndef NO_OPTIMIZE
 #if defined(__GNUC__) && !defined(__clang__)
 #define NO_OPTIMIZE __attribute__((optimize("O0")))
@@ -55,18 +52,21 @@
 #endif
 
 /*
- * Stub functions for KPM operations
- * These are placeholders that can be replaced with actual implementations
- * or linked to KernelPatch's KPM module system
+ * KPM stub implementations
+ *
+ * KPM (Kernel Patch Module) loading requires ELF parsing, kernel memory
+ * management, symbol resolution, and architecture-specific relocation support.
+ * These stubs return -ENOSYS to clearly indicate that KPM is not supported.
+ * The manager UI should handle -ENOSYS gracefully by showing a
+ * "KPM not supported" message instead of crashing.
  */
 
 noinline NO_OPTIMIZE void sukisu_kpm_load_module_path(const char *path,
                                                       const char *args,
                                                       void *ptr, int *result)
 {
-    pr_info("kpm: Stub function called (sukisu_kpm_load_module_path). "
-            "path=%s args=%s ptr=%p\n",
-            path, args, ptr);
+    pr_warn("kpm: KPM module loading is not supported in this build. "
+            "path=%s\n", path);
 
     *result = -ENOSYS;
     __asm__ volatile("nop");
@@ -76,9 +76,8 @@ EXPORT_SYMBOL(sukisu_kpm_load_module_path);
 noinline NO_OPTIMIZE void sukisu_kpm_unload_module(const char *name, void *ptr,
                                                    int *result)
 {
-    pr_info("kpm: Stub function called (sukisu_kpm_unload_module). "
-            "name=%s ptr=%p\n",
-            name, ptr);
+    pr_warn("kpm: KPM module unloading is not supported in this build. "
+            "name=%s\n", name);
 
     *result = -ENOSYS;
     __asm__ volatile("nop");
@@ -87,32 +86,25 @@ EXPORT_SYMBOL(sukisu_kpm_unload_module);
 
 noinline NO_OPTIMIZE void sukisu_kpm_num(int *result)
 {
-    pr_info("kpm: Stub function called (sukisu_kpm_num).\n");
-
-    *result = 0; /* No modules loaded in stub */
-    __asm__ volatile("nop");
+    /* No KPM modules can be loaded in this build */
+    *result = 0;
 }
 EXPORT_SYMBOL(sukisu_kpm_num);
 
 noinline NO_OPTIMIZE void sukisu_kpm_info(const char *name, char *buf,
                                           int bufferSize, int *size)
 {
-    pr_info("kpm: Stub function called (sukisu_kpm_info). "
-            "name=%s buffer=%p\n",
-            name, buf);
+    pr_warn("kpm: KPM info query is not supported in this build. "
+            "name=%s\n", name);
 
     *size = 0;
-    __asm__ volatile("nop");
 }
 EXPORT_SYMBOL(sukisu_kpm_info);
 
 noinline NO_OPTIMIZE void sukisu_kpm_list(void *out, int bufferSize,
                                           int *result)
 {
-    pr_info("kpm: Stub function called (sukisu_kpm_list). "
-            "buffer=%p size=%d\n",
-            out, bufferSize);
-
+    /* No modules to list */
     *result = 0;
 }
 EXPORT_SYMBOL(sukisu_kpm_list);
@@ -120,9 +112,8 @@ EXPORT_SYMBOL(sukisu_kpm_list);
 noinline NO_OPTIMIZE void sukisu_kpm_control(const char *name, const char *args,
                                              long arg_len, int *result)
 {
-    pr_info("kpm: Stub function called (sukisu_kpm_control). "
-            "name=%p args=%p arg_len=%ld\n",
-            name, args, arg_len);
+    pr_warn("kpm: KPM control is not supported in this build. "
+            "name=%s\n", name);
 
     *result = -ENOSYS;
     __asm__ volatile("nop");
@@ -131,12 +122,8 @@ EXPORT_SYMBOL(sukisu_kpm_control);
 
 noinline NO_OPTIMIZE void sukisu_kpm_version(char *buf, int bufferSize)
 {
-    pr_info("kpm: Stub function called (sukisu_kpm_version). "
-            "buffer=%p\n",
-            buf);
-
     if (buf && bufferSize > 0) {
-        strscpy(buf, "AuroraSU KPM Stub v1.0", bufferSize);
+        strscpy(buf, "AuroraSU (KPM not supported)", bufferSize);
     }
 }
 EXPORT_SYMBOL(sukisu_kpm_version);

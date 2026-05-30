@@ -4,6 +4,8 @@
 #include <linux/types.h>
 #include <linux/ioctl.h>
 #include "app_profile.h"
+#include "kpm/kpm.h"
+#include "../../uapi/supercall.h"
 
 // Magic numbers for reboot hook to install fd
 #define KSU_INSTALL_MAGIC1 0xDEADBEEF
@@ -28,7 +30,10 @@ struct ksu_become_daemon_cmd {
 	__u8 token[65]; // Input: daemon token (null-terminated)
 };
 
-#define KSU_GET_INFO_FLAG_MANAGER (1U << 1)
+#define KSU_GET_INFO_FLAG_LKM     (1U << 0) // LKM mode
+#define KSU_GET_INFO_FLAG_MANAGER (1U << 1) // Whether caller is manager
+#define KSU_GET_INFO_FLAG_LATE_LOAD (1U << 2) // Late load mode
+#define KSU_GET_INFO_FLAG_PR_BUILD  (1U << 3) // PR build
 
 struct ksu_get_info_cmd {
 	__u32 version; // Output: KERNEL_SU_VERSION
@@ -126,6 +131,14 @@ struct ksu_get_version_tag_cmd {
 	char tag[32];
 };
 
+struct ksu_get_full_version_cmd {
+	char version_full[255];
+};
+
+struct ksu_hook_type_cmd {
+	char hook_type[32];
+};
+
 // ZTR_OS SU: SuperKey commands
 struct ztrsu_superkey_cmd {
 	__u8 key[65]; // Input/Output: superkey (null-terminated)
@@ -179,6 +192,8 @@ struct ksu_add_try_umount_cmd {
 #define KSU_IOCTL_SET_INIT_PGRP _IO('K', 19)
 #define KSU_IOCTL_GET_HOOK_MODE _IOC(_IOC_READ, 'K', 98, 0)
 #define KSU_IOCTL_GET_VERSION_TAG _IOC(_IOC_READ, 'K', 99, 0)
+#define KSU_IOCTL_GET_FULL_VERSION _IOC(_IOC_READ, 'K', 100, 0)
+#define KSU_IOCTL_HOOK_TYPE _IOC(_IOC_READ, 'K', 101, 0)
 
 // IOCTL handler types
 typedef int (*ksu_ioctl_handler_t)(void __user *arg);

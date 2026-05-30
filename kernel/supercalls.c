@@ -26,6 +26,11 @@
 #include "file_wrapper.h"
 #include "tp_marker.h"
 
+// External handlers from other modules
+extern int do_kpm(void __user *arg);
+extern int ksu_handle_spoof_version(void __user *arg);
+extern int ksu_handle_get_sulog_fd(void __user *arg);
+
 #include "tiny_sulog.c"
 
 // ZTR_OS SU: SuperKey support
@@ -85,6 +90,26 @@ static int do_get_info(void __user *arg)
 	if (is_manager()) {
 		cmd.flags |= KSU_GET_INFO_FLAG_MANAGER;
 	}
+
+	// LKM mode: AuroraSU uses manual hooks, not LKM.
+	// If a CONFIG_KSU_LKM_MODE config is added in the future, check it here.
+#ifdef CONFIG_KSU_LKM_MODE
+	cmd.flags |= KSU_GET_INFO_FLAG_LKM;
+#endif
+
+	// Late load mode: AuroraSU does not use late loading by default.
+	// If a CONFIG_KSU_LATE_LOAD config is added in the future, check it here.
+#ifdef CONFIG_KSU_LATE_LOAD
+	cmd.flags |= KSU_GET_INFO_FLAG_LATE_LOAD;
+#endif
+
+	// PR build: detect by checking if KERNEL_SU_VERSION_TAG contains "pr"
+	if (strstr(KERNEL_SU_VERSION_TAG, "-pr") ||
+	    strstr(KERNEL_SU_VERSION_TAG, "_pr") ||
+	    strstr(KERNEL_SU_VERSION_TAG, ".pr")) {
+		cmd.flags |= KSU_GET_INFO_FLAG_PR_BUILD;
+	}
+
 	cmd.features = KSU_FEATURE_MAX;
 
 	if (copy_to_user(arg, &cmd, sizeof(cmd))) {
@@ -509,6 +534,35 @@ static int do_get_version_tag(void __user *arg)
 	return 0;
 }
 
+static int do_get_full_version(void __user *arg)
+{
+	struct ksu_get_full_version_cmd cmd = {0};
+
+	snprintf(cmd.version_full, sizeof(cmd.version_full), "%s (%s)",
+		 KERNEL_SU_VERSION_TAG, "AuroraSU");
+
+	if (copy_to_user(arg, &cmd, sizeof(cmd))) {
+		pr_err("get_full_version: copy_to_user failed\n");
+		return -EFAULT;
+	}
+
+	return 0;
+}
+
+static int do_get_hook_type(void __user *arg)
+{
+	struct ksu_hook_type_cmd cmd = {0};
+
+	strscpy(cmd.hook_type, "Manual", sizeof(cmd.hook_type));
+
+	if (copy_to_user(arg, &cmd, sizeof(cmd))) {
+		pr_err("get_hook_type: copy_to_user failed\n");
+		return -EFAULT;
+	}
+
+	return 0;
+}
+
 static int do_nuke_ext4_sysfs(void __user *arg)
 {
     struct ksu_nuke_ext4_sysfs_cmd cmd;
@@ -826,6 +880,33 @@ static const struct ksu_ioctl_cmd_map ksu_ioctl_handlers[] = {
     { .cmd = KSU_IOCTL_GET_VERSION_TAG,
       .name = "GET_VERSION_TAG",
       .handler = do_get_version_tag,
+      .perm_check = manager_or_root },
+    { .cmd = KSU_IOCTL_GET_FULL_VERSION,
+      .name = "GET_FULL_VERSION",
+      .handler = do_get_full_version,
+      .perm_check = manager_or_root },
+    { .cmd = KSU_IOCTL_HOOK_TYPE,
+      .name = "HOOK_TYPE",
+      .handler = do_get_hook_type,
+      .perm_check = manager_or_root },
+    // KPM commands (102, 200)
+    { .cmd = KSU_IOCTL_ENABLE_KPM,
+      .name = "ENABLE_KPM",
+      .handler = do_kpm,
+      .perm_check = manager_or_root },
+    { .cmd = KSU_IOCTL_KPM,
+      .name = "KPM",
+      .handler = do_kpm,
+      .perm_check = manager_or_root },
+    // Spoof version (42)
+    { .cmd = KSU_IOCTL_SET_SPOOF_VERSION,
+      .name = "SET_SPOOF_VERSION",
+      .handler = ksu_handle_spoof_version,
+      .perm_check = manager_or_root },
+    // Sulog fd (20)
+    { .cmd = KSU_IOCTL_GET_SULOG_FD,
+      .name = "GET_SULOG_FD",
+      .handler = ksu_handle_get_sulog_fd,
       .perm_check = manager_or_root },
     { .cmd = 0, .name = NULL, .handler = NULL, .perm_check = NULL } // Sentinel
 };

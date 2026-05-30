@@ -28,9 +28,13 @@
 #define KPM_NAME_LEN    32
 #define KPM_ARGS_LEN    1024
 
-/* IOCTL command for KPM operations */
-#define KSU_IOCTL_ENABLE_KPM    _IOW('K', 100, bool)
-#define KSU_IOCTL_KPM           _IOWR('K', 101, struct ksu_kpm_cmd)
+/* IOCTL command for KPM operations
+ * NOTE: Command numbers 100/101 are used by KSU_IOCTL_GET_FULL_VERSION and
+ * KSU_IOCTL_HOOK_TYPE in the manager. KPM uses 102 and 200 to avoid conflicts,
+ * matching the SukiSU-Ultra/KernelPatch specification.
+ */
+#define KSU_IOCTL_ENABLE_KPM    _IOW('K', 102, bool)
+#define KSU_IOCTL_KPM           _IOWR('K', 200, struct ksu_kpm_cmd)
 
 /* KPM command structure for ioctl */
 struct ksu_kpm_cmd {
@@ -57,7 +61,7 @@ int sukisu_handle_kpm(unsigned long control_code, unsigned long arg1,
 int sukisu_is_kpm_control_code(unsigned long control_code);
 int do_kpm(void __user *arg);
 
-/* Stub function declarations for KPM operations */
+/* KPM function prototypes */
 void sukisu_kpm_load_module_path(const char *path, const char *args,
                                  void *ptr, int *result);
 void sukisu_kpm_unload_module(const char *name, void *ptr, int *result);
