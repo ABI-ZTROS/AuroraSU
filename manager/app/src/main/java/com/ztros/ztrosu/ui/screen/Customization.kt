@@ -366,8 +366,18 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
             )
 
             // === Color Theme Preset (Ice Abyss) ===
-            var selectedPreset by rememberSaveable {
+            // 使用 prefs 作为单一数据源，通过 LaunchedEffect 监听变化
+            var selectedPreset by remember {
                 mutableStateOf(prefs.getString("theme_preset", "default") ?: "default")
+            }
+
+            LaunchedEffect(Unit) {
+                val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+                    if (key == "theme_preset") {
+                        selectedPreset = prefs.getString("theme_preset", "default") ?: "default"
+                    }
+                }
+                prefs.registerOnSharedPreferenceChangeListener(listener)
             }
 
             Spacer(Modifier.height(8.dp))
@@ -399,15 +409,15 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
                     isSelected = selectedPreset == "default",
                     onClick = {
                         selectedPreset = "default"
-                        prefs.edit { putString("theme_preset", "default") }
-                        (context as? MainActivity)?.setThemePreset("default")
-                        (context as? MainActivity)?.setAccentColor(-1)
-                        (context as? MainActivity)?.setDynamicColor(false)
                         prefs.edit {
+                            putString("theme_preset", "default")
                             putLong("material_you_accent_color", -1)
                             putInt("material_you_accent_color_index", -1)
                             putBoolean("material_you_dynamic_color", false)
                         }
+                        (context as? MainActivity)?.setThemePreset("default")
+                        (context as? MainActivity)?.setAccentColor(-1)
+                        (context as? MainActivity)?.setDynamicColor(false)
                     },
                     backgroundColor = if (isDark) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surface,
                     selectedBorderColor = MaterialTheme.colorScheme.primary,
@@ -422,15 +432,15 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
                     isSelected = selectedPreset == "ice_abyss",
                     onClick = {
                         selectedPreset = "ice_abyss"
-                        prefs.edit { putString("theme_preset", "ice_abyss") }
-                        (context as? MainActivity)?.setThemePreset("ice_abyss")
-                        (context as? MainActivity)?.setAccentColor(-1)
-                        (context as? MainActivity)?.setDynamicColor(false)
                         prefs.edit {
+                            putString("theme_preset", "ice_abyss")
                             putLong("material_you_accent_color", -1)
                             putInt("material_you_accent_color_index", -1)
                             putBoolean("material_you_dynamic_color", false)
                         }
+                        (context as? MainActivity)?.setThemePreset("ice_abyss")
+                        (context as? MainActivity)?.setAccentColor(-1)
+                        (context as? MainActivity)?.setDynamicColor(false)
                     },
                     backgroundColor = if (isDark) Color(0xFF1A2A33) else Color(0xFFE6F4FA),
                     selectedBorderColor = Color(0xFF00B4D8),
@@ -445,15 +455,15 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
                     isSelected = selectedPreset == "blood_moon",
                     onClick = {
                         selectedPreset = "blood_moon"
-                        prefs.edit { putString("theme_preset", "blood_moon") }
-                        (context as? MainActivity)?.setThemePreset("blood_moon")
-                        (context as? MainActivity)?.setAccentColor(-1)
-                        (context as? MainActivity)?.setDynamicColor(false)
                         prefs.edit {
+                            putString("theme_preset", "blood_moon")
                             putLong("material_you_accent_color", -1)
                             putInt("material_you_accent_color_index", -1)
                             putBoolean("material_you_dynamic_color", false)
                         }
+                        (context as? MainActivity)?.setThemePreset("blood_moon")
+                        (context as? MainActivity)?.setAccentColor(-1)
+                        (context as? MainActivity)?.setDynamicColor(false)
                     },
                     backgroundColor = if (isDark) Color(0xFF331A1A) else Color(0xFFFFF8F5),
                     selectedBorderColor = Color(0xFFC44536),
@@ -468,15 +478,15 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
                     isSelected = selectedPreset == "heavenly_palace",
                     onClick = {
                         selectedPreset = "heavenly_palace"
-                        prefs.edit { putString("theme_preset", "heavenly_palace") }
-                        (context as? MainActivity)?.setThemePreset("heavenly_palace")
-                        (context as? MainActivity)?.setAccentColor(-1)
-                        (context as? MainActivity)?.setDynamicColor(false)
                         prefs.edit {
+                            putString("theme_preset", "heavenly_palace")
                             putLong("material_you_accent_color", -1)
                             putInt("material_you_accent_color_index", -1)
                             putBoolean("material_you_dynamic_color", false)
                         }
+                        (context as? MainActivity)?.setThemePreset("heavenly_palace")
+                        (context as? MainActivity)?.setAccentColor(-1)
+                        (context as? MainActivity)?.setDynamicColor(false)
                     },
                     backgroundColor = if (isDark) Color(0xFF332B1A) else Color(0xFFFFFAF0),
                     selectedBorderColor = Color(0xFFD4A017),
@@ -491,15 +501,15 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
                     isSelected = selectedPreset == "azure_sky",
                     onClick = {
                         selectedPreset = "azure_sky"
-                        prefs.edit { putString("theme_preset", "azure_sky") }
-                        (context as? MainActivity)?.setThemePreset("azure_sky")
-                        (context as? MainActivity)?.setAccentColor(-1)
-                        (context as? MainActivity)?.setDynamicColor(false)
                         prefs.edit {
+                            putString("theme_preset", "azure_sky")
                             putLong("material_you_accent_color", -1)
                             putInt("material_you_accent_color_index", -1)
                             putBoolean("material_you_dynamic_color", false)
                         }
+                        (context as? MainActivity)?.setThemePreset("azure_sky")
+                        (context as? MainActivity)?.setAccentColor(-1)
+                        (context as? MainActivity)?.setDynamicColor(false)
                     },
                     backgroundColor = if (isDark) Color(0xFF1A2633) else Color(0xFFF5FAFF),
                     selectedBorderColor = Color(0xFF4A90D9),
@@ -514,15 +524,15 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
                     isSelected = selectedPreset == "fresh_lemon",
                     onClick = {
                         selectedPreset = "fresh_lemon"
-                        prefs.edit { putString("theme_preset", "fresh_lemon") }
-                        (context as? MainActivity)?.setThemePreset("fresh_lemon")
-                        (context as? MainActivity)?.setAccentColor(-1)
-                        (context as? MainActivity)?.setDynamicColor(false)
                         prefs.edit {
+                            putString("theme_preset", "fresh_lemon")
                             putLong("material_you_accent_color", -1)
                             putInt("material_you_accent_color_index", -1)
                             putBoolean("material_you_dynamic_color", false)
                         }
+                        (context as? MainActivity)?.setThemePreset("fresh_lemon")
+                        (context as? MainActivity)?.setAccentColor(-1)
+                        (context as? MainActivity)?.setDynamicColor(false)
                     },
                     backgroundColor = if (isDark) Color(0xFF2B2B1A) else Color(0xFFFFFEF8),
                     selectedBorderColor = Color(0xFFA8D830),
@@ -537,15 +547,15 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
                     isSelected = selectedPreset == "dragon_fruit",
                     onClick = {
                         selectedPreset = "dragon_fruit"
-                        prefs.edit { putString("theme_preset", "dragon_fruit") }
-                        (context as? MainActivity)?.setThemePreset("dragon_fruit")
-                        (context as? MainActivity)?.setAccentColor(-1)
-                        (context as? MainActivity)?.setDynamicColor(false)
                         prefs.edit {
+                            putString("theme_preset", "dragon_fruit")
                             putLong("material_you_accent_color", -1)
                             putInt("material_you_accent_color_index", -1)
                             putBoolean("material_you_dynamic_color", false)
                         }
+                        (context as? MainActivity)?.setThemePreset("dragon_fruit")
+                        (context as? MainActivity)?.setAccentColor(-1)
+                        (context as? MainActivity)?.setDynamicColor(false)
                     },
                     backgroundColor = if (isDark) Color(0xFF331A2B) else Color(0xFFFFFAF8),
                     selectedBorderColor = Color(0xFFE070B0),
@@ -560,15 +570,15 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
                     isSelected = selectedPreset == "divine_yellow",
                     onClick = {
                         selectedPreset = "divine_yellow"
-                        prefs.edit { putString("theme_preset", "divine_yellow") }
-                        (context as? MainActivity)?.setThemePreset("divine_yellow")
-                        (context as? MainActivity)?.setAccentColor(-1)
-                        (context as? MainActivity)?.setDynamicColor(false)
                         prefs.edit {
+                            putString("theme_preset", "divine_yellow")
                             putLong("material_you_accent_color", -1)
                             putInt("material_you_accent_color_index", -1)
                             putBoolean("material_you_dynamic_color", false)
                         }
+                        (context as? MainActivity)?.setThemePreset("divine_yellow")
+                        (context as? MainActivity)?.setAccentColor(-1)
+                        (context as? MainActivity)?.setDynamicColor(false)
                     },
                     backgroundColor = if (isDark) Color(0xFF332B1A) else Color(0xFFFFFEF8),
                     selectedBorderColor = Color(0xFFE8B820),
@@ -890,21 +900,22 @@ private fun ThemePresetCard(
     iconTint: Color,
     label: String,
 ) {
+    // 使用 tween 替代 spring 动画，避免快速切换时闪烁
     val borderWidth by animateFloatAsState(
         targetValue = if (isSelected) 2.5f else 1f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+        animationSpec = tween(200),
         label = "${name}BorderWidth"
     )
     val borderColor by animateColorAsState(
         targetValue = if (isSelected) selectedBorderColor else Color.Gray.copy(alpha = 0.3f),
-        animationSpec = tween(300),
+        animationSpec = tween(200),
         label = "${name}BorderColor"
     )
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
-            .fillMaxWidth()
+            .width(IntrinsicSize.Min)
             .clickable { onClick() }
     ) {
         Box(

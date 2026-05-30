@@ -27,6 +27,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.edit
@@ -76,7 +77,7 @@ private fun ThemePresetButton(
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
-            .widthIn(min = 56.dp, max = 80.dp)
+            .width(72.dp)
             .clip(RoundedCornerShape(12.dp))
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
@@ -85,7 +86,7 @@ private fun ThemePresetButton(
     ) {
         Box(
             modifier = Modifier
-                .size(52.dp)
+                .size(56.dp)
                 .clip(RoundedCornerShape(12.dp))
                 .background(preset.backgroundColor)
                 .then(
@@ -109,7 +110,8 @@ private fun ThemePresetButton(
             text = preset.name,
             style = MaterialTheme.typography.labelSmall,
             maxLines = 1,
-            textAlign = TextAlign.Center
+            textAlign = TextAlign.Center,
+            overflow = TextOverflow.Ellipsis
         )
     }
 }
@@ -135,7 +137,9 @@ fun MaterialYouScreen(navigator: DestinationsNavigator) {
     val navBarPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + if (isNavBarHidden) 0.dp else 112.dp
 
     val context = LocalContext.current
-    val prefs = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
+    val prefs = remember(context) {
+        context.getSharedPreferences("settings", Context.MODE_PRIVATE)
+    }
 
     // Pre-resolve all string resources
     val dynamicColorTitle = stringResource(R.string.material_you_dynamic)
@@ -175,15 +179,14 @@ fun MaterialYouScreen(navigator: DestinationsNavigator) {
         Column(
             modifier = Modifier
                 .padding(innerPadding)
-                .let { modifier ->
+                .nestedScroll(scrollBehavior.nestedScrollConnection)
+                .then(
                     if (bottomBarScrollConnection != null) {
-                        modifier
-                            .nestedScroll(bottomBarScrollConnection)
-                            .nestedScroll(scrollBehavior.nestedScrollConnection)
+                        Modifier.nestedScroll(bottomBarScrollConnection)
                     } else {
-                        modifier.nestedScroll(scrollBehavior.nestedScrollConnection)
+                        Modifier
                     }
-                }
+                )
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -211,7 +214,8 @@ fun MaterialYouScreen(navigator: DestinationsNavigator) {
                     FlowRow(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        maxItemsInEachRow = 4
                     ) {
                         themePresets.forEach { preset ->
                             ThemePresetButton(

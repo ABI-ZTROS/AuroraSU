@@ -20,6 +20,26 @@ import androidx.compose.ui.unit.dp
 // LocalCardElevation for providing card elevation to child components
 val LocalCardElevation = compositionLocalOf { 1.dp }
 
+// =============================================================================
+// 主题颜色定义说明
+// =============================================================================
+// 本文件包含多个主题预设的颜色方案（ColorScheme）。
+// 这些颜色值是主题设计的一部分，用于定义应用的整体视觉风格。
+//
+// 颜色命名规范：
+// - 基础颜色（如PRIMARY, PRIMARY_DARK等）定义在 Color.kt 中
+// - 主题特定颜色以主题名前缀命名（如 ICE_ABYSS_*, BLOOD_MOON_*）
+// - 硬编码的 ARGB 值用于定义各主题的独特色调
+//
+// 如需添加新主题：
+// 1. 在 Color.kt 中添加主题基础颜色常量
+// 2. 在本文件中参照现有主题创建 lightColorScheme/darkColorScheme
+// 3. 在 KernelSUTheme 函数中添加主题选择逻辑
+// =============================================================================
+
+// =============================================================================
+// 默认主题 (Default Theme)
+// =============================================================================
 private val DarkColorScheme = darkColorScheme(
     primary = PRIMARY,
     secondary = PRIMARY_DARK,
@@ -48,6 +68,9 @@ private val LightColorScheme = lightColorScheme(
     outlineVariant = Color(0xFFB0B0B0),
 )
 
+// =============================================================================
+// 冰渊主题 (Ice Abyss Theme)
+// =============================================================================
 private val IceAbyssDarkColorScheme = darkColorScheme(
     primary = Color(0xFF00B4D8),
     onPrimary = Color(0xFF003444),
@@ -102,7 +125,9 @@ private val IceAbyssColorScheme = lightColorScheme(
     surfaceContainerHighest = Color(0xCCE6F4FA),
 )
 
-// === 血月 (Blood Moon) Theme ===
+// =============================================================================
+// 血月主题 (Blood Moon Theme)
+// =============================================================================
 private val BloodMoonLightColorScheme = lightColorScheme(
     primary = Color(0xFFC44536),        // 柔和砖红，不刺眼
     onPrimary = Color(0xFFFFFFFF),
@@ -135,7 +160,9 @@ private val BloodMoonDarkColorScheme = darkColorScheme(
     surfaceContainerHighest = Color(0xFF3A1A1A),
 )
 
-// === 天宫 (Heavenly Palace) Theme ===
+// =============================================================================
+// 天宫主题 (Heavenly Palace Theme)
+// =============================================================================
 private val HeavenlyPalaceLightColorScheme = lightColorScheme(
     primary = Color(0xFFD4A017),         // 柔金
     onPrimary = Color(0xFFFFFFFF),
@@ -168,7 +195,9 @@ private val HeavenlyPalaceDarkColorScheme = darkColorScheme(
     surfaceContainerHighest = Color(0xFF222230),
 )
 
-// === 苍穹 (Azure Sky) Theme ===
+// =============================================================================
+// 苍穹主题 (Azure Sky Theme)
+// =============================================================================
 private val AzureSkyLightColorScheme = lightColorScheme(
     primary = Color(0xFF4A90D9),         // 柔蓝
     onPrimary = Color(0xFFFFFFFF),
@@ -201,7 +230,9 @@ private val AzureSkyDarkColorScheme = darkColorScheme(
     surfaceContainerHighest = Color(0xFF222848),
 )
 
-// === 清新柠檬 (Fresh Lemon) Theme ===
+// =============================================================================
+// 清新柠檬主题 (Fresh Lemon Theme)
+// =============================================================================
 private val FreshLemonLightColorScheme = lightColorScheme(
     primary = Color(0xFFA8D830),         // 柔柠檬绿
     onPrimary = Color(0xFFFFFFFF),
@@ -234,7 +265,9 @@ private val FreshLemonDarkColorScheme = darkColorScheme(
     surfaceContainerHighest = Color(0xFF22281A),
 )
 
-// === 火龙果 (Dragon Fruit) Theme ===
+// =============================================================================
+// 火龙果主题 (Dragon Fruit Theme)
+// =============================================================================
 private val DragonFruitLightColorScheme = lightColorScheme(
     primary = Color(0xFFE070B0),         // 柔粉紫
     onPrimary = Color(0xFFFFFFFF),
@@ -267,7 +300,9 @@ private val DragonFruitDarkColorScheme = darkColorScheme(
     surfaceContainerHighest = Color(0xFF2A2028),
 )
 
-// === 神域黄 (Divine Yellow) Theme ===
+// =============================================================================
+// 神域黄主题 (Divine Yellow Theme)
+// =============================================================================
 private val DivineYellowLightColorScheme = lightColorScheme(
     primary = Color(0xFFE8B820),         // 柔黄
     onPrimary = Color(0xFFFFFFFF),
