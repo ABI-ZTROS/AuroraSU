@@ -748,13 +748,14 @@ private fun TopBar(
                 }
             ) {
                 Icon(
-                    painter = painterResource(R.drawable.cannabis_24),
+                    painter = painterResource(R.drawable.ztros_shield),
                     contentDescription = null,
                     modifier = Modifier
                         .padding(end = 8.dp)
                         .graphicsLayer {
                             rotationZ = rotation
-                        }
+                        },
+                    tint = MaterialTheme.colorScheme.primary
                 )
                 Text(
                     text = stringResource(R.string.app_name),
@@ -1033,7 +1034,7 @@ private fun InfoCard(autoExpand: Boolean = false) {
                 modifier = Modifier.padding(bottom = 16.dp)
             ) {
                 Icon(
-                    painter = painterResource(R.drawable.cannabis_24),
+                    painter = painterResource(R.drawable.ztros_shield),
                     contentDescription = null,
                     modifier = Modifier.padding(end = 8.dp),
                     tint = MaterialTheme.colorScheme.primary
