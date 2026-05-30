@@ -14,7 +14,7 @@ pub fn is_ab_device() -> Result<()> {
 }
 
 /// Get the current slot suffix (e.g. "_a" or "_b"), optionally toggled for OTA
-pub fn get_slot_suffix(ota: bool) -> Result<String> {
+pub fn get_slot_suffix(ota: bool) -> Result<()> {
     let mut slot_suffix = utils::getprop("ro.boot.slot_suffix").unwrap_or_default();
 
     if !slot_suffix.is_empty() && ota {
