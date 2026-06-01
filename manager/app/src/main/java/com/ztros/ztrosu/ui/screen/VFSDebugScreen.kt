@@ -18,6 +18,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -78,19 +79,6 @@ fun VFSDebugScreen(navigator: DestinationsNavigator) {
     var localDefaultAction by remember { mutableStateOf(policy.defaultAction) }
     var localRulesText by remember { mutableStateOf(policy.rules.joinToString("\n")) }
 
-    LaunchedEffect(Unit) {
-        refreshData()
-    }
-
-    LaunchedEffect(autoRefresh) {
-        if (autoRefresh) {
-            while (isActive) {
-                refreshData(silent = true)
-                delay(1000L)
-            }
-        }
-    }
-
     suspend fun refreshData(silent: Boolean = false) = withContext(Dispatchers.IO) {
         if (!silent) isRefreshing = true
         try {
@@ -114,6 +102,19 @@ fun VFSDebugScreen(navigator: DestinationsNavigator) {
             }
         } finally {
             if (!silent) isRefreshing = false
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        refreshData()
+    }
+
+    LaunchedEffect(autoRefresh) {
+        if (autoRefresh) {
+            while (isActive) {
+                refreshData(silent = true)
+                delay(1000L)
+            }
         }
     }
 
@@ -173,7 +174,7 @@ fun VFSDebugScreen(navigator: DestinationsNavigator) {
             content = "Are you sure you want to clear all statistics?"
         )
         
-        if (confirmed) {
+        if (confirmed == com.ztros.ztrosu.ui.component.ConfirmResult.Confirmed) {
             loadingDialog.show()
             try {
                 val success = VFSDebugUtil.resetStats()
@@ -221,19 +222,19 @@ fun VFSDebugScreen(navigator: DestinationsNavigator) {
         },
         contentWindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
     ) { innerPadding ->
+        val bottomBarScrollState = LocalScrollState.current
+        val bottomBarScrollConnection = bottomBarScrollState?.let {
+            rememberScrollConnection(
+                isScrollingDown = it.isScrollingDown,
+                scrollOffset = it.scrollOffset,
+                previousScrollOffset = it.previousScrollOffset,
+                threshold = 30f
+            )
+        }
         Column(
             modifier = Modifier
                 .padding(innerPadding)
-                .let { modifier ->
-                    val bottomBarScrollState = LocalScrollState.current
-                    val bottomBarScrollConnection = bottomBarScrollState?.let {
-                        rememberScrollConnection(
-                            isScrollingDown = it.isScrollingDown,
-                            scrollOffset = it.scrollOffset,
-                            previousScrollOffset = it.previousScrollOffset,
-                            threshold = 30f
-                        )
-                    }
+                .let<Modifier, Modifier> { modifier ->
                     if (bottomBarScrollConnection != null) {
                         modifier
                             .nestedScroll(bottomBarScrollConnection)
