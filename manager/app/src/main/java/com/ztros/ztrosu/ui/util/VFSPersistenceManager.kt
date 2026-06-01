@@ -183,6 +183,22 @@ object VFSPersistenceManager {
     }
 
     /**
+     * Save raw hook targets JSON string (from template system)
+     */
+    suspend fun saveHookTargetsRaw(jsonString: String): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val file = SuFile.open(VFS_HOOKS_FILE)
+            file.writeText(jsonString)
+            lastSaveTime = System.currentTimeMillis()
+            triggerAutoSave("hook_targets")
+            true
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to save hook targets raw", e)
+            false
+        }
+    }
+
+    /**
      * Add a hook target
      */
     suspend fun addHookTarget(target: VFSHookTarget): Boolean = withContext(Dispatchers.IO) {
@@ -251,6 +267,22 @@ object VFSPersistenceManager {
             true
         } catch (e: Exception) {
             Log.e(TAG, "Failed to save rules", e)
+            false
+        }
+    }
+
+    /**
+     * Save raw rules JSON string (from template system)
+     */
+    suspend fun saveRulesRaw(jsonString: String): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val file = SuFile.open(VFS_RULES_FILE)
+            file.writeText(jsonString)
+            lastSaveTime = System.currentTimeMillis()
+            triggerAutoSave("rules")
+            true
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to save rules raw", e)
             false
         }
     }

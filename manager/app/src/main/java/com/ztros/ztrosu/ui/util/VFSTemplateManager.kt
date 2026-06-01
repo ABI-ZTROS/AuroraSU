@@ -14,7 +14,7 @@ private const val TAG = "VFSTemplateManager"
 /**
  * VFS Hook Target Configuration
  */
-data class VFSHookTarget(
+data class TemplateHookTarget(
     val id: String = UUID.randomUUID().toString(),
     val path: String,                    // Target path pattern
     val operations: List<String>,        // Operations to hook: open, read, write, close
@@ -32,8 +32,8 @@ data class VFSHookTarget(
     }
 
     companion object {
-        fun fromJSON(json: JSONObject): VFSHookTarget {
-            return VFSHookTarget(
+        fun fromJSON(json: JSONObject): TemplateHookTarget {
+            return TemplateHookTarget(
                 id = json.optString("id", UUID.randomUUID().toString()),
                 path = json.getString("path"),
                 operations = json.optJSONArray("operations")?.let { arr ->
@@ -49,7 +49,7 @@ data class VFSHookTarget(
 /**
  * VFS Access Rule
  */
-data class VFSRule(
+data class TemplateRule(
     val id: String = UUID.randomUUID().toString(),
     val action: String,                  // allow or deny
     val pathPattern: String,             // Path pattern (supports wildcards)
@@ -73,8 +73,8 @@ data class VFSRule(
     }
 
     companion object {
-        fun fromJSON(json: JSONObject): VFSRule {
-            return VFSRule(
+        fun fromJSON(json: JSONObject): TemplateRule {
+            return TemplateRule(
                 id = json.optString("id", UUID.randomUUID().toString()),
                 action = json.getString("action"),
                 pathPattern = json.getString("pathPattern"),
@@ -122,8 +122,8 @@ data class VFSTemplate(
     val id: String,                      // Template ID
     val name: String,                    // Template name
     val description: String,             // Template description
-    val hookTargets: List<VFSHookTarget>,// Hook target list
-    val rules: List<VFSRule>,            // Rule list
+    val hookTargets: List<TemplateHookTarget>,// Hook target list
+    val rules: List<TemplateRule>,            // Rule list
     val policySettings: VFSPolicySettings,// Policy settings
     val createdAt: Long,                 // Creation timestamp
     val isBuiltIn: Boolean               // Whether it's a built-in template
@@ -148,10 +148,10 @@ data class VFSTemplate(
                 name = json.getString("name"),
                 description = json.optString("description", ""),
                 hookTargets = json.optJSONArray("hookTargets")?.let { arr ->
-                    (0 until arr.length()).map { VFSHookTarget.fromJSON(arr.getJSONObject(it)) }
+                    (0 until arr.length()).map { TemplateHookTarget.fromJSON(arr.getJSONObject(it)) }
                 } ?: emptyList(),
                 rules = json.optJSONArray("rules")?.let { arr ->
-                    (0 until arr.length()).map { VFSRule.fromJSON(arr.getJSONObject(it)) }
+                    (0 until arr.length()).map { TemplateRule.fromJSON(arr.getJSONObject(it)) }
                 } ?: emptyList(),
                 policySettings = json.optJSONObject("policySettings")?.let {
                     VFSPolicySettings.fromJSON(it)
@@ -179,7 +179,7 @@ object VFSTemplateManager {
             name = "Developer Mode",
             description = "Monitor all VFS operations with detailed logging for debugging and development",
             hookTargets = listOf(
-                VFSHookTarget(
+                TemplateHookTarget(
                     path = "/",
                     operations = listOf("open", "read", "write", "close"),
                     enabled = true,
@@ -187,7 +187,7 @@ object VFSTemplateManager {
                 )
             ),
             rules = listOf(
-                VFSRule(
+                TemplateRule(
                     action = "allow",
                     pathPattern = "*",
                     mode = "rw",
@@ -209,19 +209,19 @@ object VFSTemplateManager {
             name = "Privacy Protection",
             description = "Protect sensitive user data paths from unauthorized access",
             hookTargets = listOf(
-                VFSHookTarget(
+                TemplateHookTarget(
                     path = "/data/data/*",
                     operations = listOf("open", "read", "write"),
                     enabled = true,
                     priority = 90
                 ),
-                VFSHookTarget(
+                TemplateHookTarget(
                     path = "/sdcard/*",
                     operations = listOf("read", "write"),
                     enabled = true,
                     priority = 80
                 ),
-                VFSHookTarget(
+                TemplateHookTarget(
                     path = "/data/media/*",
                     operations = listOf("read", "write"),
                     enabled = true,
@@ -229,31 +229,31 @@ object VFSTemplateManager {
                 )
             ),
             rules = listOf(
-                VFSRule(
+                TemplateRule(
                     action = "deny",
                     pathPattern = "/data/data/*/databases/*",
                     mode = "rw",
                     priority = 100
                 ),
-                VFSRule(
+                TemplateRule(
                     action = "deny",
                     pathPattern = "/data/data/*/shared_prefs/*",
                     mode = "rw",
                     priority = 90
                 ),
-                VFSRule(
+                TemplateRule(
                     action = "deny",
                     pathPattern = "/data/data/*/files/*",
                     mode = "rw",
                     priority = 80
                 ),
-                VFSRule(
+                TemplateRule(
                     action = "allow",
                     pathPattern = "/sdcard/DCIM/*",
                     mode = "r",
                     priority = 50
                 ),
-                VFSRule(
+                TemplateRule(
                     action = "allow",
                     pathPattern = "*",
                     mode = "r",
@@ -275,13 +275,13 @@ object VFSTemplateManager {
             name = "App Isolation",
             description = "Prevent applications from accessing other apps' private data directories",
             hookTargets = listOf(
-                VFSHookTarget(
+                TemplateHookTarget(
                     path = "/data/data/*",
                     operations = listOf("open", "read", "write"),
                     enabled = true,
                     priority = 100
                 ),
-                VFSHookTarget(
+                TemplateHookTarget(
                     path = "/data/user/*",
                     operations = listOf("open", "read", "write"),
                     enabled = true,
@@ -289,25 +289,25 @@ object VFSTemplateManager {
                 )
             ),
             rules = listOf(
-                VFSRule(
+                TemplateRule(
                     action = "deny",
                     pathPattern = "/data/data/*",
                     mode = "rw",
                     priority = 100
                 ),
-                VFSRule(
+                TemplateRule(
                     action = "deny",
                     pathPattern = "/data/user/*",
                     mode = "rw",
                     priority = 90
                 ),
-                VFSRule(
+                TemplateRule(
                     action = "allow",
                     pathPattern = "/system/*",
                     mode = "r",
                     priority = 10
                 ),
-                VFSRule(
+                TemplateRule(
                     action = "allow",
                     pathPattern = "*",
                     mode = "r",
@@ -329,25 +329,25 @@ object VFSTemplateManager {
             name = "System Protection",
             description = "Protect system partitions from unauthorized modifications",
             hookTargets = listOf(
-                VFSHookTarget(
+                TemplateHookTarget(
                     path = "/system/*",
                     operations = listOf("write"),
                     enabled = true,
                     priority = 100
                 ),
-                VFSHookTarget(
+                TemplateHookTarget(
                     path = "/vendor/*",
                     operations = listOf("write"),
                     enabled = true,
                     priority = 90
                 ),
-                VFSHookTarget(
+                TemplateHookTarget(
                     path = "/product/*",
                     operations = listOf("write"),
                     enabled = true,
                     priority = 80
                 ),
-                VFSHookTarget(
+                TemplateHookTarget(
                     path = "/system_ext/*",
                     operations = listOf("write"),
                     enabled = true,
@@ -355,37 +355,37 @@ object VFSTemplateManager {
                 )
             ),
             rules = listOf(
-                VFSRule(
+                TemplateRule(
                     action = "deny",
                     pathPattern = "/system/*",
                     mode = "w",
                     priority = 100
                 ),
-                VFSRule(
+                TemplateRule(
                     action = "deny",
                     pathPattern = "/vendor/*",
                     mode = "w",
                     priority = 90
                 ),
-                VFSRule(
+                TemplateRule(
                     action = "deny",
                     pathPattern = "/product/*",
                     mode = "w",
                     priority = 80
                 ),
-                VFSRule(
+                TemplateRule(
                     action = "deny",
                     pathPattern = "/system_ext/*",
                     mode = "w",
                     priority = 70
                 ),
-                VFSRule(
+                TemplateRule(
                     action = "deny",
                     pathPattern = "/boot*",
                     mode = "rw",
                     priority = 60
                 ),
-                VFSRule(
+                TemplateRule(
                     action = "allow",
                     pathPattern = "*",
                     mode = "rw",
@@ -468,8 +468,8 @@ object VFSTemplateManager {
     suspend fun createTemplate(
         name: String,
         description: String,
-        hookTargets: List<VFSHookTarget> = emptyList(),
-        rules: List<VFSRule> = emptyList(),
+        hookTargets: List<TemplateHookTarget> = emptyList(),
+        rules: List<TemplateRule> = emptyList(),
         policySettings: VFSPolicySettings = VFSPolicySettings()
     ): VFSTemplate? = withContext(Dispatchers.IO) {
         try {
@@ -507,11 +507,14 @@ object VFSTemplateManager {
         }
 
         try {
-            // Save hook targets
-            VFSPersistenceManager.saveHookTargets(template.hookTargets)
+            // Convert template hook targets to persistence format
+            // TemplateHookTarget uses path/operations, persistence uses simple JSON
+            val hookTargetsJson = JSONArray(template.hookTargets.map { it.toJSON() })
+            VFSPersistenceManager.saveHookTargetsRaw(hookTargetsJson.toString())
 
-            // Save rules
-            VFSPersistenceManager.saveRules(template.rules)
+            // Convert template rules to persistence format
+            val rulesJson = JSONArray(template.rules.map { it.toJSON() })
+            VFSPersistenceManager.saveRulesRaw(rulesJson.toString())
 
             // Save policy settings
             VFSPersistenceManager.savePolicySettings(template.policySettings)
@@ -829,7 +832,7 @@ object VFSTemplateManager {
 data class VFSTemplateUpdate(
     val name: String? = null,
     val description: String? = null,
-    val hookTargets: List<VFSHookTarget>? = null,
-    val rules: List<VFSRule>? = null,
+    val hookTargets: List<TemplateHookTarget>? = null,
+    val rules: List<TemplateRule>? = null,
     val policySettings: VFSPolicySettings? = null
 )
