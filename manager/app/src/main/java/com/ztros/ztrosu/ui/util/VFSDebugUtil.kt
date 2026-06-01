@@ -9,8 +9,13 @@ import kotlinx.coroutines.withContext
 import java.io.File
 
 private const val TAG = "VFSDebugUtil"
+
+// Kernel sysfs paths
 private const val VFS_SYSFS_PATH = "/sys/kernel/ztrosu/vfs"
 private const val VFS_DEBUGFS_PATH = "/sys/kernel/debug/ztrosu/vfs"
+
+// Userspace fallback paths
+private const val VFS_USERSPACE_PATH = "/data/adb/ksu/vfs_monitor"
 
 data class VFSStats(
     val openCount: Long = 0,
@@ -28,28 +33,85 @@ data class VFSPolicy(
     val rules: List<String> = emptyList()
 )
 
+enum class VFSBackend {
+    KERNEL_SYSFS,    // Native kernel implementation
+    KERNEL_DEBUGFS,  // Debugfs fallback
+    USERSPACE,       // Userspace daemon implementation
+    MOCK             // Mock data (fallback)
+}
+
 object VFSDebugUtil {
 
-    private var useMockData: Boolean? = null
+    private var backend: VFSBackend? = null
+    private var useMockData: Boolean = false
 
-    private fun isModuleAvailable(): Boolean {
-        if (useMockData != null) {
-            return !useMockData!!
+    /**
+     * Detect which backend is available
+     */
+    fun detectBackend(): VFSBackend {
+        if (backend != null) {
+            return backend!!
         }
-        return runCatching {
-            val sysfsExists = SuFile.open(VFS_SYSFS_PATH).exists()
-            val debugfsExists = SuFile.open(VFS_DEBUGFS_PATH).exists()
-            useMockData = !(sysfsExists || debugfsExists)
-            !useMockData!!
-        }.getOrDefault(false).also {
-            useMockData = !it
+
+        // Check kernel sysfs
+        if (SuFile.open(VFS_SYSFS_PATH).exists()) {
+            backend = VFSBackend.KERNEL_SYSFS
+            useMockData = false
+            Log.i(TAG, "Using kernel sysfs backend")
+            return backend!!
         }
+
+        // Check kernel debugfs
+        if (SuFile.open(VFS_DEBUGFS_PATH).exists()) {
+            backend = VFSBackend.KERNEL_DEBUGFS
+            useMockData = false
+            Log.i(TAG, "Using kernel debugfs backend")
+            return backend!!
+        }
+
+        // Check userspace implementation
+        if (SuFile.open(VFS_USERSPACE_PATH).exists()) {
+            backend = VFSBackend.USERSPACE
+            useMockData = false
+            Log.i(TAG, "Using userspace backend")
+            return backend!!
+        }
+
+        // Fallback to mock data
+        backend = VFSBackend.MOCK
+        useMockData = true
+        Log.w(TAG, "No VFS backend available, using mock data")
+        return backend!!
     }
 
-    private fun readSysfsFile(path: String): String {
-        if (!isModuleAvailable()) {
-            return ""
+    /**
+     * Check if any backend is available (not mock)
+     */
+    fun isAvailable(): Boolean {
+        return detectBackend() != VFSBackend.MOCK
+    }
+
+    /**
+     * Initialize userspace backend if needed
+     */
+    suspend fun initUserspaceBackend(): Boolean = withContext(Dispatchers.IO) {
+        if (detectBackend() != VFSBackend.MOCK) {
+            return@withContext true // Already have a backend
         }
+
+        // Try to start userspace daemon
+        val result = Shell.cmd("${VFS_USERSPACE_PATH}/ksud vfs-monitor start").exec()
+        if (result.isSuccess) {
+            // Re-detect backend
+            backend = null
+            val newBackend = detectBackend()
+            return@withContext newBackend == VFSBackend.USERSPACE
+        }
+
+        return@withContext false
+    }
+
+    private fun readFile(path: String): String {
         return runCatching {
             val file = SuFile.open(path)
             if (file.exists() && file.canRead()) {
@@ -60,10 +122,7 @@ object VFSDebugUtil {
         }.getOrDefault("")
     }
 
-    private fun writeSysfsFile(path: String, content: String): Boolean {
-        if (!isModuleAvailable()) {
-            return false
-        }
+    private fun writeFile(path: String, content: String): Boolean {
         return runCatching {
             val file = SuFile.open(path)
             if (file.exists() && file.canWrite()) {
@@ -75,20 +134,27 @@ object VFSDebugUtil {
         }.getOrDefault(false)
     }
 
+    /**
+     * Get VFS statistics
+     */
     suspend fun getVFSStats(): VFSStats = withContext(Dispatchers.IO) {
-        if (!isModuleAvailable()) {
-            return@withContext getMockStats()
+        when (detectBackend()) {
+            VFSBackend.KERNEL_SYSFS -> getKernelStats("$VFS_SYSFS_PATH/stats")
+            VFSBackend.KERNEL_DEBUGFS -> getKernelStats("$VFS_DEBUGFS_PATH/stats")
+            VFSBackend.USERSPACE -> getUserspaceStats()
+            VFSBackend.MOCK -> getMockStats()
         }
+    }
 
+    private fun getKernelStats(statsPath: String): VFSStats {
         var openCount = 0L
         var readCount = 0L
         var writeCount = 0L
         var closeCount = 0L
         var deniedCount = 0L
 
-        val statsPath = "$VFS_SYSFS_PATH/stats"
-        val content = readSysfsFile(statsPath)
-        
+        val content = readFile(statsPath)
+
         content.lines().forEach { line ->
             val trimmed = line.trim()
             when {
@@ -100,7 +166,7 @@ object VFSDebugUtil {
             }
         }
 
-        VFSStats(
+        return VFSStats(
             openCount = openCount,
             readCount = readCount,
             writeCount = writeCount,
@@ -109,22 +175,54 @@ object VFSDebugUtil {
         )
     }
 
-    suspend fun getVFSPolicy(): VFSPolicy = withContext(Dispatchers.IO) {
-        if (!isModuleAvailable()) {
-            return@withContext getMockPolicy()
+    private fun getUserspaceStats(): VFSStats {
+        var openCount = 0L
+        var readCount = 0L
+        var writeCount = 0L
+        var closeCount = 0L
+        var deniedCount = 0L
+
+        val content = readFile("$VFS_USERSPACE_PATH/stats")
+
+        content.lines().forEach { line ->
+            val trimmed = line.trim()
+            when {
+                trimmed.startsWith("open:") -> openCount = trimmed.substringAfter(":").trim().toLongOrNull() ?: 0L
+                trimmed.startsWith("read:") -> readCount = trimmed.substringAfter(":").trim().toLongOrNull() ?: 0L
+                trimmed.startsWith("write:") -> writeCount = trimmed.substringAfter(":").trim().toLongOrNull() ?: 0L
+                trimmed.startsWith("close:") -> closeCount = trimmed.substringAfter(":").trim().toLongOrNull() ?: 0L
+                trimmed.startsWith("denied:") -> deniedCount = trimmed.substringAfter(":").trim().toLongOrNull() ?: 0L
+            }
         }
 
-        val enabledPath = "$VFS_SYSFS_PATH/enabled"
-        val logLevelPath = "$VFS_SYSFS_PATH/log_level"
-        val defaultActionPath = "$VFS_SYSFS_PATH/default_action"
-        val rulesPath = "$VFS_SYSFS_PATH/rules"
+        return VFSStats(
+            openCount = openCount,
+            readCount = readCount,
+            writeCount = writeCount,
+            closeCount = closeCount,
+            deniedCount = deniedCount
+        )
+    }
 
-        val enabled = readSysfsFile(enabledPath).trim() == "1"
-        val logLevel = readSysfsFile(logLevelPath).trim().toIntOrNull() ?: 0
-        val defaultAction = readSysfsFile(defaultActionPath).trim().ifEmpty { "allow" }
-        val rules = readSysfsFile(rulesPath).lines().filter { it.isNotBlank() }
+    /**
+     * Get VFS policy
+     */
+    suspend fun getVFSPolicy(): VFSPolicy = withContext(Dispatchers.IO) {
+        when (detectBackend()) {
+            VFSBackend.KERNEL_SYSFS -> getKernelPolicy(VFS_SYSFS_PATH)
+            VFSBackend.KERNEL_DEBUGFS -> getKernelPolicy(VFS_DEBUGFS_PATH)
+            VFSBackend.USERSPACE -> getUserspacePolicy()
+            VFSBackend.MOCK -> getMockPolicy()
+        }
+    }
 
-        VFSPolicy(
+    private fun getKernelPolicy(basePath: String): VFSPolicy {
+        val enabled = readFile("$basePath/enabled").trim() == "1"
+        val logLevel = readFile("$basePath/log_level").trim().toIntOrNull() ?: 0
+        val defaultAction = readFile("$basePath/default_action").trim().ifEmpty { "allow" }
+        val rules = readFile("$basePath/rules").lines().filter { it.isNotBlank() }
+
+        return VFSPolicy(
             enabled = enabled,
             logLevel = logLevel,
             defaultAction = defaultAction,
@@ -132,26 +230,80 @@ object VFSDebugUtil {
         )
     }
 
-    suspend fun setVFSPolicy(policy: VFSPolicy): Boolean = withContext(Dispatchers.IO) {
-        if (!isModuleAvailable()) {
-            return@withContext true
+    private fun getUserspacePolicy(): VFSPolicy {
+        val content = readFile("$VFS_USERSPACE_PATH/policy")
+        var enabled = false
+        var logLevel = 0
+        var defaultAction = "allow"
+        val rules = mutableListOf<String>()
+
+        content.lines().forEach { line ->
+            val trimmed = line.trim()
+            when {
+                trimmed.startsWith("enabled:") -> enabled = trimmed.substringAfter(":").trim() == "1"
+                trimmed.startsWith("log_level:") -> logLevel = trimmed.substringAfter(":").trim().toIntOrNull() ?: 0
+                trimmed.startsWith("default_action:") -> defaultAction = trimmed.substringAfter(":").trim()
+                trimmed.startsWith("rules_count:") -> { /* skip */ }
+                trimmed.contains(":") && !trimmed.startsWith("rules") -> rules.add(trimmed)
+            }
         }
 
-        val enabledPath = "$VFS_SYSFS_PATH/enabled"
-        val logLevelPath = "$VFS_SYSFS_PATH/log_level"
-        val defaultActionPath = "$VFS_SYSFS_PATH/default_action"
-        val rulesPath = "$VFS_SYSFS_PATH/rules"
-
-        var success = true
-
-        success = success && writeSysfsFile(enabledPath, if (policy.enabled) "1" else "0")
-        success = success && writeSysfsFile(logLevelPath, policy.logLevel.toString())
-        success = success && writeSysfsFile(defaultActionPath, policy.defaultAction)
-        success = success && writeSysfsFile(rulesPath, policy.rules.joinToString("\n"))
-
-        success
+        return VFSPolicy(
+            enabled = enabled,
+            logLevel = logLevel,
+            defaultAction = defaultAction,
+            rules = rules
+        )
     }
 
+    /**
+     * Set VFS policy
+     */
+    suspend fun setVFSPolicy(policy: VFSPolicy): Boolean = withContext(Dispatchers.IO) {
+        when (detectBackend()) {
+            VFSBackend.KERNEL_SYSFS -> setKernelPolicy(VFS_SYSFS_PATH, policy)
+            VFSBackend.KERNEL_DEBUGFS -> setKernelPolicy(VFS_DEBUGFS_PATH, policy)
+            VFSBackend.USERSPACE -> setUserspacePolicy(policy)
+            VFSBackend.MOCK -> true // Mock always succeeds
+        }
+    }
+
+    private fun setKernelPolicy(basePath: String, policy: VFSPolicy): Boolean {
+        var success = true
+
+        success = success && writeFile("$basePath/enabled", if (policy.enabled) "1" else "0")
+        success = success && writeFile("$basePath/log_level", policy.logLevel.toString())
+        success = success && writeFile("$basePath/default_action", policy.defaultAction)
+        success = success && writeFile("$basePath/rules", policy.rules.joinToString("\n"))
+
+        return success
+    }
+
+    private fun setUserspacePolicy(policy: VFSPolicy): Boolean {
+        // For userspace, we use ksud commands
+        var success = true
+
+        val enabledResult = Shell.cmd("${VFS_USERSPACE_PATH}/ksud vfs-monitor set-enabled ${if (policy.enabled) "1" else "0"}").exec()
+        success = success && enabledResult.isSuccess
+
+        val logLevelResult = Shell.cmd("${VFS_USERSPACE_PATH}/ksud vfs-monitor set-log-level ${policy.logLevel}").exec()
+        success = success && logLevelResult.isSuccess
+
+        val actionResult = Shell.cmd("${VFS_USERSPACE_PATH}/ksud vfs-monitor set-default-action ${policy.defaultAction}").exec()
+        success = success && actionResult.isSuccess
+
+        // Clear and re-add rules
+        Shell.cmd("${VFS_USERSPACE_PATH}/ksud vfs-monitor clear-rules").exec()
+        policy.rules.forEach { rule ->
+            Shell.cmd("${VFS_USERSPACE_PATH}/ksud vfs-monitor add-rule \"$rule\"").exec()
+        }
+
+        return success
+    }
+
+    /**
+     * Validate policy
+     */
     fun validatePolicy(policy: VFSPolicy): Pair<Boolean, String> {
         if (policy.logLevel !in 0..5) {
             return Pair(false, "日志级别必须在 0-5 之间")
@@ -171,13 +323,34 @@ object VFSDebugUtil {
         return Pair(true, "")
     }
 
+    /**
+     * Reset statistics
+     */
     suspend fun resetStats(): Boolean = withContext(Dispatchers.IO) {
-        if (!isModuleAvailable()) {
-            return@withContext true
+        when (detectBackend()) {
+            VFSBackend.KERNEL_SYSFS -> writeFile("$VFS_SYSFS_PATH/stats_reset", "1")
+            VFSBackend.KERNEL_DEBUGFS -> writeFile("$VFS_DEBUGFS_PATH/stats_reset", "1")
+            VFSBackend.USERSPACE -> {
+                val result = Shell.cmd("${VFS_USERSPACE_PATH}/ksud vfs-monitor reset-stats").exec()
+                result.isSuccess
+            }
+            VFSBackend.MOCK -> true
         }
-        writeSysfsFile("$VFS_SYSFS_PATH/stats_reset", "1")
     }
 
+    /**
+     * Force mock mode (for testing)
+     */
+    fun forceMockMode(enabled: Boolean) {
+        useMockData = enabled
+        if (enabled) {
+            backend = VFSBackend.MOCK
+        } else {
+            backend = null // Re-detect
+        }
+    }
+
+    // Mock data for fallback
     private fun getMockStats(): VFSStats {
         return VFSStats(
             openCount = 1234,
@@ -199,9 +372,5 @@ object VFSDebugUtil {
                 "deny:/system/:w"
             )
         )
-    }
-
-    fun forceMockMode(enabled: Boolean) {
-        useMockData = enabled
     }
 }
