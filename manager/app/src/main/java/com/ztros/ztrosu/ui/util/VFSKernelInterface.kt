@@ -13,8 +13,93 @@ private const val VFS_SYSFS_PATH = "/sys/kernel/ztrosu/vfs"
 /**
  * VFS Kernel Interface - 与内核模块通讯的完整接口
  * 对应文档: docs/VFS_KERNEL_MODULE_SPEC.md v2.0
+ *
+ * 通讯通道优先级: PIPE > SYSFS > USERSPACE
  */
 object VFSKernelInterface {
+
+    // ==================== 通讯通道管理 ====================
+
+    /**
+     * 通讯通道枚举 - 定义与内核通讯的优先级
+     */
+    enum class CommChannel {
+        PIPE,       // 优先：一次性pipe（安全、高效）
+        SYSFS,      // 备用：sysfs写入（兼容性好）
+        USERSPACE   // 兜底：Shell命令（最低保障）
+    }
+
+    /**
+     * 当前检测到的最佳通讯通道（缓存）
+     */
+    @Volatile
+    private var cachedChannel: CommChannel? = null
+
+    /**
+     * 自动检测最佳通讯通道
+     * 优先级: PIPE > SYSFS > USERSPACE
+     */
+    suspend fun detectBestChannel(): CommChannel = withContext(Dispatchers.IO) {
+        cachedChannel?.let { return@withContext it }
+
+        val channel = try {
+            // 1. 尝试创建pipe，如果成功则使用PIPE
+            if (VFSPipeComm.isAvailable()) {
+                Log.i(TAG, "Detected PIPE channel as best communication channel")
+                CommChannel.PIPE
+            } else if (SuFile.open(VFS_SYSFS_PATH).exists()) {
+                // 2. 如果pipe失败，使用SYSFS
+                Log.i(TAG, "Detected SYSFS channel as best communication channel")
+                CommChannel.SYSFS
+            } else {
+                // 3. 如果sysfs不可用，使用USERSPACE
+                Log.i(TAG, "Falling back to USERSPACE channel")
+                CommChannel.USERSPACE
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Error detecting best channel, falling back to SYSFS", e)
+            CommChannel.SYSFS
+        }
+
+        cachedChannel = channel
+        channel
+    }
+
+    /**
+     * 重置通道缓存，强制下次重新检测
+     */
+    fun resetChannelCache() {
+        cachedChannel = null
+    }
+
+    // ==================== 事件监听集成 ====================
+
+    /**
+     * 启动netlink事件监听
+     * @param callback 事件回调函数
+     */
+    fun startEventListening(callback: (VFSEvent) -> Unit) {
+        try {
+            VFSNetlinkListener.startListening(callback)
+            Log.i(TAG, "Started netlink event listening")
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to start netlink event listening, silently degraded", e)
+        }
+    }
+
+    /**
+     * 停止netlink事件监听
+     */
+    fun stopEventListening() {
+        try {
+            VFSNetlinkListener.stopListening()
+            Log.i(TAG, "Stopped netlink event listening")
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to stop netlink event listening", e)
+        }
+    }
+
+    // ==================== 模块版本查询 ====================
 
     /**
      * 获取模块接口版本
@@ -76,12 +161,45 @@ object VFSKernelInterface {
     /**
      * 添加Hook目标
      * 协议: add:<type>:<identifier>:<uid>:<mode>
+     * 通讯通道优先级: PIPE > SYSFS > USERSPACE
      */
     suspend fun addHookTarget(target: HookTarget): Boolean = withContext(Dispatchers.IO) {
-        val typeStr = target.type.name
-        val modeStr = target.mode.name
-        val command = "add:${typeStr}:${target.identifier}:${target.uid}:${modeStr}"
-        writeFile("$VFS_SYSFS_PATH/hook_targets", command)
+        val channel = detectBestChannel()
+        when (channel) {
+            CommChannel.PIPE -> {
+                VFSPipeComm.addHook(
+                    type = if (target.type == HookType.PID) 0 else 1,
+                    identifier = target.identifier,
+                    uid = target.uid,
+                    mode = target.mode.value
+                ).also { success ->
+                    if (!success) {
+                        Log.w(TAG, "PIPE addHook failed, falling back to SYSFS")
+                        cachedChannel = null
+                        // Fallback到SYSFS
+                        val typeStr = target.type.name
+                        val modeStr = target.mode.name
+                        val command = "add:${typeStr}:${target.identifier}:${target.uid}:${modeStr}"
+                        writeFile("$VFS_SYSFS_PATH/hook_targets", command)
+                    } else {
+                        Log.i(TAG, "Added hook target via PIPE: $target")
+                    }
+                }
+            }
+            CommChannel.SYSFS -> {
+                val typeStr = target.type.name
+                val modeStr = target.mode.name
+                val command = "add:${typeStr}:${target.identifier}:${target.uid}:${modeStr}"
+                writeFile("$VFS_SYSFS_PATH/hook_targets", command)
+            }
+            CommChannel.USERSPACE -> {
+                val typeStr = target.type.name
+                val modeStr = target.mode.name
+                val command = "add:${typeStr}:${target.identifier}:${target.uid}:${modeStr}"
+                val result = Shell.cmd("echo '$command' > $VFS_SYSFS_PATH/hook_targets").exec()
+                result.isSuccess
+            }
+        }
     }
 
     /**

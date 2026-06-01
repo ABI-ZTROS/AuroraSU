@@ -324,6 +324,39 @@ object VFSHookManager {
     // ==================== Hook Target Management ====================
 
     /**
+     * 获取可选目标列表（供UI使用）
+     * 使用VFSTargetSelector获取当前可用的PID或Package目标
+     * @param mode 目标模式（PID或PACKAGE）
+     * @return 可选目标列表
+     */
+    suspend fun getSelectableTargets(mode: TargetMode): List<SelectableTarget> = withContext(Dispatchers.IO) {
+        return@withContext try {
+            VFSTargetSelector.getSelectableTargets(mode)
+        } catch (e: Exception) {
+            Log.w(TAG, "VFSTargetSelector unavailable, using fallback", e)
+            // Fallback: 使用本地方法获取目标列表
+            when (mode) {
+                TargetMode.PID -> getRunningProcesses().map { (pid, uid, name) ->
+                    SelectableTarget(
+                        identifier = pid.toString(),
+                        displayName = name,
+                        uid = uid,
+                        type = HookType.PID
+                    )
+                }
+                TargetMode.PACKAGE -> getInstalledPackages().map { (pkgName, uid) ->
+                    SelectableTarget(
+                        identifier = pkgName,
+                        displayName = pkgName,
+                        uid = uid,
+                        type = HookType.PACKAGE
+                    )
+                }
+            }
+        }
+    }
+
+    /**
      * Get all hook targets
      */
     suspend fun getHookTargets(): List<VFSHookTarget> = withContext(Dispatchers.IO) {
@@ -639,8 +672,51 @@ object VFSHookManager {
 
     /**
      * Apply hook to kernel
+     * 通讯通道优先级: PIPE > SYSFS > USERSPACE
      */
     private fun applyHookToKernel(target: VFSHookTarget): Boolean {
+        return try {
+            // 优先使用pipe通讯，fallback到sysfs
+            val channel = runCatching {
+                kotlinx.coroutines.runBlocking {
+                    VFSKernelInterface.detectBestChannel()
+                }
+            }.getOrDefault(VFSKernelInterface.CommChannel.SYSFS)
+
+            when (channel) {
+                VFSKernelInterface.CommChannel.PIPE -> {
+                    VFSPipeComm.addHook(
+                        type = if (target.type == HookType.PID) 0 else 1,
+                        identifier = target.identifier,
+                        uid = target.uid,
+                        mode = target.mode.ordinal
+                    ).also { success ->
+                        if (success) {
+                            Log.i(TAG, "Applied hook via PIPE: ${target.identifier}")
+                        } else {
+                            Log.w(TAG, "PIPE failed, falling back to SYSFS for: ${target.identifier}")
+                            VFSKernelInterface.resetChannelCache()
+                            applyHookViaSysfs(target)
+                        }
+                    }
+                }
+                VFSKernelInterface.CommChannel.SYSFS -> {
+                    applyHookViaSysfs(target)
+                }
+                VFSKernelInterface.CommChannel.USERSPACE -> {
+                    applyHookViaUserspace(target)
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to apply hook to kernel", e)
+            false
+        }
+    }
+
+    /**
+     * Apply hook via sysfs (原有逻辑)
+     */
+    private fun applyHookViaSysfs(target: VFSHookTarget): Boolean {
         return try {
             val basePath = when {
                 SuFile.open(VFS_SYSFS_PATH).exists() -> VFS_SYSFS_PATH
@@ -657,14 +733,14 @@ object VFSHookManager {
                 // Format: add:<type>:<identifier>:<uid>:<mode>
                 val command = "add:${target.type.name}:${target.identifier}:${target.uid}:${target.mode.name}"
                 hookFile.appendText("$command\n")
-                Log.i(TAG, "Applied hook to kernel: $command")
+                Log.i(TAG, "Applied hook to kernel via SYSFS: $command")
                 true
             } else {
                 // Fallback: use userspace daemon
                 applyHookViaUserspace(target)
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to apply hook to kernel", e)
+            Log.e(TAG, "Failed to apply hook via SYSFS", e)
             false
         }
     }

@@ -352,6 +352,24 @@ object VFSDebugUtil {
         }
     }
 
+    // ==================== 实时事件流 ====================
+
+    /**
+     * 获取实时事件流
+     * 通过VFSKernelInterface委托给VFSNetlinkListener
+     * @param callback 事件回调函数
+     */
+    fun startEventStream(callback: (VFSEvent) -> Unit) {
+        VFSKernelInterface.startEventListening(callback)
+    }
+
+    /**
+     * 停止实时事件流
+     */
+    fun stopEventStream() {
+        VFSKernelInterface.stopEventListening()
+    }
+
     // Mock data for fallback
     private fun getMockStats(): VFSStats {
         return VFSStats(
