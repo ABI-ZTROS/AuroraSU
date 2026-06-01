@@ -268,13 +268,15 @@ object VFSDebugUtil {
         }
     }
 
-    private fun setKernelPolicy(basePath: String, policy: VFSPolicy): Boolean {
+    private suspend fun setKernelPolicy(basePath: String, policy: VFSPolicy): Boolean {
         var success = true
 
         success = success && writeFile("$basePath/enabled", if (policy.enabled) "1" else "0")
         success = success && writeFile("$basePath/log_level", policy.logLevel.toString())
         success = success && writeFile("$basePath/default_action", policy.defaultAction)
-        success = success && writeFile("$basePath/rules", policy.rules.joinToString("\n"))
+        
+        // 使用增强的规则写入逻辑 (支持v1/v2兼容性)
+        success = success && VFSKernelInterface.addRulesBatch(policy.rules)
 
         return success
     }
