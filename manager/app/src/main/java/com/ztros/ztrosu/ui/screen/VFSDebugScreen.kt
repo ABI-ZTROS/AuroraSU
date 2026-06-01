@@ -821,6 +821,7 @@ private fun HooksTab(
         }
     }
 
+    Box(modifier = Modifier.fillMaxSize()) {
     Column(modifier = Modifier.fillMaxSize()) {
         // Search bar
         OutlinedTextField(
@@ -912,6 +913,7 @@ private fun HooksTab(
         containerColor = MaterialTheme.colorScheme.primary
     ) {
         Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.vfs_add_hook))
+    }
     }
 
     // Add Hook Dialog
