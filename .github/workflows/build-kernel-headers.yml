@@ -1,0 +1,286 @@
+# =============================================================================
+# build-kernel-headers.yml
+# =============================================================================
+# Extract GKI kernel headers from full kernel source for module compilation.
+# This workflow can be triggered manually or called from other workflows.
+# Extracted headers are cached and uploaded as artifacts for reuse.
+#
+# Supported GKI branches:
+#   - common-android14-6.1-lts
+#   - common-android14-6.1-2025-09
+#   - common-android14-5.15-lts
+#   - common-android15-6.6-lts
+#   - common-android16-6.12-lts
+# =============================================================================
+
+name: Build GKI Kernel Headers
+
+on:
+  workflow_dispatch:
+    inputs:
+      kernel_branch:
+        description: 'GKI kernel manifest branch'
+        required: true
+        default: 'common-android14-6.1-lts'
+        type: choice
+        options:
+          - common-android12-5.10-lts
+          - common-android13-5.10-lts
+          - common-android13-5.15-lts
+          - common-android14-5.15-lts
+          - common-android14-6.1-lts
+          - common-android14-6.1-2025-09
+          - common-android15-6.6-lts
+          - common-android16-6.12-lts
+      upload_artifact:
+        description: 'Upload headers as workflow artifact'
+        required: false
+        default: true
+        type: boolean
+      cache_headers:
+        description: 'Cache extracted headers for future builds'
+        required: false
+        default: true
+        type: boolean
+  workflow_call:
+    inputs:
+      kernel_branch:
+        description: 'GKI kernel manifest branch'
+        required: true
+        type: string
+        default: 'common-android14-6.1-lts'
+      upload_artifact:
+        description: 'Upload headers as workflow artifact'
+        required: false
+        type: boolean
+        default: true
+      cache_headers:
+        description: 'Cache extracted headers for future builds'
+        required: false
+        type: boolean
+        default: true
+    outputs:
+      headers-cache-key:
+        description: 'Cache key used for the extracted headers'
+        value: ${{ jobs.extract-headers.outputs.cache-key }}
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  # ===========================================================================
+  # Extract GKI kernel headers
+  # ===========================================================================
+  extract-headers:
+    name: Extract ${{ inputs.kernel_branch || 'common-android14-6.1-lts' }} headers
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    outputs:
+      cache-key: ${{ steps.set-cache-key.outputs.key }}
+
+    env:
+      KERNEL_BRANCH: ${{ inputs.kernel_branch || 'common-android14-6.1-lts' }}
+
+    steps:
+      # -----------------------------------------------------------------------
+      # Step 1: Checkout
+      # -----------------------------------------------------------------------
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # -----------------------------------------------------------------------
+      # Step 2: Install dependencies
+      # -----------------------------------------------------------------------
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            bc \
+            bison \
+            curl \
+            flex \
+            git \
+            libelf-dev \
+            python3 \
+            rsync \
+            xz-utils
+
+      # -----------------------------------------------------------------------
+      # Step 3: Check cache first
+      # -----------------------------------------------------------------------
+      - name: Set cache key
+        id: set-cache-key
+        run: |
+          CACHE_KEY="gki-headers-${KERNEL_BRANCH}-v1"
+          echo "key=${CACHE_KEY}" >> "${GITHUB_OUTPUT}"
+
+      - name: Check headers cache
+        id: cache-headers
+        if: ${{ inputs.cache_headers || true }}
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/gki-kernel-headers
+          key: ${{ steps.set-cache-key.outputs.key }}
+          lookup-only: true
+
+      # -----------------------------------------------------------------------
+      # Step 4: Skip if cache hit
+      # -----------------------------------------------------------------------
+      - name: Headers already cached
+        if: steps.cache-headers.outputs.cache-hit == 'true'
+        run: |
+          echo "Kernel headers for ${KERNEL_BRANCH} are already cached."
+          echo "Cache hit: true" >> "${GITHUB_ENV}"
+
+      # -----------------------------------------------------------------------
+      # Step 5: Install repo tool
+      # -----------------------------------------------------------------------
+      - name: Install repo tool
+        if: steps.cache-headers.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p "${GITHUB_WORKSPACE}/bin"
+          curl -L https://storage.googleapis.com/git-repo-downloads/repo \
+            -o "${GITHUB_WORKSPACE}/bin/repo"
+          chmod +x "${GITHUB_WORKSPACE}/bin/repo"
+          echo "${GITHUB_WORKSPACE}/bin" >> "${GITHUB_PATH}"
+
+      # -----------------------------------------------------------------------
+      # Step 6: Download kernel source
+      # -----------------------------------------------------------------------
+      - name: Download kernel source
+        if: steps.cache-headers.outputs.cache-hit != 'true'
+        timeout-minutes: 60
+        run: |
+          set -euxo pipefail
+
+          mkdir -p "${GITHUB_WORKSPACE}/android-kernel"
+          cd "${GITHUB_WORKSPACE}/android-kernel"
+
+          repo init \
+            -u https://android.googlesource.com/kernel/manifest \
+            -b "${KERNEL_BRANCH}" \
+            --depth=1
+
+          repo sync \
+            -c \
+            -j"$(nproc --all)" \
+            --fail-fast \
+            --no-tags \
+            --force-sync \
+            --no-clone-bundle \
+            --optimized-fetch \
+            --prune \
+            --current-branch
+
+      # -----------------------------------------------------------------------
+      # Step 7: Extract headers
+      # -----------------------------------------------------------------------
+      - name: Extract kernel headers
+        if: steps.cache-headers.outputs.cache-hit != 'true'
+        run: |
+          set -euxo pipefail
+
+          KERNEL_SRC="${GITHUB_WORKSPACE}/android-kernel/common"
+          HEADERS_DIR="${GITHUB_WORKSPACE}/gki-kernel-headers"
+
+          if [ ! -d "$KERNEL_SRC" ]; then
+            echo "ERROR: Kernel source not found at $KERNEL_SRC"
+            exit 1
+          fi
+
+          mkdir -p "$HEADERS_DIR"
+
+          # Copy headers needed for out-of-tree module compilation
+          # This includes:
+          # - Top-level Makefile and Kconfig
+          # - arch/arm64 headers and configs
+          # - include/ (kernel headers)
+          # - scripts/ (kbuild scripts)
+          rsync -a --delete \
+            --include='Makefile' \
+            --include='Kconfig' \
+            --include='arch/' \
+            --include='arch/arm64/' \
+            --include='arch/arm64/include/' \
+            --include='arch/arm64/include/**' \
+            --include='arch/arm64/lib/' \
+            --include='arch/arm64/lib/**' \
+            --include='arch/arm64/Makefile' \
+            --include='arch/arm64/tools/' \
+            --include='arch/arm64/tools/**' \
+            --include='include/' \
+            --include='include/**' \
+            --include='scripts/' \
+            --include='scripts/**' \
+            --include='Module.symvers' \
+            --include='tools/' \
+            --include='tools/objtool/' \
+            --include='tools/objtool/**' \
+            --exclude='*.o' \
+            --exclude='*.cmd' \
+            --exclude='*.ko' \
+            --exclude='*.mod' \
+            --exclude='*.mod.c' \
+            --exclude='*.order' \
+            --exclude='*.symvers' \
+            --exclude='.*' \
+            "$KERNEL_SRC/" "$HEADERS_DIR/"
+
+          # Ensure output directory
+          BRANCH_SHORT=$(echo "${KERNEL_BRANCH}" | sed 's/^common-//')
+          mkdir -p "$HEADERS_DIR/out/$BRANCH_SHORT"
+
+          # Create Module.symvers if missing
+          touch "$HEADERS_DIR/Module.symvers"
+
+          echo "=== Headers extracted ==="
+          echo "Source: $KERNEL_SRC"
+          echo "Destination: $HEADERS_DIR"
+          echo "Size: $(du -sh "$HEADERS_DIR" | cut -f1)"
+          echo "Files: $(find "$HEADERS_DIR" -type f | wc -l)"
+
+      # -----------------------------------------------------------------------
+      # Step 8: Save to cache
+      # -----------------------------------------------------------------------
+      - name: Save headers to cache
+        if: steps.cache-headers.outputs.cache-hit != 'true' && (inputs.cache_headers || true)
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ github.workspace }}/gki-kernel-headers
+          key: ${{ steps.set-cache-key.outputs.key }}
+
+      # -----------------------------------------------------------------------
+      # Step 9: Upload artifact
+      # -----------------------------------------------------------------------
+      - name: Upload headers artifact
+        if: ${{ inputs.upload_artifact || true }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: gki-kernel-headers-${{ env.KERNEL_BRANCH }}
+          path: ${{ github.workspace }}/gki-kernel-headers
+          if-no-files-found: error
+          compression-level: 6
+          retention-days: 14
+
+      # -----------------------------------------------------------------------
+      # Step 10: Summary
+      # -----------------------------------------------------------------------
+      - name: Headers extraction summary
+        if: always()
+        run: |
+          echo "## GKI Kernel Headers Summary" >> "${GITHUB_STEP_SUMMARY}"
+          echo "" >> "${GITHUB_STEP_SUMMARY}"
+          echo "| Property | Value |" >> "${GITHUB_STEP_SUMMARY}"
+          echo "|----------|-------|" >> "${GITHUB_STEP_SUMMARY}"
+          echo "| Branch | \`${KERNEL_BRANCH}\` |" >> "${GITHUB_STEP_SUMMARY}"
+          echo "| Cache Key | \`${{ steps.set-cache-key.outputs.key }}\` |" >> "${GITHUB_STEP_SUMMARY}"
+          echo "| Cache Hit | ${{ steps.cache-headers.outputs.cache-hit || 'N/A' }} |" >> "${GITHUB_STEP_SUMMARY}"
+          echo "| Artifact | gki-kernel-headers-${KERNEL_BRANCH} |" >> "${GITHUB_STEP_SUMMARY}"
+
+          if [ -d "${GITHUB_WORKSPACE}/gki-kernel-headers" ]; then
+            SIZE=$(du -sh "${GITHUB_WORKSPACE}/gki-kernel-headers" | cut -f1)
+            FILES=$(find "${GITHUB_WORKSPACE}/gki-kernel-headers" -type f | wc -l)
+            echo "| Size | ${SIZE} |" >> "${GITHUB_STEP_SUMMARY}"
+            echo "| Files | ${FILES} |" >> "${GITHUB_STEP_SUMMARY}"
+          fi
