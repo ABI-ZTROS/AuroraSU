@@ -165,24 +165,20 @@ object VFSTargetSelector {
      */
     fun getRunningProcessesRoot(): List<RunningProcess> {
         return try {
-            val result = Shell.cmd(
-                """
+            val script = """
                 for pid_dir in /proc/[0-9]*; do
-                    pid=${pid_dir##*/}
-                    # 读取UID
-                    uid=$(awk '/^Uid:/{print $2}' "$pid_dir/status" 2>/dev/null)
-                    if [ -z "$uid" ]; then continue; fi
+                    pid=${'$'}{pid_dir##*/}
+                    uid=${'$'}(awk '/^Uid:/{print ${'$'}2}' "${'$'}pid_dir/status" 2>/dev/null)
+                    if [ -z "${'$'}uid" ]; then continue; fi
                     
-                    # 读取进程名
-                    name=$(awk '/^Name:/{print $2}' "$pid_dir/status" 2>/dev/null)
+                    name=${'$'}(awk '/^Name:/{print ${'$'}2}' "${'$'}pid_dir/status" 2>/dev/null)
                     
-                    # 读取cmdline
-                    cmdline=$(tr '\0' ' ' < "$pid_dir/cmdline" 2>/dev/null | cut -c1-256)
+                    cmdline=${'$'}(tr '\0' ' ' < "${'$'}pid_dir/cmdline" 2>/dev/null | cut -c1-256)
                     
-                    echo "PID:$pid|UID:$uid|NAME:$name|CMDLINE:$cmdline"
+                    echo "PID:${'$'}pid|UID:${'$'}uid|NAME:${'$'}name|CMDLINE:${'$'}cmdline"
                 done
-                """.trimIndent()
-            ).exec()
+            """.trimIndent()
+            val result = Shell.cmd(script).exec()
 
             if (!result.isSuccess) {
                 Log.w(TAG, "Root process scan failed, falling back to non-root")
