@@ -2,23 +2,12 @@
 
 package com.ztros.ztrosu.ui.screen
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.WindowInsetsSides
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -113,7 +102,7 @@ import com.ztros.ztrosu.ui.rememberScrollConnection
 import com.ztros.ztrosu.ui.theme.GREEN
 import com.ztros.ztrosu.ui.theme.ORANGE
 import com.ztros.ztrosu.ui.theme.RED
-import com.ztros.ztrosu.ui.util.CommChannel
+import com.ztros.ztrosu.ui.util.VFSKernelInterface.CommChannel
 import com.ztros.ztrosu.ui.util.HookMode
 import com.ztros.ztrosu.ui.util.HookType
 import com.ztros.ztrosu.ui.util.LocalSnackbarHost
@@ -131,7 +120,7 @@ import com.ztros.ztrosu.ui.util.VFSStats
 import com.ztros.ztrosu.ui.util.VFSPolicy
 import com.ztros.ztrosu.ui.util.VFSTemplate
 import com.ztros.ztrosu.ui.util.VFSTemplateManager
-import com.ztros.ztrosu.ui.util.VFSEvent
+import com.ztros.ztrosu.ui.util.VFSNetlinkListener.VFSEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -1421,7 +1410,7 @@ private fun TemplateCard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = if (isActive) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f) else CardDefaults.cardColors.containerColor
+            containerColor = if (isActive) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f) else CardDefaults.cardColors().containerColor
         )
     ) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
