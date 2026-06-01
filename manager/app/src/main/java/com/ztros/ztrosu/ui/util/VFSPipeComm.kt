@@ -492,10 +492,10 @@ object VFSPipeComm {
                 
                 # 将base64数据解码并写入管道
                 echo '$base64Data' | base64 -d > '$pipePath' &
-                WRITE_PID=$!
+                WRITE_PID=${'$'}!
                 
                 # 等待写入完成或超时
-                timeout ${PIPE_TIMEOUT_MS}ms wait $WRITE_PID 2>/dev/null
+                timeout ${PIPE_TIMEOUT_MS}ms wait ${'$'}WRITE_PID 2>/dev/null
                 exit 0
             """.trimIndent()
 
