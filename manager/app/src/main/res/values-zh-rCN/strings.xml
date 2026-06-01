@@ -295,4 +295,23 @@
   <string name="backup_failed">备份失败</string>
   <string name="restore_success">恢复成功</string>
   <string name="restore_failed">恢复失败</string>
+  <!-- VFS Debug Console -->
+  <string name="vfs_debug_title">VFS 调试控制台</string>
+  <string name="vfs_debug_label">VFS 调试</string>
+  <string name="vfs_debug_open_count">打开次数</string>
+  <string name="vfs_debug_unlink_count">删除次数</string>
+  <string name="vfs_debug_rename_count">重命名次数</string>
+  <string name="vfs_debug_latency">延迟</string>
+  <string name="vfs_debug_memory_usage">内存使用</string>
+  <string name="vfs_debug_enable_open_check">启用打开检查</string>
+  <string name="vfs_debug_enable_unlink_check">启用删除检查</string>
+  <string name="vfs_debug_enable_rename_check">启用重命名检查</string>
+  <string name="vfs_debug_log_only_mode">仅记录模式</string>
+  <string name="vfs_debug_whitelist_mode">白名单模式</string>
+  <string name="vfs_debug_save">保存</string>
+  <string name="vfs_debug_validation_error">验证错误</string>
+  <string name="vfs_debug_clear_stats">清除统计</string>
+  <string name="vfs_debug_export_logs">导出日志</string>
+  <string name="vfs_debug_stats_cleared">统计信息已清除</string>
+  <string name="vfs_debug_settings_saved">设置已保存</string>
 </resources>
