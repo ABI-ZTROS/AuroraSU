@@ -25,6 +25,12 @@ kernelsu-objs += sulog/fd.o
 kernelsu-objs += selinux/selinux.o
 kernelsu-objs += selinux/sepolicy.o
 kernelsu-objs += selinux/rules.o
+
+# VFS debug module (optional)
+kernelsu-$(CONFIG_KSU_VFS_DEBUG) += vfs_debug.o
+kernelsu-$(CONFIG_KSU_VFS_DEBUG) += vfs_debug_sysfs.o
+kernelsu-$(CONFIG_KSU_VFS_DEBUG) += vfs_debug_hook.o
+
 ccflags-y += -I$(srctree)/security/selinux -I$(srctree)/security/selinux/include
 ccflags-y += -I$(objtree)/security/selinux -include $(srctree)/include/uapi/asm-generic/errno.h
 
