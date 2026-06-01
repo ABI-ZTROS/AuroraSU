@@ -1,6 +1,7 @@
 package com.ztros.ztrosu.ui.util
 
 import android.util.Log
+import com.topjohnwu.superuser.Shell
 import com.topjohnwu.superuser.io.SuFile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -146,6 +147,9 @@ data class VFSRule(
         }
     }
 
+    /** Alias for toJson() for consistency with other VFS data classes */
+    fun toJSON(): JSONObject = toJson()
+
     companion object {
         /**
          * 从JSON对象解析规则
@@ -196,6 +200,9 @@ data class VFSRule(
                 uidFilter = uidFilter
             )
         }
+
+        /** Alias for fromJson() for consistency with other VFS data classes */
+        fun fromJSON(json: JSONObject): VFSRule = fromJson(json)
     }
 }
 
@@ -302,7 +309,7 @@ object VFSRuleEngine {
             // 确保父目录存在
             val parentDir = File(RULES_FILE_PATH).parentFile
             if (parentDir != null && !parentDir.exists()) {
-                SuFile.open(parentDir).mkdirs()
+                Shell.cmd("mkdir -p '${parentDir.absolutePath}'").exec()
             }
 
             val jsonArray = JSONArray()

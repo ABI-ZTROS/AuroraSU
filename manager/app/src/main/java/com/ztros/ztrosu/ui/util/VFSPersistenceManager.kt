@@ -554,10 +554,14 @@ object VFSPersistenceManager {
         val parts = ruleStr.split(":")
         if (parts.size < 3) return null
 
+        val action = RuleAction.fromString(parts[0]) ?: return null
+        val pathPattern = parts[1]
+        val opTypes = VFSOp.fromMode(parts[2])
+
         return VFSRule(
-            action = parts[0],
-            pathPattern = parts[1],
-            mode = parts[2],
+            action = action,
+            pathPattern = pathPattern,
+            opTypes = opTypes,
             enabled = true
         )
     }

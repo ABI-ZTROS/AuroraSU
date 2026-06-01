@@ -66,6 +66,9 @@ data class VFSHookTarget(
         }
     }
 
+    /** Alias for toJson() for consistency with other VFS data classes */
+    fun toJSON(): JSONObject = toJson()
+
     companion object {
         fun fromJson(json: JSONObject): VFSHookTarget {
             return VFSHookTarget(
@@ -80,6 +83,9 @@ data class VFSHookTarget(
                 lastPid = json.optInt("lastPid", -1)
             )
         }
+
+        /** Alias for fromJson() for consistency with other VFS data classes */
+        fun fromJSON(json: JSONObject): VFSHookTarget = fromJson(json)
     }
 }
 
@@ -329,27 +335,29 @@ object VFSHookManager {
      * @param mode 目标模式（PID或PACKAGE）
      * @return 可选目标列表
      */
-    suspend fun getSelectableTargets(mode: TargetMode): List<SelectableTarget> = withContext(Dispatchers.IO) {
+    suspend fun getSelectableTargets(mode: VFSTargetSelector.TargetMode): List<VFSTargetSelector.SelectableTarget> = withContext(Dispatchers.IO) {
         return@withContext try {
             VFSTargetSelector.getSelectableTargets(mode)
         } catch (e: Exception) {
             Log.w(TAG, "VFSTargetSelector unavailable, using fallback", e)
             // Fallback: 使用本地方法获取目标列表
             when (mode) {
-                TargetMode.PID -> getRunningProcesses().map { (pid, uid, name) ->
-                    SelectableTarget(
-                        identifier = pid.toString(),
-                        displayName = name,
+                VFSTargetSelector.TargetMode.RUNNING_PROCESS -> getRunningProcesses().map { (pid, uid, name) ->
+                    VFSTargetSelector.SelectableTarget(
+                        mode = VFSTargetSelector.TargetMode.RUNNING_PROCESS,
+                        pid = pid,
+                        packageName = null,
                         uid = uid,
-                        type = HookType.PID
+                        displayName = name
                     )
                 }
-                TargetMode.PACKAGE -> getInstalledPackages().map { (pkgName, uid) ->
-                    SelectableTarget(
-                        identifier = pkgName,
-                        displayName = pkgName,
+                VFSTargetSelector.TargetMode.INSTALLED_APP -> getInstalledPackages().map { (pkgName, uid) ->
+                    VFSTargetSelector.SelectableTarget(
+                        mode = VFSTargetSelector.TargetMode.INSTALLED_APP,
+                        pid = null,
+                        packageName = pkgName,
                         uid = uid,
-                        type = HookType.PACKAGE
+                        displayName = pkgName
                     )
                 }
             }
@@ -653,13 +661,13 @@ object VFSHookManager {
         }
     }
 
-    private fun addTarget(target: VFSHookTarget): Boolean {
+    private suspend fun addTarget(target: VFSHookTarget): Boolean {
         val targets = getHookTargets().toMutableList()
         targets.add(target)
         return saveTargets(targets)
     }
 
-    private fun removeTarget(id: String): Boolean {
+    private suspend fun removeTarget(id: String): Boolean {
         val targets = getHookTargets().toMutableList()
         val removed = targets.removeAll { it.id == id }
         if (removed) {

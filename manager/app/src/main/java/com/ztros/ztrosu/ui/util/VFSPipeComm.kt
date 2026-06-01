@@ -6,9 +6,6 @@ import com.topjohnwu.superuser.io.SuFile
 import java.io.ByteArrayOutputStream
 import java.io.DataInputStream
 import java.io.DataOutputStream
-import java.net.InetSocketAddress
-import java.net.LocalSocket
-import java.net.LocalSocketAddress
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.concurrent.TimeUnit
