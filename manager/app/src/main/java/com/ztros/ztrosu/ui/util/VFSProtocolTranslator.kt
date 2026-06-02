@@ -56,10 +56,10 @@ object VFSProtocolTranslator {
     /** 策略二进制格式长度（4 字节） */
     const val POLICY_BINARY_SIZE: Int = 4
 
-    /** 事件头部固定长度（magic + event_type + pid + uid + path_len = 5 * 4 = 20 字节） */
+    /** 事件头部固定长度 (magic + event_type + pid + uid + path_len, 共 20 字节) */
     private const val EVENT_HEADER_SIZE = 20
 
-    /** 事件尾部固定长度（timestamp 8 字节 + result 4 字节 = 12 字节） */
+    /** 事件尾部固定长度 (timestamp 8 字节 + result 4 字节, 共 12 字节) */
     private const val EVENT_TRAILER_SIZE = 12
 
     // ==================== 数据类 ====================
@@ -99,7 +99,8 @@ object VFSProtocolTranslator {
     /**
      * 将单条规则字符串转换为二进制格式。
      *
-     * 字符串格式："action:path_pattern:mode"，例如 "deny:/system/**:rw"、"allow:/sdcard/:r"
+     * 字符串格式："action:path_pattern:mode"，例如 "deny:/system/star-star:rw"、"allow:/sdcard/:r"
+     * 其中 star-star 表示 glob 通配符匹配任意路径深度
      *
      * 二进制格式：
      * - `__u8 action`（0=allow, 1=deny）
