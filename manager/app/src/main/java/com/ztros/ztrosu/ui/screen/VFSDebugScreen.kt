@@ -58,6 +58,7 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
@@ -120,6 +121,7 @@ import com.ztros.ztrosu.ui.util.VFSStats
 import com.ztros.ztrosu.ui.util.VFSPolicy
 import com.ztros.ztrosu.ui.util.VFSTemplate
 import com.ztros.ztrosu.ui.util.VFSTemplateManager
+import com.ztros.ztrosu.ui.util.VFSProtocolTranslator
 import com.ztros.ztrosu.ui.util.VFSNetlinkListener.VFSEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -402,7 +404,8 @@ fun VFSDebugScreen(navigator: DestinationsNavigator) {
         R.string.vfs_tab_hooks,
         R.string.vfs_tab_rules,
         R.string.vfs_tab_templates,
-        R.string.vfs_tab_events
+        R.string.vfs_tab_events,
+        "协议" // TODO: R.string.vfs_tab_protocol
     )
 
     Scaffold(
@@ -504,7 +507,8 @@ fun VFSDebugScreen(navigator: DestinationsNavigator) {
                         scope.launch {
                             snackBarHost.showSnackbar("Logs exported", duration = SnackbarDuration.Short)
                         }
-                    }
+                    },
+                    onNavigateToProtocol = { selectedTabIndex = 5 }
                 )
                 1 -> HooksTab(
                     hookTargets = hookTargets,
@@ -532,6 +536,12 @@ fun VFSDebugScreen(navigator: DestinationsNavigator) {
                     onStopListening = { stopEventListening() },
                     onClearEvents = { VFSNetlinkListener.clearBuffer(); events = emptyList() }
                 )
+                5 -> ProtocolTab(
+                    events = events,
+                    channel = channel,
+                    moduleVersion = moduleVersion,
+                    onNavigateToProtocol = { selectedTabIndex = 5 }
+                )
             }
         }
     }
@@ -556,7 +566,8 @@ private fun DashboardTab(
     onLogLevelChange: (Int) -> Unit,
     onDefaultActionChange: (String) -> Unit,
     onResetStats: () -> Unit,
-    onExportLogs: () -> Unit
+    onExportLogs: () -> Unit,
+    onNavigateToProtocol: () -> Unit
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -568,6 +579,7 @@ private fun DashboardTab(
         item { QuickSummaryRow(hookTargets, rules, events) }
         item { QuickConfigCard(localEnabled, localLogLevel, localDefaultAction, onEnabledChange, onLogLevelChange, onDefaultActionChange) }
         item { ActionButtonsRow(onResetStats, onExportLogs) }
+        item { ProtocolDebugCard(channel, moduleVersion, onNavigateToProtocol) }
         item { Spacer(Modifier.height(16.dp)) }
     }
 }
@@ -1687,6 +1699,659 @@ private fun EventItem(event: VFSEvent) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+    }
+}
+
+// ==================== Tab 6: Protocol Translator ====================
+
+@Composable
+private fun ProtocolTab(
+    events: List<VFSEvent>,
+    channel: CommChannel,
+    moduleVersion: Int?,
+    onNavigateToProtocol: () -> Unit
+) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        item {
+            // TODO: vfs_protocol_title
+            Text(
+                text = "协议调试器",
+                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                modifier = Modifier.padding(bottom = 4.dp)
+            )
+        }
+        item { RuleTranslatorSection() }
+        item { PolicyTranslatorSection() }
+        item { HookCommandTranslatorSection() }
+        item { LiveEventInspectorSection(events) }
+        item { Spacer(Modifier.height(16.dp)) }
+    }
+}
+
+// ==================== Dashboard: Protocol Debug Card ====================
+
+@Composable
+private fun ProtocolDebugCard(
+    channel: CommChannel,
+    moduleVersion: Int?,
+    onNavigateToProtocol: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
+        )
+    ) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Icon(Icons.Filled.Description, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                // TODO: vfs_protocol_channel_info
+                Text(
+                    text = "协议调试",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
+                )
+            }
+            HorizontalDivider()
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                AssistChip(
+                    onClick = {},
+                    label = { Text(getChannelName(channel)) },
+                    leadingIcon = {
+                        Icon(
+                            Icons.Filled.RadioButtonChecked,
+                            contentDescription = null,
+                            modifier = Modifier.size(12.dp),
+                            tint = getChannelColor(channel)
+                        )
+                    }
+                )
+                AssistChip(
+                    onClick = {},
+                    label = { Text("协议 v${moduleVersion ?: "?"}") },
+                    leadingIcon = {
+                        Icon(Icons.Filled.Security, contentDescription = null, modifier = Modifier.size(12.dp))
+                    }
+                )
+            }
+            Button(
+                onClick = onNavigateToProtocol,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(Icons.Filled.Description, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                // TODO: vfs_protocol_title
+                Text("打开协议调试器")
+            }
+        }
+    }
+}
+
+// ==================== Protocol: Rule Translator Section ====================
+
+@Composable
+private fun RuleTranslatorSection() {
+    // TODO: vfs_protocol_rule_translator
+    var ruleInput by remember { mutableStateOf("") }
+    var hexInput by remember { mutableStateOf("") }
+    var forwardResult by remember { mutableStateOf<String?>(null) }
+    var forwardParsed by remember { mutableStateOf<String?>(null) }
+    var reverseResult by remember { mutableStateOf<String?>(null) }
+    var validationStatus by remember { mutableStateOf<Pair<Boolean, String?>>(true to null) }
+
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Icon(Icons.Filled.Security, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Text(
+                    text = "规则翻译器", // TODO: vfs_protocol_rule_translator
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
+                )
+            }
+            HorizontalDivider()
+
+            // Forward translation: rule string -> binary
+            Text(
+                text = "规则字符串 -> 二进制", // TODO: vfs_protocol_binary_preview
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            OutlinedTextField(
+                value = ruleInput,
+                onValueChange = {
+                    ruleInput = it
+                    val result = VFSProtocolTranslator.validateRuleString(it)
+                    validationStatus = result.valid to result.error
+                },
+                label = { Text("输入规则字符串...") }, // TODO: vfs_protocol_input_hint
+                placeholder = { Text("deny:/system/**:rw") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                supportingText = {
+                    if (ruleInput.isNotEmpty()) {
+                        Text(
+                            text = if (validationStatus.first) "格式验证通过" // TODO: vfs_protocol_validation_ok
+                            else "格式错误: ${validationStatus.second}", // TODO: vfs_protocol_validation_error
+                            color = if (validationStatus.first) GREEN else RED
+                        )
+                    }
+                }
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(
+                    onClick = {
+                        val binary = VFSProtocolTranslator.ruleToBinary(ruleInput)
+                        if (binary != null) {
+                            forwardResult = VFSProtocolTranslator.hexDump(binary)
+                            val validation = VFSProtocolTranslator.validateRuleString(ruleInput)
+                            forwardParsed = validation.parsedFields?.entries?.joinToString("\n") { "  ${it.key} = ${it.value}" }
+                        } else {
+                            forwardResult = null
+                            forwardParsed = null
+                        }
+                    },
+                    enabled = ruleInput.isNotEmpty() && validationStatus.first,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("翻译") // TODO: vfs_protocol_translate
+                }
+            }
+
+            if (forwardResult != null) {
+                Text(
+                    text = "Hex 转储", // TODO: vfs_protocol_hex_dump
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                ) {
+                    Text(
+                        text = forwardResult!!,
+                        modifier = Modifier.padding(12.dp).horizontalScroll(rememberScrollState()),
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = MaterialTheme.typography.bodySmall.fontSize,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
+
+            if (forwardParsed != null) {
+                Text(
+                    text = "解析字段", // TODO: vfs_protocol_parsed_fields
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                ) {
+                    Text(
+                        text = forwardParsed!!,
+                        modifier = Modifier.padding(12.dp),
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = MaterialTheme.typography.bodySmall.fontSize,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
+
+            HorizontalDivider()
+
+            // Reverse translation: hex -> rule string
+            Text(
+                text = "二进制 -> 规则字符串", // TODO: vfs_protocol_string_preview
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            OutlinedTextField(
+                value = hexInput,
+                onValueChange = { hexInput = it },
+                label = { Text("输入 Hex 数据 (如: 01 0a 2f 73 79 73 74 65 6d)") },
+                placeholder = { Text("01 0a 2f 73 79 73 74 65 6d") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+            Button(
+                onClick = {
+                    try {
+                        val bytes = hexInput.trim().split(Regex("\\s+")).map { it.toInt(16).toByte() }.toByteArray()
+                        reverseResult = VFSProtocolTranslator.ruleToString(bytes)
+                    } catch (_: Exception) {
+                        reverseResult = "无效的 Hex 数据"
+                    }
+                },
+                enabled = hexInput.isNotEmpty(),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("反向翻译") // TODO: vfs_protocol_reverse
+            }
+
+            if (reverseResult != null) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                ) {
+                    Text(
+                        text = reverseResult!!,
+                        modifier = Modifier.padding(12.dp),
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = MaterialTheme.typography.bodySmall.fontSize,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
+        }
+    }
+}
+
+// ==================== Protocol: Policy Translator Section ====================
+
+@Composable
+private fun PolicyTranslatorSection() {
+    // TODO: vfs_protocol_policy_translator
+    var enabled by remember { mutableStateOf(true) }
+    var logLevel by remember { mutableStateOf(0) }
+    var defaultAction by remember { mutableStateOf("allow") }
+    var hexDump by remember { mutableStateOf<String?>(null) }
+    var fieldBreakdown by remember { mutableStateOf<String?>(null) }
+
+    // Auto-translate on state change
+    LaunchedEffect(enabled, logLevel, defaultAction) {
+        val binary = VFSProtocolTranslator.policyToBinary(enabled, logLevel, defaultAction)
+        hexDump = VFSProtocolTranslator.hexDump(binary)
+        val map = VFSProtocolTranslator.policyToMap(binary)
+        fieldBreakdown = map.entries.joinToString("\n") { "  ${it.key} = ${it.value}" }
+    }
+
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Icon(Icons.Filled.Settings, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Text(
+                    text = "策略翻译器", // TODO: vfs_protocol_policy_translator
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
+                )
+            }
+            HorizontalDivider()
+
+            // Policy controls
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text("启用:", style = MaterialTheme.typography.bodyMedium)
+                Switch(checked = enabled, onCheckedChange = { enabled = it })
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text("日志级别:", style = MaterialTheme.typography.bodyMedium)
+                LogLevelSelector(currentLevel = logLevel, onLevelChange = { logLevel = it })
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text("默认动作:", style = MaterialTheme.typography.bodyMedium)
+                ActionSelector(currentAction = defaultAction, onActionChange = { defaultAction = it })
+            }
+
+            // Hex dump display
+            if (hexDump != null) {
+                Text(
+                    text = "Hex 转储 (4 字节)", // TODO: vfs_protocol_hex_dump
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                ) {
+                    Text(
+                        text = hexDump!!,
+                        modifier = Modifier.padding(12.dp).horizontalScroll(rememberScrollState()),
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = MaterialTheme.typography.bodySmall.fontSize,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
+
+            // Field breakdown
+            if (fieldBreakdown != null) {
+                Text(
+                    text = "解析字段", // TODO: vfs_protocol_parsed_fields
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                ) {
+                    Text(
+                        text = fieldBreakdown!!,
+                        modifier = Modifier.padding(12.dp),
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = MaterialTheme.typography.bodySmall.fontSize,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
+        }
+    }
+}
+
+// ==================== Protocol: Hook Command Translator Section ====================
+
+@Composable
+private fun HookCommandTranslatorSection() {
+    // TODO: vfs_protocol_hook_translator
+    var commandInput by remember { mutableStateOf("") }
+    var hexInput by remember { mutableStateOf("") }
+    var forwardHex by remember { mutableStateOf<String?>(null) }
+    var forwardParsed by remember { mutableStateOf<String?>(null) }
+    var reverseResult by remember { mutableStateOf<String?>(null) }
+    var validationStatus by remember { mutableStateOf<Pair<Boolean, String?>>(true to null) }
+
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Icon(Icons.Filled.ToggleOn, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Text(
+                    text = "Hook 命令翻译器", // TODO: vfs_protocol_hook_translator
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
+                )
+            }
+            HorizontalDivider()
+
+            // Forward translation
+            Text(
+                text = "命令字符串 -> 二进制", // TODO: vfs_protocol_binary_preview
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            OutlinedTextField(
+                value = commandInput,
+                onValueChange = {
+                    commandInput = it
+                    val result = VFSProtocolTranslator.validateHookCommand(it)
+                    validationStatus = result.valid to result.error
+                },
+                label = { Text("输入 Hook 命令...") },
+                placeholder = { Text("add:PID:12345:10086:INTERCEPT_ALL") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                supportingText = {
+                    if (commandInput.isNotEmpty()) {
+                        Text(
+                            text = if (validationStatus.first) "格式验证通过" // TODO: vfs_protocol_validation_ok
+                            else "格式错误: ${validationStatus.second}", // TODO: vfs_protocol_validation_error
+                            color = if (validationStatus.first) GREEN else RED
+                        )
+                    }
+                }
+            )
+            Button(
+                onClick = {
+                    val binary = VFSProtocolTranslator.hookCommandToBinary(commandInput)
+                    if (binary != null) {
+                        forwardHex = VFSProtocolTranslator.hexDump(binary)
+                        val validation = VFSProtocolTranslator.validateHookCommand(commandInput)
+                        forwardParsed = validation.parsedFields?.entries?.joinToString("\n") { "  ${it.key} = ${it.value}" }
+                    } else {
+                        forwardHex = null
+                        forwardParsed = null
+                    }
+                },
+                enabled = commandInput.isNotEmpty() && validationStatus.first,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("翻译") // TODO: vfs_protocol_translate
+            }
+
+            if (forwardHex != null) {
+                Text(
+                    text = "Hex 转储", // TODO: vfs_protocol_hex_dump
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                ) {
+                    Text(
+                        text = forwardHex!!,
+                        modifier = Modifier.padding(12.dp).horizontalScroll(rememberScrollState()),
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = MaterialTheme.typography.bodySmall.fontSize,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
+
+            if (forwardParsed != null) {
+                Text(
+                    text = "解析字段", // TODO: vfs_protocol_parsed_fields
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                ) {
+                    Text(
+                        text = forwardParsed!!,
+                        modifier = Modifier.padding(12.dp),
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = MaterialTheme.typography.bodySmall.fontSize,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
+
+            HorizontalDivider()
+
+            // Reverse translation
+            Text(
+                text = "二进制 -> 命令字符串", // TODO: vfs_protocol_string_preview
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            OutlinedTextField(
+                value = hexInput,
+                onValueChange = { hexInput = it },
+                label = { Text("输入 Hex 数据") },
+                placeholder = { Text("01 04 50 49 44 ...") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+            Button(
+                onClick = {
+                    try {
+                        val bytes = hexInput.trim().split(Regex("\\s+")).map { it.toInt(16).toByte() }.toByteArray()
+                        reverseResult = VFSProtocolTranslator.hookBinaryToCommand(bytes)
+                    } catch (_: Exception) {
+                        reverseResult = "无效的 Hex 数据"
+                    }
+                },
+                enabled = hexInput.isNotEmpty(),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("反向翻译") // TODO: vfs_protocol_reverse
+            }
+
+            if (reverseResult != null) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                ) {
+                    Text(
+                        text = reverseResult!!,
+                        modifier = Modifier.padding(12.dp),
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = MaterialTheme.typography.bodySmall.fontSize,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
+        }
+    }
+}
+
+// ==================== Protocol: Live Event Inspector Section ====================
+
+@Composable
+private fun LiveEventInspectorSection(events: List<VFSEvent>) {
+    // TODO: vfs_protocol_event_inspector
+    val lastEvent = events.lastOrNull()
+
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Icon(Icons.Filled.Analytics, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Text(
+                    text = "事件检查器", // TODO: vfs_protocol_event_inspector
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
+                )
+                if (lastEvent != null) {
+                    Badge(
+                        containerColor = GREEN
+                    ) {
+                        Text("LIVE", style = MaterialTheme.typography.labelSmall)
+                    }
+                }
+            }
+            HorizontalDivider()
+
+            if (lastEvent != null) {
+                // Build a simulated binary representation for display
+                // In a real scenario, the raw binary would come from the netlink socket
+                val rawBytes = byteArrayOf(
+                    0x5F.toByte(), // magic byte placeholder ('V' = 0x56, 'F' = 0x46; use 0x5F as generic magic)
+                    lastEvent.eventType.toByte(),
+                    (lastEvent.pid shr 8).toByte(),
+                    lastEvent.pid.toByte(),
+                    (lastEvent.uid shr 8).toByte(),
+                    lastEvent.uid.toByte(),
+                    lastEvent.result.toByte(),
+                    0x00 // reserved
+                )
+                val rawHexDump = VFSProtocolTranslator.hexDump(rawBytes)
+
+                // Raw binary hex dump
+                Text(
+                    text = "Hex 转储", // TODO: vfs_protocol_hex_dump
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                ) {
+                    Text(
+                        text = rawHexDump,
+                        modifier = Modifier.padding(12.dp).horizontalScroll(rememberScrollState()),
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = MaterialTheme.typography.bodySmall.fontSize,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+
+                // Parsed fields display
+                Text(
+                    text = "解析字段", // TODO: vfs_protocol_parsed_fields
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        EventFieldRow("event_type", getEventTypeName(lastEvent.eventType))
+                        EventFieldRow("pid", lastEvent.pid.toString())
+                        EventFieldRow("uid", lastEvent.uid.toString())
+                        EventFieldRow("path", lastEvent.path)
+                        EventFieldRow("timestamp", formatTimestamp(lastEvent.timestamp))
+                        EventFieldRow("result", if (lastEvent.result == 0) "ALLOW" else "DENY")
+                    }
+                }
+
+                // Human-readable string
+                Text(
+                    text = "字符串预览", // TODO: vfs_protocol_string_preview
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                ) {
+                    Text(
+                        text = "[${getEventTypeName(lastEvent.eventType)}] pid=${lastEvent.pid} uid=${lastEvent.uid} path=\"${lastEvent.path}\" -> ${if (lastEvent.result == 0) "ALLOW" else "DENY"}",
+                        modifier = Modifier.padding(12.dp).horizontalScroll(rememberScrollState()),
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = MaterialTheme.typography.bodySmall.fontSize,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            } else {
+                // TODO: vfs_protocol_no_event
+                Text(
+                    text = "暂无事件数据",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(vertical = 16.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun EventFieldRow(label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text(
+            text = label,
+            fontFamily = FontFamily.Monospace,
+            fontSize = MaterialTheme.typography.bodySmall.fontSize,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.width(80.dp)
+        )
+        Text(
+            text = value,
+            fontFamily = FontFamily.Monospace,
+            fontSize = MaterialTheme.typography.bodySmall.fontSize,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f)
+        )
     }
 }
 

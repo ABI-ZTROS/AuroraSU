@@ -15,6 +15,19 @@ import kotlin.concurrent.withLock
 private const val TAG = "VFSPipeComm"
 
 /**
+ * 结构化规则数据，用于与内核VFS模块的二进制协议通讯。
+ *
+ * @param action   动作类型: 0=allow, 1=deny
+ * @param path     路径模式字符串
+ * @param modeMask 模式掩码: bit0=read, bit1=write
+ */
+data class PipeRuleData(
+    val action: Int,    // 0=allow, 1=deny
+    val path: String,
+    val modeMask: Int   // bit0=read, bit1=write
+)
+
+/**
  * VFS Pipe通讯管理器
  *
  * 通过FIFO管道与内核VFS模块进行二进制协议通讯。
@@ -188,13 +201,24 @@ object VFSPipeComm {
     }
 
     /**
-     * 设置规则列表
+     * 设置规则列表（结构化版本）
      *
-     * @param rules 规则列表 (格式: "action:path:mode")
+     * @param rules 结构化规则数据列表
+     * @return true=成功
+     */
+    fun setRules(rules: List<PipeRuleData>): Boolean {
+        val data = buildRulesData(rules)
+        return sendCommand(CMD_SET_RULES, data)
+    }
+
+    /**
+     * 设置规则列表（字符串兼容版本）
+     *
+     * @param rules 规则列表 (格式: "action:path:mode"，如 "allow:/data:r", "deny:/tmp:rw")
      * @return true=成功
      */
     fun setRules(rules: List<String>): Boolean {
-        val data = buildRulesData(rules)
+        val data = buildRulesDataFromStrings(rules)
         return sendCommand(CMD_SET_RULES, data)
     }
 
@@ -208,7 +232,20 @@ object VFSPipeComm {
     }
 
     /**
-     * 设置策略
+     * 设置策略（结构化版本）
+     *
+     * @param enabled 是否启用VFS监控
+     * @param logLevel 日志级别 (0-5)
+     * @param defaultAction 默认动作 (0=allow, 1=deny)
+     * @return true=成功
+     */
+    fun setPolicy(enabled: Boolean, logLevel: Int, defaultAction: Int): Boolean {
+        val data = buildPolicyData(enabled, logLevel, defaultAction)
+        return sendCommand(CMD_SET_POLICY, data)
+    }
+
+    /**
+     * 设置策略（字符串兼容版本）
      *
      * @param enabled 是否启用VFS监控
      * @param logLevel 日志级别 (0-5)
@@ -308,73 +345,162 @@ object VFSPipeComm {
 
     /**
      * 构建Hook数据
+     *
+     * 内核格式 (cmd_add_hook):
+     *   __u8  hook_type        // 0=PID, 1=PACKAGE
+     *   __u32 identifier_len    // identifier字符串长度 (不含\0)
+     *   char  identifier[]      // PID字符串或包名 (变长)
+     *   __u32 uid               // 目标UID
+     *   __u8  hook_mode         // 0=MONITOR_ONLY, 1=INTERCEPT_READ,
+     *                          // 2=INTERCEPT_WRITE, 3=INTERCEPT_ALL
      */
     private fun buildHookData(type: Int, identifier: String, uid: Int, mode: Int): ByteArray {
         val identifierBytes = identifier.toByteArray(Charsets.UTF_8)
-        val buffer = ByteBuffer.allocate(4 + 4 + identifierBytes.size + 4 + 4)
+        // __u8(1) + __u32(4) + identifier(var) + __u32(4) + __u8(1)
+        val buffer = ByteBuffer.allocate(1 + 4 + identifierBytes.size + 4 + 1)
         buffer.order(ByteOrder.LITTLE_ENDIAN)
 
-        buffer.putInt(type)                          // Hook类型
-        buffer.putInt(identifierBytes.size)           // 标识符长度
-        buffer.put(identifierBytes)                  // 标识符
-        buffer.putInt(uid)                            // UID
-        buffer.putInt(mode)                           // Hook模式
+        buffer.put(type.toByte())                   // hook_type: __u8
+        buffer.putInt(identifierBytes.size)          // identifier_len: __u32
+        buffer.put(identifierBytes)                  // identifier: char[]
+        buffer.putInt(uid)                            // uid: __u32
+        buffer.put(mode.toByte())                     // hook_mode: __u8
 
         return buffer.array()
     }
 
     /**
      * 构建移除Hook数据
+     *
+     * 内核格式 (cmd_remove_hook):
+     *   __u8  hook_type        // 0=PID, 1=PACKAGE
+     *   __u32 identifier_len    // identifier字符串长度
+     *   char  identifier[]      // PID字符串或包名
      */
     private fun buildRemoveHookData(type: Int, identifier: String): ByteArray {
         val identifierBytes = identifier.toByteArray(Charsets.UTF_8)
-        val buffer = ByteBuffer.allocate(4 + 4 + identifierBytes.size)
+        // __u8(1) + __u32(4) + identifier(var)
+        val buffer = ByteBuffer.allocate(1 + 4 + identifierBytes.size)
         buffer.order(ByteOrder.LITTLE_ENDIAN)
 
-        buffer.putInt(type)                          // Hook类型
-        buffer.putInt(identifierBytes.size)           // 标识符长度
-        buffer.put(identifierBytes)                  // 标识符
+        buffer.put(type.toByte())                   // hook_type: __u8
+        buffer.putInt(identifierBytes.size)          // identifier_len: __u32
+        buffer.put(identifierBytes)                  // identifier: char[]
 
         return buffer.array()
     }
 
     /**
-     * 构建规则数据
+     * 构建规则数据（结构化版本）
+     *
+     * 内核格式 (cmd_set_rules):
+     *   __u32 rule_count
+     *   每条规则:
+     *     __u8  action       // 0=allow, 1=deny
+     *     __u32 path_len     // 路径长度
+     *     char  path[]       // 路径模式 (变长)
+     *     __u8  mode_mask    // bit0=read, bit1=write
      */
-    private fun buildRulesData(rules: List<String>): ByteArray {
-        val baos = ByteArrayOutputStream()
-        val dos = DataOutputStream(baos)
-
-        try {
-            dos.writeInt(rules.size)  // 规则数量 (little-endian via later conversion)
-            for (rule in rules) {
-                val ruleBytes = rule.toByteArray(Charsets.UTF_8)
-                dos.writeInt(ruleBytes.size)
-                dos.write(ruleBytes)
-            }
-        } finally {
-            dos.close()
+    private fun buildRulesData(rules: List<PipeRuleData>): ByteArray {
+        // 计算总大小: __u32(rule_count) + 每条规则(__u8 + __u32 + path + __u8)
+        var totalSize = 4 // rule_count: __u32
+        for (rule in rules) {
+            val pathBytes = rule.path.toByteArray(Charsets.UTF_8)
+            totalSize += 1 + 4 + pathBytes.size + 1 // action(u8) + path_len(u32) + path(var) + mode_mask(u8)
         }
 
-        // ByteArrayOutputStream已经是大端序，需要转为小端序
-        val raw = baos.toByteArray()
-        return convertToLittleEndian(raw)
+        val buffer = ByteBuffer.allocate(totalSize)
+        buffer.order(ByteOrder.LITTLE_ENDIAN)
+
+        buffer.putInt(rules.size)  // rule_count: __u32
+
+        for (rule in rules) {
+            val pathBytes = rule.path.toByteArray(Charsets.UTF_8)
+            buffer.put(rule.action.toByte())          // action: __u8
+            buffer.putInt(pathBytes.size)             // path_len: __u32
+            buffer.put(pathBytes)                      // path: char[]
+            buffer.put(rule.modeMask.toByte())         // mode_mask: __u8
+        }
+
+        return buffer.array()
+    }
+
+    /**
+     * 构建规则数据（字符串解析兼容版本）
+     *
+     * 解析格式: "action:path:mode"
+     *   action: "allow" 或 "deny"
+     *   path: 路径模式
+     *   mode: "r"=read, "w"=write, "rw"=both
+     */
+    private fun buildRulesDataFromStrings(rules: List<String>): ByteArray {
+        val parsedRules = rules.mapNotNull { ruleStr ->
+            val parts = ruleStr.split(":", limit = 3)
+            if (parts.size != 3) {
+                Log.w(TAG, "Skipping malformed rule: $ruleStr")
+                return@mapNotNull null
+            }
+            val action = when (parts[0].lowercase()) {
+                "allow" -> 0
+                "deny" -> 1
+                else -> {
+                    Log.w(TAG, "Unknown action in rule: $ruleStr")
+                    return@mapNotNull null
+                }
+            }
+            val path = parts[1]
+            val modeMask = when (parts[2].lowercase()) {
+                "r" -> 0x01  // bit0=read
+                "w" -> 0x02  // bit1=write
+                "rw" -> 0x03 // bit0=read + bit1=write
+                else -> {
+                    Log.w(TAG, "Unknown mode in rule: $ruleStr")
+                    return@mapNotNull null
+                }
+            }
+            PipeRuleData(action, path, modeMask)
+        }
+        return buildRulesData(parsedRules)
     }
 
     /**
      * 构建策略数据
+     *
+     * 内核格式 (cmd_set_policy):
+     *   __u8  enabled          // 0或1
+     *   __u8  log_level        // 0-5
+     *   __u8  default_action   // 0=allow, 1=deny
+     *   __u8  reserved         // 对齐填充
      */
-    private fun buildPolicyData(enabled: Boolean, logLevel: Int, defaultAction: String): ByteArray {
-        val actionBytes = defaultAction.toByteArray(Charsets.UTF_8)
-        val buffer = ByteBuffer.allocate(4 + 4 + 4 + actionBytes.size)
+    private fun buildPolicyData(enabled: Boolean, logLevel: Int, defaultAction: Int): ByteArray {
+        val buffer = ByteBuffer.allocate(4) // 4 x __u8
         buffer.order(ByteOrder.LITTLE_ENDIAN)
 
-        buffer.putInt(if (enabled) 1 else 0)        // 启用标志
-        buffer.putInt(logLevel)                        // 日志级别
-        buffer.putInt(actionBytes.size)               // 默认动作字符串长度
-        buffer.put(actionBytes)                       // 默认动作
+        buffer.put(if (enabled) 1 else 0.toByte())   // enabled: __u8
+        buffer.put(logLevel.toByte())                   // log_level: __u8
+        buffer.put(defaultAction.toByte())              // default_action: __u8
+        buffer.put(0.toByte())                          // reserved: __u8
 
         return buffer.array()
+    }
+
+    /**
+     * 构建策略数据（字符串兼容版本）
+     *
+     * @param enabled 是否启用VFS监控
+     * @param logLevel 日志级别 (0-5)
+     * @param defaultAction 默认动作 ("allow" 或 "deny")
+     */
+    private fun buildPolicyData(enabled: Boolean, logLevel: Int, defaultAction: String): ByteArray {
+        val actionInt = when (defaultAction.lowercase()) {
+            "allow" -> 0
+            "deny" -> 1
+            else -> {
+                Log.w(TAG, "Unknown default action: $defaultAction, defaulting to allow")
+                0
+            }
+        }
+        return buildPolicyData(enabled, logLevel, actionInt)
     }
 
     /**
