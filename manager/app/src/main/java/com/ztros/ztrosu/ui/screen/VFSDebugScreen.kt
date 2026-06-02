@@ -405,7 +405,7 @@ fun VFSDebugScreen(navigator: DestinationsNavigator) {
         R.string.vfs_tab_rules,
         R.string.vfs_tab_templates,
         R.string.vfs_tab_events,
-        "协议" // TODO: R.string.vfs_tab_protocol
+        R.string.vfs_tab_protocol
     )
 
     Scaffold(

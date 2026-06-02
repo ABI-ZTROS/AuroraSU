@@ -99,7 +99,7 @@ object VFSProtocolTranslator {
     /**
      * 将单条规则字符串转换为二进制格式。
      *
-     * 字符串格式：`"action:path_pattern:mode"`，例如 `"deny:/system/**:rw"`、`"allow:/sdcard/:r"`
+     * 字符串格式："action:path_pattern:mode"，例如 "deny:/system/**:rw"、"allow:/sdcard/:r"
      *
      * 二进制格式：
      * - `__u8 action`（0=allow, 1=deny）
