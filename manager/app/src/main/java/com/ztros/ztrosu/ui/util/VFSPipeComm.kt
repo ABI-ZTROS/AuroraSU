@@ -206,7 +206,7 @@ object VFSPipeComm {
      * @param rules 结构化规则数据列表
      * @return true=成功
      */
-    fun setRules(rules: List<PipeRuleData>): Boolean {
+    fun setStructuredRules(rules: List<PipeRuleData>): Boolean {
         val data = buildRulesData(rules)
         return sendCommand(CMD_SET_RULES, data)
     }
