@@ -405,7 +405,8 @@ fun VFSDebugScreen(navigator: DestinationsNavigator) {
         R.string.vfs_tab_rules,
         R.string.vfs_tab_templates,
         R.string.vfs_tab_events,
-        R.string.vfs_tab_protocol
+        R.string.vfs_tab_protocol,
+        R.string.vfs_tab_audit
     )
 
     Scaffold(
@@ -542,6 +543,10 @@ fun VFSDebugScreen(navigator: DestinationsNavigator) {
                     moduleVersion = moduleVersion,
                     onNavigateToProtocol = { selectedTabIndex = 5 }
                 )
+                6 -> {
+                    val auditManager = remember { AuditManager.getInstance(context) }
+                    AuditTab(auditManager = auditManager)
+                }
             }
         }
     }
