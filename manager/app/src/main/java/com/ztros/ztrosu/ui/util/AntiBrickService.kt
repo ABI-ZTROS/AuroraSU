@@ -91,10 +91,14 @@ class AntiBrickService : Service() {
     }
 
     private fun startMonitoring() {
+        // 检测用户层服务是否也在运行
+        val isUserLayerActive = isUserLayerServiceActive()
+        val mode = if (isUserLayerActive) "协同模式" else "独立模式"
+
         // 前台服务通知
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("防格机保护运行中")
-            .setContentText("正在监控高危命令...")
+            .setContentTitle("防格机保护 [$mode]")
+            .setContentText(if (isUserLayerActive) "内核层+用户层双重保护运行中" else "内核层保护运行中")
             .setSmallIcon(R.drawable.ic_security)
             .setOngoing(true)
             .build()
@@ -116,7 +120,21 @@ class AntiBrickService : Service() {
             }
         }
 
-        Log.i(TAG, "Anti-brick monitoring started")
+        Log.i(TAG, "Kernel-layer anti-brick started in $mode")
+    }
+
+    /**
+     * 检测用户层服务是否活跃
+     */
+    private fun isUserLayerServiceActive(): Boolean {
+        return try {
+            val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager
+            activityManager.getRunningServices(Integer.MAX_VALUE).any {
+                it.service.className == AntiBrickUserService::class.java.name
+            }
+        } catch (e: Exception) {
+            false
+        }
     }
 
     /**
