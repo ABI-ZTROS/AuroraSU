@@ -406,7 +406,8 @@ fun VFSDebugScreen(navigator: DestinationsNavigator) {
         R.string.vfs_tab_templates,
         R.string.vfs_tab_events,
         R.string.vfs_tab_protocol,
-        R.string.vfs_tab_audit
+        R.string.vfs_tab_audit,
+        R.string.vfs_tab_spoof
     )
 
     Scaffold(
@@ -544,6 +545,7 @@ fun VFSDebugScreen(navigator: DestinationsNavigator) {
                     onNavigateToProtocol = { selectedTabIndex = 5 }
                 )
                 6 -> AuditTab()
+                7 -> IdentitySpoofTab()
             }
         }
     }
