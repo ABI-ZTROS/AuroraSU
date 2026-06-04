@@ -97,7 +97,7 @@ class AntiBrickUserService : Service() {
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("防格机保护 [$mode]")
             .setContentText(if (isKernelActive) "内核模块运行中，用户层辅助监控" else "内核模块未加载，用户层独立保护")
-            .setSmallIcon(R.drawable.ic_security)
+            .setSmallIcon(R.drawable.ztros_shield)
             .setOngoing(true)
             .build()
 

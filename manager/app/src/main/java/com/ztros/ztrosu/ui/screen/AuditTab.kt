@@ -176,7 +176,7 @@ private fun ShellStatsTab(
             StatCard(
                 title = "交互式",
                 value = stats.interactiveCount.toString(),
-                icon = Icons.Default.Console,
+                icon = Icons.Default.Terminal,
                 color = MaterialTheme.colorScheme.secondary,
                 modifier = Modifier.weight(1f)
             )
@@ -269,7 +269,7 @@ private fun ShellExecCard(record: ShellExecRecord) {
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        if (isScript) Icons.Default.Description else Icons.Default.Console,
+                        if (isScript) Icons.Default.Description else Icons.Default.Terminal,
                         contentDescription = null,
                         modifier = Modifier.size(18.dp),
                         tint = if (isScript) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.secondary
@@ -420,7 +420,7 @@ private fun PartitionProtectionTab(
                 onClick = onResetModification,
                 modifier = Modifier.weight(1f)
             ) {
-                Icon(Icons.Default.RestartAlt, null, modifier = Modifier.size(18.dp))
+                Icon(Icons.Default.Refresh, null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(4.dp))
                 Text("重置标记")
             }
