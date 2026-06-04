@@ -648,6 +648,7 @@
     <string name="vfs_disabled_only">仅禁用</string>
     <!-- VFS Protocol Translator -->
     <string name="vfs_tab_protocol">协议</string>
+    <string name="vfs_tab_audit">审计</string>
     <string name="vfs_protocol_title">协议调试器</string>
     <string name="vfs_protocol_rule_translator">规则翻译器</string>
     <string name="vfs_protocol_policy_translator">策略翻译器</string>
