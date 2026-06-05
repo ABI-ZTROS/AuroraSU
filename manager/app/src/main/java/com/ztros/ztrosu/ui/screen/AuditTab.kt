@@ -443,7 +443,7 @@ private fun PartitionProtectionTab(
     }
 
     // 策略设置对话框
-    if (showPolicyDialog) {
+    if (showPolicyDialog && status != null) {
         PolicyDialog(
             currentStatus = status,
             onDismiss = { showPolicyDialog = false },
