@@ -110,8 +110,8 @@ object VFSPersistenceManager {
         try {
             val file = SuFile.open(VFS_CONFIG_FILE)
             if (!file.exists()) {
-                Log.w(TAG, "Config file not found, returning default")
-                return@withContext VFSConfig()
+                Log.w(TAG, "Config file not found")
+                return@withContext null
             }
 
             val json = JSONObject(file.readText())
@@ -522,8 +522,8 @@ object VFSPersistenceManager {
      */
     suspend fun syncAllConfigurations(): Boolean = withContext(Dispatchers.IO) {
         try {
-            // Load current policy from kernel/userspace
-            val policy = VFSDebugUtil.getVFSPolicy()
+            // Load current policy from kernel
+            val policy = VFSDebugUtil.getVFSPolicy() ?: return@withContext false
 
             // Sync to config file
             val settings = VFSPolicySettings(

@@ -57,13 +57,13 @@ object IdentitySpoofInterface {
     /**
      * 获取所有伪装规则
      */
-    suspend fun getRules(): List<SpoofRule> = withContext(Dispatchers.IO) {
+    suspend fun getRules(): List<SpoofRule>? = withContext(Dispatchers.IO) {
         try {
             val content = File("$spoofBase/rules").readText()
             content.lines().drop(1).mapNotNull { parseRuleLine(it) }
         } catch (e: Exception) {
             Log.w(TAG, "Failed to read rules", e)
-            emptyList()
+            null
         }
     }
 

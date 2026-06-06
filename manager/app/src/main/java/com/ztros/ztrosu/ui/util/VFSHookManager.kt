@@ -680,7 +680,7 @@ object VFSHookManager {
 
     /**
      * Apply hook to kernel
-     * 通讯通道优先级: PIPE > SYSFS > USERSPACE
+     * 通讯通道优先级: PIPE > SYSFS
      */
     private fun applyHookToKernel(target: VFSHookTarget): Boolean {
         return try {
@@ -689,7 +689,7 @@ object VFSHookManager {
                 kotlinx.coroutines.runBlocking {
                     VFSKernelInterface.detectBestChannel()
                 }
-            }.getOrDefault(VFSKernelInterface.CommChannel.SYSFS)
+            }.getOrNull()
 
             when (channel) {
                 VFSKernelInterface.CommChannel.PIPE -> {
@@ -711,8 +711,9 @@ object VFSHookManager {
                 VFSKernelInterface.CommChannel.SYSFS -> {
                     applyHookViaSysfs(target)
                 }
-                VFSKernelInterface.CommChannel.USERSPACE -> {
-                    applyHookViaUserspace(target)
+                null -> {
+                    Log.w(TAG, "No kernel communication channel available")
+                    false
                 }
             }
         } catch (e: Exception) {
@@ -722,7 +723,7 @@ object VFSHookManager {
     }
 
     /**
-     * Apply hook via sysfs (原有逻辑)
+     * Apply hook via sysfs
      */
     private fun applyHookViaSysfs(target: VFSHookTarget): Boolean {
         return try {
@@ -744,8 +745,8 @@ object VFSHookManager {
                 Log.i(TAG, "Applied hook to kernel via SYSFS: $command")
                 true
             } else {
-                // Fallback: use userspace daemon
-                applyHookViaUserspace(target)
+                Log.w(TAG, "Kernel hook_targets file not available")
+                false
             }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to apply hook via SYSFS", e)
@@ -775,42 +776,11 @@ object VFSHookManager {
                 Log.i(TAG, "Removed hook from kernel: $command")
                 true
             } else {
-                removeHookViaUserspace(target)
+                Log.w(TAG, "Kernel hook_targets file not available")
+                false
             }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to remove hook from kernel", e)
-            false
-        }
-    }
-
-    /**
-     * Apply hook via userspace daemon
-     */
-    private fun applyHookViaUserspace(target: VFSHookTarget): Boolean {
-        return try {
-            val ksudPath = "/data/adb/ksu/ksud"
-            val command = "$ksudPath vfs-hook add ${target.type.name} ${target.identifier} ${target.uid} ${target.mode.name}"
-            val result = Shell.cmd(command).exec()
-            Log.i(TAG, "Applied hook via userspace: ${result.isSuccess}")
-            result.isSuccess
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to apply hook via userspace", e)
-            false
-        }
-    }
-
-    /**
-     * Remove hook via userspace daemon
-     */
-    private fun removeHookViaUserspace(target: VFSHookTarget): Boolean {
-        return try {
-            val ksudPath = "/data/adb/ksu/ksud"
-            val command = "$ksudPath vfs-hook remove ${target.type.name} ${target.identifier}"
-            val result = Shell.cmd(command).exec()
-            Log.i(TAG, "Removed hook via userspace: ${result.isSuccess}")
-            result.isSuccess
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to remove hook via userspace", e)
             false
         }
     }

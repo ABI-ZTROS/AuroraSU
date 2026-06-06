@@ -98,7 +98,7 @@ object SecurityAuditInterface {
     /**
      * 获取最近的 Shell 执行记录
      */
-    suspend fun getRecentShellExecs(): List<ShellExecRecord> = withContext(Dispatchers.IO) {
+    suspend fun getRecentShellExecs(): List<ShellExecRecord>? = withContext(Dispatchers.IO) {
         try {
             val content = File("$auditBase/shell_recent").readText()
             content.lines().filter { it.isNotBlank() }.mapNotNull { line ->
@@ -106,7 +106,7 @@ object SecurityAuditInterface {
             }
         } catch (e: Exception) {
             Log.w(TAG, "Failed to read shell recent", e)
-            emptyList()
+            null
         }
     }
 

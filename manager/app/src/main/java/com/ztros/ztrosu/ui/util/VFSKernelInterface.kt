@@ -26,8 +26,7 @@ object VFSKernelInterface {
      */
     enum class CommChannel {
         PIPE,       // 优先：一次性pipe（安全、高效）
-        SYSFS,      // 备用：sysfs写入（兼容性好）
-        USERSPACE   // 兜底：Shell命令（最低保障）
+        SYSFS       // 备用：sysfs写入（兼容性好）
     }
 
     /**
@@ -38,9 +37,9 @@ object VFSKernelInterface {
 
     /**
      * 自动检测最佳通讯通道
-     * 优先级: PIPE > SYSFS > USERSPACE
+     * 优先级: PIPE > SYSFS
      */
-    suspend fun detectBestChannel(): CommChannel = withContext(Dispatchers.IO) {
+    suspend fun detectBestChannel(): CommChannel? = withContext(Dispatchers.IO) {
         cachedChannel?.let { return@withContext it }
 
         val channel = try {
@@ -53,13 +52,13 @@ object VFSKernelInterface {
                 Log.i(TAG, "Detected SYSFS channel as best communication channel")
                 CommChannel.SYSFS
             } else {
-                // 3. 如果sysfs不可用，使用USERSPACE
-                Log.i(TAG, "Falling back to USERSPACE channel")
-                CommChannel.USERSPACE
+                // 没有可用通道
+                Log.w(TAG, "No kernel communication channel available")
+                null
             }
         } catch (e: Exception) {
-            Log.w(TAG, "Error detecting best channel, falling back to SYSFS", e)
-            CommChannel.SYSFS
+            Log.w(TAG, "Error detecting best channel", e)
+            null
         }
 
         cachedChannel = channel
@@ -162,10 +161,10 @@ object VFSKernelInterface {
     /**
      * 添加Hook目标
      * 协议: add:<type>:<identifier>:<uid>:<mode>
-     * 通讯通道优先级: PIPE > SYSFS > USERSPACE
+     * 通讯通道优先级: PIPE > SYSFS
      */
     suspend fun addHookTarget(target: HookTarget): Boolean = withContext(Dispatchers.IO) {
-        val channel = detectBestChannel()
+        val channel = detectBestChannel() ?: return@withContext false
         when (channel) {
             CommChannel.PIPE -> {
                 VFSPipeComm.addHook(
@@ -192,13 +191,6 @@ object VFSKernelInterface {
                 val modeStr = target.mode.name
                 val command = "add:${typeStr}:${target.identifier}:${target.uid}:${modeStr}"
                 writeFile("$VFS_SYSFS_PATH/hook_targets", command)
-            }
-            CommChannel.USERSPACE -> {
-                val typeStr = target.type.name
-                val modeStr = target.mode.name
-                val command = "add:${typeStr}:${target.identifier}:${target.uid}:${modeStr}"
-                val result = Shell.cmd("echo '$command' > $VFS_SYSFS_PATH/hook_targets").exec()
-                result.isSuccess
             }
         }
     }
@@ -351,10 +343,10 @@ object VFSKernelInterface {
     /**
      * 获取完整的模块状态
      */
-    suspend fun getModuleStatus(): ModuleStatus = withContext(Dispatchers.IO) {
-        val version = getVersion() ?: 0
-        val stats = VFSDebugUtil.getVFSStats()
-        val policy = VFSDebugUtil.getVFSPolicy()
+    suspend fun getModuleStatus(): ModuleStatus? = withContext(Dispatchers.IO) {
+        val version = getVersion() ?: return@withContext null
+        val stats = VFSDebugUtil.getVFSStats() ?: return@withContext null
+        val policy = VFSDebugUtil.getVFSPolicy() ?: return@withContext null
         val hooks = if (version >= 2) getHookList() else emptyList()
 
         ModuleStatus(

@@ -136,7 +136,12 @@ object VFSNetlinkListener {
         // 尝试JNI方式，失败则使用Shell fallback
         if (!tryStartJniListener()) {
             Log.i(TAG, "JNI listener not available, using Shell fallback")
-            startShellFallbackListener()
+            if (!startShellFallbackListener()) {
+                Log.w(TAG, "No kernel event source available, listener not started")
+                isListening.set(false)
+                eventCallback = null
+                errorCallback = null
+            }
         }
     }
 
@@ -272,8 +277,18 @@ object VFSNetlinkListener {
      * 1. 通过root shell在后台持续读取 /proc/net/netlink 或内核事件节点
      * 2. 解析输出并转换为VFSEvent
      * 3. 通过回调通知UI层
+     *
+     * @return 是否成功启动（至少有一个数据源可用）
      */
-    private fun startShellFallbackListener() {
+    private fun startShellFallbackListener(): Boolean {
+        // 先检查是否有任何可用数据源
+        val hasKernelNode = SuFile.open("/sys/kernel/ztrosu/vfs/events").exists()
+        val hasDebugFs = SuFile.open("/sys/kernel/debug/ztrosu/vfs/event_log").exists()
+        if (!hasKernelNode && !hasDebugFs) {
+            Log.w(TAG, "No kernel event sources available")
+            return false
+        }
+
         listenerThread = thread(name = "VFSNetlink-Shell") {
             Log.i(TAG, "Shell fallback listener started")
 
@@ -300,6 +315,7 @@ object VFSNetlinkListener {
 
             Log.i(TAG, "Shell fallback listener stopped")
         }
+        return true
     }
 
     /**
@@ -333,16 +349,6 @@ object VFSNetlinkListener {
             }
         } catch (e: Exception) {
             Log.d(TAG, "DebugFS event log not available")
-        }
-
-        // 方案3：通过ksud获取事件
-        try {
-            val ksudEvents = pollFromKsud()
-            if (ksudEvents.isNotEmpty()) {
-                events.addAll(ksudEvents)
-            }
-        } catch (e: Exception) {
-            Log.d(TAG, "ksud event source not available")
         }
 
         return events
@@ -397,24 +403,6 @@ object VFSNetlinkListener {
             parseTextEventLog(content)
         } catch (e: Exception) {
             Log.e(TAG, "Error reading debugfs event log", e)
-            emptyList()
-        }
-    }
-
-    /**
-     * 通过ksud守护进程获取事件
-     */
-    private fun pollFromKsud(): List<VFSEvent> {
-        return try {
-            val ksudPath = "/data/adb/ksu/ksud"
-            val result = Shell.cmd("$ksudPath vfs-events poll 2>/dev/null").exec()
-
-            if (result.isSuccess && result.out.isNotEmpty()) {
-                parseTextEventLog(result.out.joinToString("\n"))
-            } else {
-                emptyList()
-            }
-        } catch (e: Exception) {
             emptyList()
         }
     }
