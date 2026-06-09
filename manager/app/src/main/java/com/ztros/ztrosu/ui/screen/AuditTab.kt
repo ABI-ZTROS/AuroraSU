@@ -41,7 +41,7 @@ fun AuditTab(
 
     // Shell 统计数据
     var shellStats by remember { mutableStateOf<ShellExecStats?>(null) }
-    var shellRecords by remember { mutableStateOf<List<ShellExecRecord>>(emptyList()) }
+    var shellRecords by remember { mutableStateOf<List<ShellExecRecord>?>(null) }
     var isRefreshing by remember { mutableStateOf(false) }
 
     // 分区保护数据

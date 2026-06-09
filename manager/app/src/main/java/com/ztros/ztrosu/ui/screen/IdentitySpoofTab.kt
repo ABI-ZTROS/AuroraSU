@@ -30,7 +30,7 @@ fun IdentitySpoofTab(
     val snackbarHostState = remember { SnackbarHostState() }
 
     // 状态
-    var rules by remember { mutableStateOf<List<SpoofRule>>(emptyList()) }
+    var rules by remember { mutableStateOf<List<SpoofRule>?>(null) }
     var isRefreshing by remember { mutableStateOf(false) }
     var showAddDialog by remember { mutableStateOf(false) }
     var moduleEnabled by remember { mutableStateOf(false) }

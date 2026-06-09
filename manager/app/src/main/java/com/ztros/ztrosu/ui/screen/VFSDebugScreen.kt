@@ -123,6 +123,11 @@ import com.ztros.ztrosu.ui.util.VFSTemplate
 import com.ztros.ztrosu.ui.util.VFSTemplateManager
 import com.ztros.ztrosu.ui.util.VFSProtocolTranslator
 import com.ztros.ztrosu.ui.util.VFSEvent
+import com.ztros.ztrosu.ui.util.EVENT_VFS_OPEN
+import com.ztros.ztrosu.ui.util.EVENT_VFS_READ
+import com.ztros.ztrosu.ui.util.EVENT_VFS_WRITE
+import com.ztros.ztrosu.ui.util.EVENT_VFS_CLOSE
+import com.ztros.ztrosu.ui.util.EVENT_VFS_DENY
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -154,9 +159,9 @@ fun VFSDebugScreen(navigator: DestinationsNavigator) {
 
     // ==================== Shared State ====================
 
-    var stats by remember { mutableStateOf(VFSStats()) }
-    var policy by remember { mutableStateOf(VFSPolicy()) }
-    var backend by remember { mutableStateOf(VFSBackend.MOCK) }
+    var stats by remember { mutableStateOf<VFSStats?>(null) }
+    var policy by remember { mutableStateOf<VFSPolicy?>(null) }
+    var backend by remember { mutableStateOf<VFSBackend?>(null) }
     var channel by remember { mutableStateOf<CommChannel?>(null) }
     var moduleVersion by remember { mutableStateOf<Int?>(null) }
 
@@ -1950,7 +1955,7 @@ private fun RuleTranslatorSection() {
                         val bytes = hexInput.trim().split(Regex("\\s+")).map { it.toInt(16).toByte() }.toByteArray()
                         reverseResult = VFSProtocolTranslator.ruleToString(bytes)
                     } catch (_: Exception) {
-                        reverseResult = stringResource(R.string.vfs_protocol_validation_error)
+                        reverseResult = "解析错误: 无效的十六进制格式"
                     }
                 },
                 enabled = hexInput.isNotEmpty(),
@@ -2211,7 +2216,7 @@ private fun HookCommandTranslatorSection() {
                         val bytes = hexInput.trim().split(Regex("\\s+")).map { it.toInt(16).toByte() }.toByteArray()
                         reverseResult = VFSProtocolTranslator.hookBinaryToCommand(bytes)
                     } catch (_: Exception) {
-                        reverseResult = stringResource(R.string.vfs_protocol_validation_error)
+                        reverseResult = "解析错误: 无效的十六进制格式"
                     }
                 },
                 enabled = hexInput.isNotEmpty(),
@@ -2412,11 +2417,13 @@ private fun getBackendColor(backend: VFSBackend): Color = when (backend) {
 private fun getChannelName(channel: CommChannel): String = when (channel) {
     CommChannel.PIPE -> "PIPE"
     CommChannel.SYSFS -> "SysFS"
+    CommChannel.USERSPACE -> "Shell"
 }
 
 private fun getChannelColor(channel: CommChannel): Color = when (channel) {
     CommChannel.PIPE -> GREEN
     CommChannel.SYSFS -> Color(0xFF4CAF50)
+    CommChannel.USERSPACE -> ORANGE
 }
 
 @Composable
