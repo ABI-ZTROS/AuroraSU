@@ -113,9 +113,10 @@ object VFSKernelInterface {
 
     /**
      * 检查内核模块是否支持v2接口
+     * phantom-lkm 返回版本 3，因此使用 >= 2 而非 == 2
      */
     suspend fun isV2Supported(): Boolean {
-        return getVersion() == 2
+        return getVersion()?.let { it >= 2 } ?: false
     }
 
     // ==================== Hook目标管理 (v2接口) ====================

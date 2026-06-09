@@ -28,9 +28,9 @@ data class PipeRuleData(
 )
 
 /**
- * VFS Pipe通讯管理器
+ * VFS Misc Device 通讯管理器
  *
- * 通过FIFO管道与内核VFS模块进行二进制协议通讯。
+ * 通过内核 misc char device (/dev/aurora_vfs) 与内核VFS模块进行二进制协议通讯。
  * 使用SuFile和Shell进行root操作（/dev/需要root权限）。
  *
  * 命令协议（与内核约定，little-endian）：
@@ -40,12 +40,8 @@ data class PipeRuleData(
  *   CmdLen  : UInt32
  *   Data    : ByteArray
  *
- * 响应协议：
- *   Magic   : UInt32 (0xAF5F)
- *   Version : UInt32 (2)
- *   Status  : UInt32 (0=success, non-zero=error)
- *   RespLen : UInt32
- *   Data    : ByteArray
+ * 注意: 内核 misc device 不支持读取（pipe_read 返回 -EINVAL），
+ *       因此仅支持写入命令，不支持读取响应。
  */
 object VFSPipeComm {
 
@@ -53,7 +49,7 @@ object VFSPipeComm {
 
     const val MAGIC: Int = 0xAF5F
     const val VERSION = 2
-    const val PIPE_BASE = "/dev/aurora_vfs_"
+    const val DEVICE_PATH = "/dev/aurora_vfs"
     const val PIPE_TIMEOUT_MS = 5000L
 
     // 命令类型
@@ -84,48 +80,32 @@ object VFSPipeComm {
     /**
      * 发送命令到内核VFS模块
      *
+     * 直接写入 /dev/aurora_vfs misc device，无需创建/销毁管道。
+     * 内核不支持读取响应，因此仅返回写入是否成功。
+     *
      * @param cmdType 命令类型 (CMD_ADD_HOOK, CMD_REMOVE_HOOK, etc.)
      * @param data 命令数据负载
-     * @return true=成功, false=失败
+     * @return true=写入成功, false=失败
      */
     fun sendCommand(cmdType: Int, data: ByteArray = ByteArray(0)): Boolean {
         commLock.withLock {
-            var pipePath: String? = null
             return try {
-                // 1. 创建随机命名管道
-                pipePath = createPipe()
-                if (pipePath == null) {
-                    Log.e(TAG, "Failed to create pipe")
-                    return false
-                }
-
-                // 2. 构建命令包
+                // 1. 构建命令包
                 val commandPacket = buildCommandPacket(cmdType, data)
 
-                // 3. 通过root shell写入管道
-                val writeSuccess = writeToPipe(pipePath, commandPacket)
+                // 2. 直接写入 misc device
+                val writeSuccess = writeToDevice(commandPacket)
                 if (!writeSuccess) {
-                    Log.e(TAG, "Failed to write command to pipe: $pipePath")
+                    Log.e(TAG, "Failed to write command to $DEVICE_PATH")
                     return false
                 }
 
-                // 4. 读取响应
-                val responseData = readFromPipe(pipePath)
-                if (responseData == null) {
-                    Log.e(TAG, "Failed to read response from pipe: $pipePath")
-                    return false
-                }
-
-                // 5. 解析响应
-                parseResponse(responseData)
+                // 3. 内核 misc device 不支持读取，写入成功即视为命令成功
+                Log.i(TAG, "Command type=$cmdType sent successfully (${commandPacket.size} bytes)")
+                true
             } catch (e: Exception) {
                 Log.e(TAG, "Error sending command type=$cmdType", e)
                 false
-            } finally {
-                // 6. 销毁管道
-                if (pipePath != null) {
-                    destroyPipe(pipePath)
-                }
             }
         }
     }
@@ -133,41 +113,28 @@ object VFSPipeComm {
     /**
      * 发送命令并获取响应数据
      *
+     * 注意: 内核 misc device 不支持读取（pipe_read 返回 -EINVAL），
+     *       因此此方法始终返回 null。保留此接口以兼容调用方。
+     *
      * @param cmdType 命令类型
      * @param data 命令数据负载
-     * @return 响应数据，失败返回null
+     * @return 始终返回 null（内核不支持读取响应）
      */
     fun sendCommandWithData(cmdType: Int, data: ByteArray = ByteArray(0)): ByteArray? {
         commLock.withLock {
-            var pipePath: String? = null
             return try {
-                pipePath = createPipe()
-                if (pipePath == null) {
-                    Log.e(TAG, "Failed to create pipe")
-                    return null
-                }
-
                 val commandPacket = buildCommandPacket(cmdType, data)
-                val writeSuccess = writeToPipe(pipePath, commandPacket)
+                val writeSuccess = writeToDevice(commandPacket)
                 if (!writeSuccess) {
-                    Log.e(TAG, "Failed to write command to pipe: $pipePath")
+                    Log.e(TAG, "Failed to write command to $DEVICE_PATH")
                     return null
                 }
-
-                val responseData = readFromPipe(pipePath)
-                if (responseData == null) {
-                    Log.e(TAG, "Failed to read response from pipe: $pipePath")
-                    return null
-                }
-
-                parseResponseData(responseData)
+                Log.i(TAG, "Command type=$cmdType sent successfully (${commandPacket.size} bytes)")
+                // 内核 misc device 不支持读取响应
+                null
             } catch (e: Exception) {
                 Log.e(TAG, "Error sending command with data type=$cmdType", e)
                 null
-            } finally {
-                if (pipePath != null) {
-                    destroyPipe(pipePath)
-                }
             }
         }
     }
@@ -275,48 +242,40 @@ object VFSPipeComm {
         return sendCommandWithData(CMD_QUERY_STATUS)
     }
 
-    // ==================== 管道管理 ====================
+    // ==================== 设备读写 ====================
 
     /**
-     * 创建随机命名的FIFO管道
-     *
-     * @return 管道路径，失败返回null
+     * 通过root shell将二进制数据直接写入 /dev/aurora_vfs misc device
      */
-    fun createPipe(): String? {
+    private fun writeToDevice(data: ByteArray): Boolean {
         return try {
-            val randomSuffix = generateRandomHex(8)
-            val pipePath = "$PIPE_BASE$randomSuffix"
+            // 将数据转为base64以安全传输
+            val base64Data = android.util.Base64.encodeToString(data, android.util.Base64.NO_WRAP)
 
-            // 使用root shell创建FIFO管道
-            val result = Shell.cmd("mkfifo '$pipePath' 2>/dev/null && chmod 660 '$pipePath'").exec()
+            // 使用root shell将base64数据解码后写入misc device
+            val script = """
+                # 确保misc device存在
+                if [ ! -e '$DEVICE_PATH' ]; then
+                    echo "ERROR: Device not found: $DEVICE_PATH"
+                    exit 1
+                fi
+
+                # 将base64数据解码并写入misc device
+                echo '$base64Data' | base64 -d > '$DEVICE_PATH'
+                exit ${'$'}?
+            """.trimIndent()
+
+            val result = Shell.cmd(script).exec()
             if (result.isSuccess) {
-                Log.d(TAG, "Created pipe: $pipePath")
-                pipePath
+                Log.d(TAG, "Successfully wrote ${data.size} bytes to $DEVICE_PATH")
+                true
             } else {
-                Log.e(TAG, "Failed to create pipe $pipePath: ${result.err.joinToString()}")
-                null
+                Log.e(TAG, "Failed to write to $DEVICE_PATH: ${result.err.joinToString()}")
+                false
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Exception creating pipe", e)
-            null
-        }
-    }
-
-    /**
-     * 销毁管道（unlink删除）
-     *
-     * @param path 管道路径
-     */
-    fun destroyPipe(path: String) {
-        try {
-            val result = Shell.cmd("rm -f '$path'").exec()
-            if (result.isSuccess) {
-                Log.d(TAG, "Destroyed pipe: $path")
-            } else {
-                Log.w(TAG, "Failed to destroy pipe $path: ${result.err.joinToString()}")
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Exception destroying pipe $path", e)
+            Log.e(TAG, "Exception writing to $DEVICE_PATH", e)
+            false
         }
     }
 
@@ -597,96 +556,7 @@ object VFSPipeComm {
         return result
     }
 
-    // ==================== 管道读写 ====================
-
-    /**
-     * 通过root shell将数据写入管道
-     */
-    private fun writeToPipe(pipePath: String, data: ByteArray): Boolean {
-        return try {
-            // 将数据转为base64以安全传输
-            val base64Data = android.util.Base64.encodeToString(data, android.util.Base64.NO_WRAP)
-
-            // 使用root shell写入管道
-            // 先在后台打开管道读取端（防止写入阻塞），然后写入数据
-            val script = """
-                # 确保管道存在
-                if [ ! -p '$pipePath' ]; then
-                    echo "ERROR: Pipe not found"
-                    exit 1
-                fi
-                
-                # 将base64数据解码并写入管道
-                echo '$base64Data' | base64 -d > '$pipePath' &
-                WRITE_PID=${'$'}!
-                
-                # 等待写入完成或超时
-                timeout ${PIPE_TIMEOUT_MS / 1000}s wait ${'$'}WRITE_PID 2>/dev/null
-                exit 0
-            """.trimIndent()
-
-            val result = Shell.cmd(script).exec()
-            if (result.isSuccess) {
-                Log.d(TAG, "Successfully wrote ${data.size} bytes to pipe")
-                true
-            } else {
-                Log.e(TAG, "Failed to write to pipe: ${result.err.joinToString()}")
-                false
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Exception writing to pipe $pipePath", e)
-            false
-        }
-    }
-
-    /**
-     * 通过root shell从管道读取响应
-     */
-    private fun readFromPipe(pipePath: String): ByteArray? {
-        return try {
-            // 使用root shell读取管道并base64编码返回
-            val script = """
-                if [ ! -p '$pipePath' ]; then
-                    echo "ERROR: Pipe not found"
-                    exit 1
-                fi
-                
-                # 读取管道数据并编码为base64
-                timeout ${PIPE_TIMEOUT_MS / 1000}s cat '$pipePath' 2>/dev/null | base64 -w 0
-                exit 0
-            """.trimIndent()
-
-            val result = Shell.cmd(script).exec()
-            if (result.isSuccess && result.out.isNotEmpty()) {
-                val base64Output = result.out.first().trim()
-                if (base64Output.isNotEmpty() && base64Output != "ERROR: Pipe not found") {
-                    val decoded = android.util.Base64.decode(base64Output, android.util.Base64.DEFAULT)
-                    Log.d(TAG, "Read ${decoded.size} bytes from pipe")
-                    decoded
-                } else {
-                    null
-                }
-            } else {
-                Log.e(TAG, "Failed to read from pipe: ${result.err.joinToString()}")
-                null
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Exception reading from pipe $pipePath", e)
-            null
-        }
-    }
-
     // ==================== 工具方法 ====================
-
-    /**
-     * 生成指定长度的随机hex字符串
-     */
-    private fun generateRandomHex(length: Int): String {
-        val random = java.security.SecureRandom()
-        val bytes = ByteArray(length / 2 + 1)
-        random.nextBytes(bytes)
-        return bytes.take(length / 2).joinToString("") { "%02x".format(it) }
-    }
 
     /**
      * 状态码转字符串
@@ -704,16 +574,21 @@ object VFSPipeComm {
     }
 
     /**
-     * 检查Pipe通讯是否可用
+     * 检查 misc device 是否可用
+     * 检查 /dev/aurora_vfs 是否存在
      */
     fun isAvailable(): Boolean {
         return try {
-            val result = Shell.cmd("ls -la ${PIPE_BASE}* 2>/dev/null; echo 'PIPE_CHECK_OK'").exec()
-            // 检查/dev/目录是否可访问
-            val devCheck = Shell.cmd("test -d /dev && echo 'DEV_OK' || echo 'DEV_FAIL'").exec()
-            devCheck.isSuccess
+            val result = Shell.cmd("test -e '$DEVICE_PATH' && echo 'DEVICE_OK' || echo 'DEVICE_FAIL'").exec()
+            val available = result.isSuccess && result.out.any { it.contains("DEVICE_OK") }
+            if (available) {
+                Log.d(TAG, "Misc device $DEVICE_PATH is available")
+            } else {
+                Log.d(TAG, "Misc device $DEVICE_PATH is not available")
+            }
+            available
         } catch (e: Exception) {
-            Log.e(TAG, "Pipe availability check failed", e)
+            Log.e(TAG, "Device availability check failed", e)
             false
         }
     }
@@ -726,7 +601,7 @@ object VFSPipeComm {
             appendLine("VFSPipeComm Debug Info:")
             appendLine("  Magic: 0x${MAGIC.toString(16)}")
             appendLine("  Version: $VERSION")
-            appendLine("  Pipe Base: $PIPE_BASE")
+            appendLine("  Device Path: $DEVICE_PATH")
             appendLine("  Timeout: ${PIPE_TIMEOUT_MS}ms")
             appendLine("  Available: ${isAvailable()}")
         }
