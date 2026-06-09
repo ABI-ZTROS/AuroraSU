@@ -686,6 +686,10 @@ object VFSHookManager {
                 VFSKernelInterface.CommChannel.SYSFS -> {
                     applyHookViaSysfs(target)
                 }
+                VFSKernelInterface.CommChannel.USERSPACE -> {
+                    Log.w(TAG, "Userspace channel not supported for hooks")
+                    false
+                }
                 null -> {
                     Log.w(TAG, "No kernel communication channel available")
                     false

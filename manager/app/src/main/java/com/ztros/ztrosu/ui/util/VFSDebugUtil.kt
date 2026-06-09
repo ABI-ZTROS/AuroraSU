@@ -149,6 +149,7 @@ object VFSDebugUtil {
         when (detectBackend()) {
             VFSBackend.KERNEL_SYSFS -> getKernelPolicy(VFS_SYSFS_PATH)
             VFSBackend.KERNEL_DEBUGFS -> getKernelPolicy(VFS_DEBUGFS_PATH)
+            VFSBackend.MOCK -> null
             null -> null
         }
     }
@@ -174,6 +175,7 @@ object VFSDebugUtil {
         when (detectBackend()) {
             VFSBackend.KERNEL_SYSFS -> setKernelPolicy(VFS_SYSFS_PATH, policy)
             VFSBackend.KERNEL_DEBUGFS -> setKernelPolicy(VFS_DEBUGFS_PATH, policy)
+            VFSBackend.MOCK -> false
             null -> false
         }
     }
@@ -220,6 +222,7 @@ object VFSDebugUtil {
         when (detectBackend()) {
             VFSBackend.KERNEL_SYSFS -> writeFile("$VFS_SYSFS_PATH/stats_reset", "1")
             VFSBackend.KERNEL_DEBUGFS -> writeFile("$VFS_DEBUGFS_PATH/stats_reset", "1")
+            VFSBackend.MOCK -> false
             null -> false
         }
     }

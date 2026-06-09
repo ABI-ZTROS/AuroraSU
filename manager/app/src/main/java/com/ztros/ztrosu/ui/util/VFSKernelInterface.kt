@@ -193,7 +193,7 @@ object VFSKernelInterface {
                 val command = "add:${typeStr}:${target.identifier}:${target.uid}:${modeStr}"
                 writeFile("$VFS_SYSFS_PATH/hook_targets", command)
             }
-
+            CommChannel.USERSPACE -> false
         }
     }
 
