@@ -611,7 +611,7 @@ private fun BottomBar(
 ) {
     val navigator = navController.rememberDestinationsNavigator()
     val isManager = Natives.isManager
-    val fullFeatured = isManager && !Natives.requireNewKernel() && rootAvailable()
+    val fullFeatured = KernelDetect.isFullFeatured()
 
     val visibleDestinations = remember(fullFeatured) {
         BottomBarDestination.entries

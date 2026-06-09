@@ -77,6 +77,13 @@ object VFSDebugUtil {
         return detectBackend() != null
     }
 
+    /**
+     * Reset the cached backend detection, forcing re-detection on next call.
+     */
+    fun resetBackend() {
+        backend = null
+    }
+
 
     private fun readFile(path: String): String {
         return runCatching {

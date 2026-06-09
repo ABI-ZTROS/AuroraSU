@@ -1,6 +1,7 @@
 package com.ztros.ztrosu.ui.util
 
 import android.content.Context
+import com.topjohnwu.superuser.io.SuFile
 import com.ztros.ztrosu.Natives
 import com.ztros.ztrosu.ksuApp
 import java.io.File
@@ -39,13 +40,19 @@ object KernelDetect {
      * Returns true if /sys/kernel/ztrosu/vfs/version exists and contains a valid version number.
      */
     private fun checkSysfsKernel(): Boolean {
-        val file = File(SYSFS_VERSION_PATH)
-        if (!file.exists() || !file.canRead()) return false
         return try {
-            val content = file.readText().trim()
-            content.toIntOrNull() != null || content.toDoubleOrNull() != null
+            val f = SuFile.open(SYSFS_VERSION_PATH)
+            f.exists() && f.canRead()
         } catch (_: Exception) {
-            false
+            // Fallback to java.io.File for non-root detection
+            val file = File(SYSFS_VERSION_PATH)
+            if (!file.exists() || !file.canRead()) return false
+            return try {
+                val content = file.readText().trim()
+                content.toIntOrNull() != null || content.toDoubleOrNull() != null
+            } catch (_: Exception) {
+                false
+            }
         }
     }
 
@@ -136,5 +143,16 @@ object KernelDetect {
      */
     fun isModeLocked(): Boolean {
         return isZtrOsKernel()
+    }
+
+    /**
+     * Single source of truth for "full featured" mode detection.
+     * Used by both Home.kt and MainActivity.kt BottomBar.
+     * Conditions:
+     * - ZTR_OS kernel detected (via KSU ioctl or sysfs), OR
+     * - Manager is installed with a valid kernel version AND root is available
+     */
+    fun isFullFeatured(): Boolean {
+        return isZtrOsKernel() || (Natives.isManager && Natives.version != -1 && rootAvailable())
     }
 }

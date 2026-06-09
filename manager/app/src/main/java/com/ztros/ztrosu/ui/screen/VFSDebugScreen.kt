@@ -192,6 +192,10 @@ fun VFSDebugScreen(navigator: DestinationsNavigator) {
     suspend fun refreshData(silent: Boolean = false) = withContext(Dispatchers.IO) {
         if (!silent) isRefreshing = true
         try {
+            // Reset cached detections to ensure fresh results
+            VFSDebugUtil.resetBackend()
+            VFSKernelInterface.resetChannelCache()
+
             backend = VFSDebugUtil.detectBackend()
             stats = VFSDebugUtil.getVFSStats()
             policy = VFSDebugUtil.getVFSPolicy()

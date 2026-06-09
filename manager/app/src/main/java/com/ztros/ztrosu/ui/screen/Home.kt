@@ -104,8 +104,8 @@ fun HomeScreen(navigator: DestinationsNavigator) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
 
     val isManager = Natives.isManager
-    // isZtrOsKernel() covers both KSU ioctl and sysfs (phantom-lkm) detection
-    val fullFeatured = KernelDetect.isZtrOsKernel() || (isManager && Natives.version != -1)
+    // Single source of truth: KernelDetect.isFullFeatured()
+    val fullFeatured = KernelDetect.isFullFeatured()
     val ksuVersion = if (isManager) Natives.version else null
     val ksuVersionTag = if (isManager) Natives.getVersionTag() else null
 
