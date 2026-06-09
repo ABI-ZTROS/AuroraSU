@@ -2400,27 +2400,23 @@ private fun ActionSelector(currentAction: String, onActionChange: (String) -> Un
 private fun getBackendName(backend: VFSBackend): String = when (backend) {
     VFSBackend.KERNEL_SYSFS -> "SysFS"
     VFSBackend.KERNEL_DEBUGFS -> "DebugFS"
-    VFSBackend.USERSPACE -> "Userspace"
     VFSBackend.MOCK -> "Mock"
 }
 
 private fun getBackendColor(backend: VFSBackend): Color = when (backend) {
     VFSBackend.KERNEL_SYSFS -> GREEN
     VFSBackend.KERNEL_DEBUGFS -> Color(0xFF4CAF50)
-    VFSBackend.USERSPACE -> ORANGE
     VFSBackend.MOCK -> RED
 }
 
 private fun getChannelName(channel: CommChannel): String = when (channel) {
     CommChannel.PIPE -> "PIPE"
     CommChannel.SYSFS -> "SysFS"
-    CommChannel.USERSPACE -> "Shell"
 }
 
 private fun getChannelColor(channel: CommChannel): Color = when (channel) {
     CommChannel.PIPE -> GREEN
     CommChannel.SYSFS -> Color(0xFF4CAF50)
-    CommChannel.USERSPACE -> ORANGE
 }
 
 @Composable
@@ -2455,20 +2451,20 @@ private fun getOpShortName(op: VFSOp): String = when (op) {
 
 @Composable
 private fun getEventTypeName(eventType: Int): String = when (eventType) {
-    VFSNetlinkListener.EVENT_VFS_OPEN -> stringResource(R.string.vfs_event_type_open)
-    VFSNetlinkListener.EVENT_VFS_READ -> stringResource(R.string.vfs_event_type_read)
-    VFSNetlinkListener.EVENT_VFS_WRITE -> stringResource(R.string.vfs_event_type_write)
-    VFSNetlinkListener.EVENT_VFS_CLOSE -> stringResource(R.string.vfs_event_type_close)
-    VFSNetlinkListener.EVENT_VFS_DENY -> stringResource(R.string.vfs_event_type_deny)
+    EVENT_VFS_OPEN -> stringResource(R.string.vfs_event_type_open)
+    EVENT_VFS_READ -> stringResource(R.string.vfs_event_type_read)
+    EVENT_VFS_WRITE -> stringResource(R.string.vfs_event_type_write)
+    EVENT_VFS_CLOSE -> stringResource(R.string.vfs_event_type_close)
+    EVENT_VFS_DENY -> stringResource(R.string.vfs_event_type_deny)
     else -> "UNK"
 }
 
 private fun getEventTypeColor(eventType: Int): Color = when (eventType) {
-    VFSNetlinkListener.EVENT_VFS_OPEN -> Color(0xFF42A5F5)
-    VFSNetlinkListener.EVENT_VFS_READ -> GREEN
-    VFSNetlinkListener.EVENT_VFS_WRITE -> ORANGE
-    VFSNetlinkListener.EVENT_VFS_CLOSE -> Color(0xFF9C27B0)
-    VFSNetlinkListener.EVENT_VFS_DENY -> RED
+    EVENT_VFS_OPEN -> Color(0xFF42A5F5)
+    EVENT_VFS_READ -> GREEN
+    EVENT_VFS_WRITE -> ORANGE
+    EVENT_VFS_CLOSE -> Color(0xFF9C27B0)
+    EVENT_VFS_DENY -> RED
     else -> Color(0xFF757575)
 }
 

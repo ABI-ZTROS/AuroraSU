@@ -4,7 +4,7 @@ import android.util.Log
 import com.topjohnwu.superuser.Shell
 import com.topjohnwu.superuser.ShellUtils
 import com.topjohnwu.superuser.io.SuFile
-import com.ztros.ztrosu.ui.util.VFSNetlinkListener.VFSEvent
+import com.ztros.ztrosu.ui.util.VFSEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
