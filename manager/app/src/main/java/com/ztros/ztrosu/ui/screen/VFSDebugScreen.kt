@@ -198,9 +198,9 @@ fun VFSDebugScreen(navigator: DestinationsNavigator) {
             moduleVersion = try { VFSKernelInterface.getVersion() } catch (_: Exception) { null }
             channel = try { VFSKernelInterface.detectBestChannel() } catch (_: Exception) { null }
 
-            localEnabled = policy.enabled
-            localLogLevel = policy.logLevel
-            localDefaultAction = policy.defaultAction
+            localEnabled = policy?.enabled ?: false
+            localLogLevel = policy?.logLevel ?: 0
+            localDefaultAction = policy?.defaultAction ?: "allow"
 
             hookTargets = VFSHookManager.getHookTargets()
             rules = VFSRuleEngine.getRules()
@@ -240,7 +240,7 @@ fun VFSDebugScreen(navigator: DestinationsNavigator) {
                 enabled = localEnabled,
                 logLevel = localLogLevel,
                 defaultAction = localDefaultAction,
-                rules = policy.rules
+                rules = policy?.rules ?: emptyList()
             )
             val validation = VFSDebugUtil.validatePolicy(newPolicy)
             if (!validation.first) {
@@ -496,9 +496,9 @@ fun VFSDebugScreen(navigator: DestinationsNavigator) {
         ) {
             when (selectedTabIndex) {
                 0 -> DashboardTab(
-                    stats = stats,
-                    policy = policy,
-                    backend = backend,
+                    stats = stats ?: VFSStats(),
+                    policy = policy ?: VFSPolicy(),
+                    backend = backend ?: VFSBackend.MOCK,
                     channel = channel,
                     moduleVersion = moduleVersion,
                     hookTargets = hookTargets,

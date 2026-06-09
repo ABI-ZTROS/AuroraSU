@@ -109,14 +109,15 @@ fun IdentitySpoofTab(
                 .padding(padding)
                 .padding(horizontal = 16.dp)
         ) {
-            if (rules.isEmpty()) {
+            val rulesList = rules ?: emptyList()
+            if (rulesList.isEmpty()) {
                 EmptySpoofState { showAddDialog = true }
             } else {
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    items(rules, key = { it.id }) { rule ->
+                    items(rulesList, key = { it.id }) { rule ->
                         SpoofRuleCard(
                             rule = rule,
                             onDelete = {

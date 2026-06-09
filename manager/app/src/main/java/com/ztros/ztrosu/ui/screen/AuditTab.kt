@@ -97,7 +97,7 @@ fun AuditTab(
         when (selectedSubTab) {
             0 -> ShellStatsTab(
                 stats = shellStats,
-                records = shellRecords,
+                records = shellRecords ?: emptyList(),
                 onClearHistory = {
                     scope.launch {
                         securityAuditInterface.clearShellHistory()

@@ -46,7 +46,7 @@ object VFSDebugUtil {
     /**
      * Detect which backend is available
      */
-    fun detectBackend(): VFSBackend {
+    fun detectBackend(): VFSBackend? {
         if (backend != null) {
             return backend!!
         }
@@ -108,6 +108,7 @@ object VFSDebugUtil {
         when (detectBackend()) {
             VFSBackend.KERNEL_SYSFS -> getKernelStats("$VFS_SYSFS_PATH/stats")
             VFSBackend.KERNEL_DEBUGFS -> getKernelStats("$VFS_DEBUGFS_PATH/stats")
+            VFSBackend.MOCK -> null
             null -> null
         }
     }
