@@ -15,6 +15,7 @@ import android.view.LayoutInflater
 import android.view.WindowManager
 import android.widget.Button
 import android.widget.TextView
+import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import com.ztros.ztrosu.R
 import kotlinx.coroutines.*
@@ -26,18 +27,18 @@ import java.nio.ByteOrder
 private const val TAG = "AntiBrickUser"
 private const val CHANNEL_ID = "anti_brick_user"
 private const val NOTIFICATION_ID = 1002
+private const val LOG_FILE_PATH = "/data/local/tmp/anti_brick_user.log"
 
 /**
  * 用户层防格机守护服务（冗余方案）
  *
- * 使用 fanotify 监控 exec 事件，不依赖内核模块。
+ * 使用 /proc 轮询监控 exec 事件，不依赖内核模块。
  * 当内核模块被卸载或失效时，此服务自动接管保护。
  */
 class AntiBrickUserService : Service() {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var monitorJob: Job? = null
-    private var fanotifyFd: FileDescriptor? = null
     private var wakeLock: PowerManager.WakeLock? = null
 
     companion object {
@@ -108,10 +109,8 @@ class AntiBrickUserService : Service() {
             .apply { acquire(10 * 60 * 1000L) }
 
         monitorJob = scope.launch {
-            // 优先尝试 fanotify，失败则降级为轮询
-            if (!startFanotifyMonitor()) {
-                startPollingMonitor()
-            }
+            // 直接使用 proc 轮询监控作为唯一实现
+            startPollingMonitor()
         }
 
         Log.i(TAG, "User-layer anti-brick started in $mode")
@@ -130,63 +129,11 @@ class AntiBrickUserService : Service() {
     }
 
     /**
-     * fanotify 监控（需要 root + fanotify 支持）
-     */
-    private suspend fun startFanotifyMonitor(): Boolean = withContext(Dispatchers.IO) {
-        try {
-            // 通过 JNI 或 Runtime.exec 调用 fanotify_init
-            val process = Runtime.getRuntime().exec(
-                arrayOf("su", "-c",
-                    "sh -c '"
-                            + "exec 3<>/dev/null; "
-                            + "if command -v fanotify >/dev/null 2>&1; then "
-                            + "  echo fanotify_available; "
-                            + "else "
-                            + "  echo fanotify_not_available; "
-                            + "fi'"
-                )
-            )
-            val output = process.inputStream.bufferedReader().readText().trim()
-            if (output != "fanotify_available") {
-                Log.w(TAG, "fanotify not available, falling back to polling")
-                return@withContext false
-            }
-
-            // fanotify 可用，启动监控脚本
-            val fanotifyScript = """
-                #!/system/bin/sh
-                # fanotify 监控高危命令执行
-                
-                FANOTIFY_INIT="/proc/self/fd/3"
-                
-                # 使用 inotifywait 作为替代方案（更通用）
-                while true; do
-                    # 监控 /system/bin 目录下的 rm, dd, mkfs 等命令
-                    for cmd in rm dd mkfs fdisk parted flash fastboot; do
-                        if [ -f "/system/bin/${'$'}cmd" ]; then
-                            # 通过审计日志检测（如果内核支持 audit）
-                            : # 占位
-                        fi
-                    done
-                    sleep 1
-                done
-            """.trimIndent()
-
-            // 实际实现：使用轮询检测 /proc/[pid]/cmdline
-            startPollingMonitor()
-            true
-        } catch (e: Exception) {
-            Log.w(TAG, "fanotify setup failed", e)
-            false
-        }
-    }
-
-    /**
-     * 轮询监控（降级方案，不依赖 fanotify）
+     * /proc 轮询监控（唯一实现，不依赖 fanotify）
      * 通过扫描 /proc 检测高危命令执行
      */
     private suspend fun startPollingMonitor() = withContext(Dispatchers.IO) {
-        Log.i(TAG, "Starting polling-based monitor")
+        Log.i(TAG, "Starting proc polling monitor")
 
         val dangerousPatterns = listOf(
             "rm -rf /" to "RM_RF_ROOT",
@@ -282,7 +229,7 @@ class AntiBrickUserService : Service() {
             Log.i(TAG, "Killed dangerous process pid=$pid")
 
             // 2. 记录日志
-            File("/data/local/tmp/anti_brick_user.log").appendText(
+            File(LOG_FILE_PATH).appendText(
                 "${System.currentTimeMillis()}: BLOCKED pid=$pid type=$riskType cmd=$cmdline\n"
             )
 
@@ -292,6 +239,22 @@ class AntiBrickUserService : Service() {
             }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to handle dangerous command", e)
+        }
+    }
+
+    /**
+     * 读取拦截日志内容
+     */
+    private fun readLogContent(): String {
+        return try {
+            val logFile = File(LOG_FILE_PATH)
+            if (logFile.exists()) {
+                logFile.readText().lines().takeLast(50).joinToString("\n")
+            } else {
+                "暂无日志记录"
+            }
+        } catch (e: Exception) {
+            "读取日志失败: ${e.message}"
         }
     }
 
@@ -320,7 +283,9 @@ class AntiBrickUserService : Service() {
             view.findViewById<Button>(R.id.btn_deny).apply {
                 text = "查看日志"
                 setOnClickListener {
-                    // TODO: 打开日志查看
+                    // 显示日志内容Toast
+                    val logContent = readLogContent()
+                    Toast.makeText(this@AntiBrickUserService, logContent, Toast.LENGTH_LONG).show()
                     try { wm.removeView(view) } catch (_: Exception) {}
                 }
             }

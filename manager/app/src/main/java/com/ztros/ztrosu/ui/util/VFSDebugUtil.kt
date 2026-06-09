@@ -35,7 +35,8 @@ data class VFSPolicy(
 
 enum class VFSBackend {
     KERNEL_SYSFS,    // Native kernel implementation
-    KERNEL_DEBUGFS   // Debugfs fallback
+    KERNEL_DEBUGFS,  // Debugfs fallback
+    MOCK             // No backend available (disconnected)
 }
 
 object VFSDebugUtil {

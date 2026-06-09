@@ -50,7 +50,7 @@ private data class LogEntry(
     val granted: Boolean
 )
 
-private suspend fun fetchAuditStats(): AuditStats = withContext(Dispatchers.IO) {
+private suspend fun fetchAuditStats(): AuditStats? = withContext(Dispatchers.IO) {
     runCatching {
         // Read KernelSU log
         val ksuLog = ShellUtils.fastCmd("cat /data/adb/ksu/sulog 2>/dev/null").trim()
@@ -133,7 +133,7 @@ private suspend fun fetchAuditStats(): AuditStats = withContext(Dispatchers.IO) 
             } + auditLines).takeLast(30),
             anomalies = anomalies
         )
-    }.getOrDefault(AuditStats())
+    }.getOrNull()
 }
 
 private suspend fun revokeAllSu(): Boolean = withContext(Dispatchers.IO) {
@@ -171,7 +171,7 @@ fun AuditScreen(navigator: DestinationsNavigator) {
     val noAnomalies = stringResource(R.string.audit_no_anomalies)
     val noLogs = stringResource(R.string.audit_no_logs)
 
-    var auditStats by remember { mutableStateOf(AuditStats()) }
+    var auditStats by remember { mutableStateOf<AuditStats?>(null) }
     var isLoading by remember { mutableStateOf(true) }
 
     LaunchedEffect(Unit) {
@@ -235,7 +235,33 @@ fun AuditScreen(navigator: DestinationsNavigator) {
                 ) {
                     CircularProgressIndicator()
                 }
+            } else if (auditStats == null) {
+                // Disconnected state
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(32.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            Icons.Filled.Warning,
+                            contentDescription = null,
+                            modifier = Modifier.size(48.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = stringResource(R.string.audit_disconnected),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
             } else {
+                val stats = auditStats!!
                 // Risk Score Card
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(
@@ -252,22 +278,22 @@ fun AuditScreen(navigator: DestinationsNavigator) {
                             contentAlignment = Alignment.Center
                         ) {
                             CircularProgressIndicator(
-                                progress = { auditStats.riskScore / 100f },
+                                progress = { stats.riskScore / 100f },
                                 modifier = Modifier.size(120.dp),
                                 strokeWidth = 8.dp,
                                 strokeCap = StrokeCap.Round,
                                 color = when {
-                                    auditStats.riskScore >= 80 -> MaterialTheme.colorScheme.error
-                                    auditStats.riskScore >= 50 -> MaterialTheme.colorScheme.tertiary
+                                    stats.riskScore >= 80 -> MaterialTheme.colorScheme.error
+                                    stats.riskScore >= 50 -> MaterialTheme.colorScheme.tertiary
                                     else -> MaterialTheme.colorScheme.primary
                                 }
                             )
                             Text(
-                                text = "${auditStats.riskScore}",
+                                text = "${stats.riskScore}",
                                 style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
                                 color = when {
-                                    auditStats.riskScore >= 80 -> MaterialTheme.colorScheme.error
-                                    auditStats.riskScore >= 50 -> MaterialTheme.colorScheme.tertiary
+                                    stats.riskScore >= 80 -> MaterialTheme.colorScheme.error
+                                    stats.riskScore >= 50 -> MaterialTheme.colorScheme.tertiary
                                     else -> MaterialTheme.colorScheme.primary
                                 }
                             )
@@ -299,7 +325,7 @@ fun AuditScreen(navigator: DestinationsNavigator) {
                         ) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text(
-                                    text = "${auditStats.grantedCount}",
+                                    text = "${stats.grantedCount}",
                                     style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                                     color = MaterialTheme.colorScheme.primary
                                 )
@@ -311,7 +337,7 @@ fun AuditScreen(navigator: DestinationsNavigator) {
                             }
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text(
-                                    text = "${auditStats.deniedCount}",
+                                    text = "${stats.deniedCount}",
                                     style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                                     color = MaterialTheme.colorScheme.error
                                 )
@@ -323,7 +349,7 @@ fun AuditScreen(navigator: DestinationsNavigator) {
                             }
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text(
-                                    text = "${auditStats.avcDenials}",
+                                    text = "${stats.avcDenials}",
                                     style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                                     color = MaterialTheme.colorScheme.tertiary
                                 )
@@ -335,7 +361,7 @@ fun AuditScreen(navigator: DestinationsNavigator) {
                             }
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text(
-                                    text = "${auditStats.allowedApps}",
+                                    text = "${stats.allowedApps}",
                                     style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                                     color = MaterialTheme.colorScheme.primary
                                 )
@@ -367,14 +393,14 @@ fun AuditScreen(navigator: DestinationsNavigator) {
                                 Icon(
                                     Icons.Filled.Warning,
                                     contentDescription = null,
-                                    tint = if (auditStats.anomalies.isNotEmpty())
+                                    tint = if (stats.anomalies.isNotEmpty())
                                         MaterialTheme.colorScheme.error
                                     else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         )
-                        if (auditStats.anomalies.isNotEmpty()) {
-                            auditStats.anomalies.forEach { anomaly ->
+                        if (stats.anomalies.isNotEmpty()) {
+                            stats.anomalies.forEach { anomaly ->
                                 Text(
                                     text = anomaly,
                                     style = MaterialTheme.typography.bodySmall,
@@ -409,8 +435,8 @@ fun AuditScreen(navigator: DestinationsNavigator) {
                                 Icon(Icons.Filled.History, contentDescription = null)
                             }
                         )
-                        if (auditStats.recentLogs.isNotEmpty()) {
-                            auditStats.recentLogs.forEach { log ->
+                        if (stats.recentLogs.isNotEmpty()) {
+                            stats.recentLogs.forEach { log ->
                                 Text(
                                     text = log,
                                     style = MaterialTheme.typography.bodySmall,

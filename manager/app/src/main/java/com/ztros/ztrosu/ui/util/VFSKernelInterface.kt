@@ -26,7 +26,8 @@ object VFSKernelInterface {
      */
     enum class CommChannel {
         PIPE,       // 优先：一次性pipe（安全、高效）
-        SYSFS       // 备用：sysfs写入（兼容性好）
+        SYSFS,      // 备用：sysfs写入（兼容性好）
+        USERSPACE   // 用户空间回退（未连接状态）
     }
 
     /**
@@ -192,6 +193,7 @@ object VFSKernelInterface {
                 val command = "add:${typeStr}:${target.identifier}:${target.uid}:${modeStr}"
                 writeFile("$VFS_SYSFS_PATH/hook_targets", command)
             }
+            CommChannel.USERSPACE -> false
         }
     }
 

@@ -621,7 +621,7 @@ object VFSPipeComm {
                 WRITE_PID=${'$'}!
                 
                 # 等待写入完成或超时
-                timeout ${PIPE_TIMEOUT_MS}ms wait ${'$'}WRITE_PID 2>/dev/null
+                timeout ${PIPE_TIMEOUT_MS / 1000}s wait ${'$'}WRITE_PID 2>/dev/null
                 exit 0
             """.trimIndent()
 
@@ -652,7 +652,7 @@ object VFSPipeComm {
                 fi
                 
                 # 读取管道数据并编码为base64
-                timeout ${PIPE_TIMEOUT_MS}ms cat '$pipePath' 2>/dev/null | base64 -w 0
+                timeout ${PIPE_TIMEOUT_MS / 1000}s cat '$pipePath' 2>/dev/null | base64 -w 0
                 exit 0
             """.trimIndent()
 

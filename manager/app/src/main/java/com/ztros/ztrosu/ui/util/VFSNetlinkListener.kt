@@ -11,14 +11,14 @@ import java.nio.ByteOrder
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.thread
 
-private const val TAG = "VFSNetlinkListener"
+private const val TAG = "VFSSysfsEventListener"
 
 /**
- * VFS Netlink事件监听器
+ * VFS Sysfs事件监听器
  *
- * 通过Netlink socket异步接收内核VFS模块发出的事件通知。
+ * 通过轮询sysfs节点异步接收内核VFS模块发出的事件通知。
  * 由于Android Java/Kotlin层没有直接的netlink socket API，
- * 本类采用Shell命令 + 线程轮询的fallback方案实现。
+ * 本类采用Shell命令 + 线程轮询的sysfs读取方案实现。
  *
  * 事件协议（与内核约定，little-endian）：
  *   Magic     : UInt32 (0xAF5F)
@@ -30,7 +30,7 @@ private const val TAG = "VFSNetlinkListener"
  *   Timestamp : UInt64
  *   Result    : UInt32 (0=allow, 1=deny)
  */
-object VFSNetlinkListener {
+object VFSSysfsEventListener {
 
     // ==================== 事件类型常量 ====================
 
@@ -42,9 +42,6 @@ object VFSNetlinkListener {
     const val EVENT_HOOK_ADDED = 10
     const val EVENT_HOOK_REMOVED = 11
     const val EVENT_RULE_CHANGED = 12
-
-    // Netlink多播组
-    const val NETLINK_GROUP = 31
 
     // 协议头大小: 5 * UInt32 + 1 * UInt64 = 28 bytes (不含Path)
     private const val EVENT_HEADER_SIZE = 28
@@ -102,7 +99,7 @@ object VFSNetlinkListener {
     private var eventCallback: ((VFSEvent) -> Unit)? = null
     private var errorCallback: ((String) -> Unit)? = null
 
-    // 事件缓冲区（用于Shell轮询模式）
+    // 事件缓冲区（用于轮询模式）
     private val eventBuffer = mutableListOf<VFSEvent>()
     private val bufferLock = Any()
 
@@ -113,11 +110,10 @@ object VFSNetlinkListener {
     // ==================== 监听控制 ====================
 
     /**
-     * 启动Netlink事件监听
+     * 启动Sysfs事件监听
      *
      * 由于Android没有直接的netlink socket API，采用以下策略：
-     * 1. 首先尝试通过JNI native代码创建netlink socket
-     * 2. 如果JNI不可行，使用Shell命令 + 线程轮询作为fallback
+     * 使用Shell命令 + 线程轮询读取sysfs节点作为PRIMARY方案
      *
      * @param callback 事件回调函数
      * @param errorCallback 错误回调函数（可选）
@@ -131,22 +127,19 @@ object VFSNetlinkListener {
         this.eventCallback = callback
         this.errorCallback = errorCallback
 
-        Log.i(TAG, "Starting VFS Netlink event listener...")
+        Log.i(TAG, "Starting VFS Sysfs event listener...")
 
-        // 尝试JNI方式，失败则使用Shell fallback
-        if (!tryStartJniListener()) {
-            Log.i(TAG, "JNI listener not available, using Shell fallback")
-            if (!startShellFallbackListener()) {
-                Log.w(TAG, "No kernel event source available, listener not started")
-                isListening.set(false)
-                eventCallback = null
-                errorCallback = null
-            }
+        // 使用Shell轮询作为主要方案
+        if (!startShellPollingListener()) {
+            Log.w(TAG, "No kernel event source available, listener not started")
+            isListening.set(false)
+            eventCallback = null
+            this.errorCallback = null
         }
     }
 
     /**
-     * 停止Netlink事件监听
+     * 停止Sysfs事件监听
      */
     fun stopListening() {
         if (!isListening.getAndSet(false)) {
@@ -154,14 +147,11 @@ object VFSNetlinkListener {
             return
         }
 
-        Log.i(TAG, "Stopping VFS Netlink event listener...")
+        Log.i(TAG, "Stopping VFS Sysfs event listener...")
 
         // 中断监听线程
         listenerThread?.interrupt()
         listenerThread = null
-
-        // 清理JNI资源
-        tryStopJniListener()
 
         eventCallback = null
         errorCallback = null
@@ -171,7 +161,7 @@ object VFSNetlinkListener {
             eventBuffer.clear()
         }
 
-        Log.i(TAG, "VFS Netlink event listener stopped. Total events: $totalEventsReceived")
+        Log.i(TAG, "VFS Sysfs event listener stopped. Total events: $totalEventsReceived")
     }
 
     /**
@@ -196,91 +186,19 @@ object VFSNetlinkListener {
         val lastEventTime: Long
     )
 
-    // ==================== JNI Netlink实现 ====================
+    // ==================== Shell Polling实现 ====================
 
     /**
-     * 尝试通过JNI启动native netlink socket监听
-     *
-     * 注意：这需要对应的native C/C++代码实现。
-     * 如果native库中没有对应的JNI函数，此方法将返回false。
-     */
-    private fun tryStartJniListener(): Boolean {
-        return try {
-            // 尝试加载native netlink库
-            System.loadLibrary("vfsnetlink")
-
-            // 调用native方法创建netlink socket
-            val fd = nativeCreateNetlinkSocket(NETLINK_GROUP)
-            if (fd < 0) {
-                Log.w(TAG, "JNI: Failed to create netlink socket (fd=$fd)")
-                return false
-            }
-
-            Log.i(TAG, "JNI: Created netlink socket fd=$fd")
-
-            // 启动native读取线程
-            listenerThread = thread(name = "VFSNetlink-JNI") {
-                try {
-                    nativeStartListening(fd) { eventData ->
-                        val event = parseEvent(eventData)
-                        if (event != null) {
-                            dispatchEvent(event)
-                        }
-                    }
-                } catch (e: InterruptedException) {
-                    Log.d(TAG, "JNI listener thread interrupted")
-                } catch (e: Exception) {
-                    Log.e(TAG, "JNI listener error", e)
-                    notifyError("JNI listener error: ${e.message}")
-                } finally {
-                    nativeCloseNetlinkSocket(fd)
-                }
-            }
-
-            true
-        } catch (e: UnsatisfiedLinkError) {
-            Log.d(TAG, "JNI netlink library not available: ${e.message}")
-            false
-        } catch (e: Exception) {
-            Log.w(TAG, "JNI listener initialization failed", e)
-            false
-        }
-    }
-
-    /**
-     * 停止JNI监听
-     */
-    private fun tryStopJniListener() {
-        try {
-            nativeStopListening()
-        } catch (e: UnsatisfiedLinkError) {
-            // Native库不可用，忽略
-        } catch (e: Exception) {
-            Log.w(TAG, "Error stopping JNI listener", e)
-        }
-    }
-
-    // Native方法声明（需要对应的C/C++实现）
-    // 如果没有native实现，这些方法会抛出UnsatisfiedLinkError
-
-    private external fun nativeCreateNetlinkSocket(group: Int): Int
-    private external fun nativeStartListening(fd: Int, callback: (ByteArray) -> Unit)
-    private external fun nativeStopListening()
-    private external fun nativeCloseNetlinkSocket(fd: Int)
-
-    // ==================== Shell Fallback实现 ====================
-
-    /**
-     * 使用Shell命令 + 线程轮询作为fallback方案
+     * 使用Shell命令 + 线程轮询作为主要方案
      *
      * 策略：
-     * 1. 通过root shell在后台持续读取 /proc/net/netlink 或内核事件节点
+     * 1. 通过root shell持续读取 /sys/kernel/ztrosu/vfs/events 或内核事件节点
      * 2. 解析输出并转换为VFSEvent
      * 3. 通过回调通知UI层
      *
      * @return 是否成功启动（至少有一个数据源可用）
      */
-    private fun startShellFallbackListener(): Boolean {
+    private fun startShellPollingListener(): Boolean {
         // 先检查是否有任何可用数据源
         val hasKernelNode = SuFile.open("/sys/kernel/ztrosu/vfs/events").exists()
         val hasDebugFs = SuFile.open("/sys/kernel/debug/ztrosu/vfs/event_log").exists()
@@ -289,8 +207,8 @@ object VFSNetlinkListener {
             return false
         }
 
-        listenerThread = thread(name = "VFSNetlink-Shell") {
-            Log.i(TAG, "Shell fallback listener started")
+        listenerThread = thread(name = "VFSSysfs-Polling") {
+            Log.i(TAG, "Shell polling listener started")
 
             try {
                 while (isListening.get() && !Thread.currentThread().isInterrupted) {
@@ -307,13 +225,13 @@ object VFSNetlinkListener {
                     Thread.sleep(500)
                 }
             } catch (e: InterruptedException) {
-                Log.d(TAG, "Shell fallback listener interrupted")
+                Log.d(TAG, "Shell polling listener interrupted")
             } catch (e: Exception) {
-                Log.e(TAG, "Shell fallback listener error", e)
+                Log.e(TAG, "Shell polling listener error", e)
                 notifyError("Shell listener error: ${e.message}")
             }
 
-            Log.i(TAG, "Shell fallback listener stopped")
+            Log.i(TAG, "Shell polling listener stopped")
         }
         return true
     }
@@ -323,8 +241,7 @@ object VFSNetlinkListener {
      *
      * 尝试以下数据源（按优先级）：
      * 1. /sys/kernel/ztrosu/vfs/events - 内核事件文件
-     * 2. /proc/net/netlink - Netlink socket状态
-     * 3. /sys/kernel/debug/ztrosu/vfs/event_log - DebugFS事件日志
+     * 2. /sys/kernel/debug/ztrosu/vfs/event_log - DebugFS事件日志
      */
     private fun pollEventsFromShell(): List<VFSEvent> {
         val events = mutableListOf<VFSEvent>()
@@ -708,47 +625,15 @@ object VFSNetlinkListener {
         }
     }
 
-    // ==================== Shell Netlink辅助工具 ====================
+    // ==================== Sysfs辅助工具 ====================
 
     /**
-     * 检查Netlink是否可用
+     * 检查sysfs事件源是否可用
      */
-    fun isNetlinkAvailable(): Boolean {
-        return try {
-            // 检查netlink模块是否加载
-            val result = Shell.cmd(
-                """
-                # 检查 /proc/net/netlink 是否可读
-                if [ -r /proc/net/netlink ]; then
-                    # 检查是否有VFS相关的netlink组
-                    cat /proc/net/netlink 2>/dev/null | head -5
-                    echo "NETLINK_OK"
-                else
-                    echo "NETLINK_FAIL"
-                fi
-                """.trimIndent()
-            ).exec()
-
-            result.out.any { it.contains("NETLINK_OK") }
-        } catch (e: Exception) {
-            false
-        }
-    }
-
-    /**
-     * 获取Netlink socket状态信息
-     */
-    fun getNetlinkStatus(): String {
-        return try {
-            val result = Shell.cmd("cat /proc/net/netlink 2>/dev/null").exec()
-            if (result.isSuccess) {
-                result.out.joinToString("\n")
-            } else {
-                "Not available"
-            }
-        } catch (e: Exception) {
-            "Error: ${e.message}"
-        }
+    fun isSysfsAvailable(): Boolean {
+        val hasKernelNode = SuFile.open("/sys/kernel/ztrosu/vfs/events").exists()
+        val hasDebugFs = SuFile.open("/sys/kernel/debug/ztrosu/vfs/event_log").exists()
+        return hasKernelNode || hasDebugFs
     }
 
     /**
@@ -756,10 +641,9 @@ object VFSNetlinkListener {
      */
     fun getDebugInfo(): String {
         return buildString {
-            appendLine("VFSNetlinkListener Debug Info:")
+            appendLine("VFSSysfsEventListener Debug Info:")
             appendLine("  Listening: ${isListening.get()}")
-            appendLine("  Netlink Group: $NETLINK_GROUP")
-            appendLine("  Netlink Available: ${isNetlinkAvailable()}")
+            appendLine("  Sysfs Available: ${isSysfsAvailable()}")
             appendLine("  Total Events: $totalEventsReceived")
             appendLine("  Last Event: $lastEventTime")
             appendLine("  Buffer Size: ${getBufferSize()}")
@@ -768,3 +652,10 @@ object VFSNetlinkListener {
         }
     }
 }
+
+/**
+ * 兼容性别名 - 旧代码可能引用VFSNetlinkListener
+ * @deprecated 请使用 VFSSysfsEventListener
+ */
+@Deprecated("Use VFSSysfsEventListener instead", ReplaceWith("VFSSysfsEventListener"))
+typealias VFSNetlinkListener = VFSSysfsEventListener

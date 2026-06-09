@@ -336,32 +336,7 @@ object VFSHookManager {
      * @return 可选目标列表
      */
     suspend fun getSelectableTargets(mode: VFSTargetSelector.TargetMode): List<VFSTargetSelector.SelectableTarget> = withContext(Dispatchers.IO) {
-        return@withContext try {
-            VFSTargetSelector.getSelectableTargets(mode)
-        } catch (e: Exception) {
-            Log.w(TAG, "VFSTargetSelector unavailable, using fallback", e)
-            // Fallback: 使用本地方法获取目标列表
-            when (mode) {
-                VFSTargetSelector.TargetMode.RUNNING_PROCESS -> getRunningProcesses().map { (pid, uid, name) ->
-                    VFSTargetSelector.SelectableTarget(
-                        mode = VFSTargetSelector.TargetMode.RUNNING_PROCESS,
-                        pid = pid,
-                        packageName = null,
-                        uid = uid,
-                        displayName = name
-                    )
-                }
-                VFSTargetSelector.TargetMode.INSTALLED_APP -> getInstalledPackages().map { (pkgName, uid) ->
-                    VFSTargetSelector.SelectableTarget(
-                        mode = VFSTargetSelector.TargetMode.INSTALLED_APP,
-                        pid = null,
-                        packageName = pkgName,
-                        uid = uid,
-                        displayName = pkgName
-                    )
-                }
-            }
-        }
+        VFSTargetSelector.getSelectableTargets(mode)
     }
 
     /**

@@ -79,14 +79,14 @@ fun createRootShellBuilder(globalMnt: Boolean = false): Shell.Builder {
     }
 }
 
+class RootShellException(message: String, cause: Throwable? = null) : Exception(message, cause)
+
 fun createRootShell(globalMnt: Boolean = false): Shell {
     return runCatching {
         createRootShellBuilder(globalMnt).build()
     }.getOrElse { e ->
-        Log.w(TAG, "su failed: ", e)
-        Shell.Builder.create().apply {
-            if (globalMnt) setFlags(Shell.FLAG_MOUNT_MASTER)
-        }.build()
+        Log.e(TAG, "Failed to create root shell: ", e)
+        throw RootShellException("Unable to create root shell. Ensure root access is granted.", e)
     }
 }
 

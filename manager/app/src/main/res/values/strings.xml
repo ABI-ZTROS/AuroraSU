@@ -444,6 +444,7 @@
     <string name="audit_risk_score">风险评分</string>
     <string name="audit_avc_denials">AVC 拒绝</string>
     <string name="audit_allowed_apps">已授权应用</string>
+    <string name="audit_disconnected">未连接</string>
     <string name="material_you_title">Material You</string>
     <string name="material_you_dynamic">动态取色</string>
     <string name="material_you_dynamic_desc">从壁纸提取颜色</string>
@@ -689,4 +690,7 @@
     <string name="vfs_protocol_field_path_len">路径长度</string>
     <string name="vfs_protocol_bytes">字节</string>
     <string name="vfs_protocol_current_policy">当前策略</string>
+    <string name="vfs_no_templates">暂无模板</string>
+    <string name="vfs_no_templates_summary">没有可用的模板</string>
+    <string name="vfs_disconnected">未连接</string>
 </resources>

@@ -157,7 +157,7 @@ fun VFSDebugScreen(navigator: DestinationsNavigator) {
     var stats by remember { mutableStateOf(VFSStats()) }
     var policy by remember { mutableStateOf(VFSPolicy()) }
     var backend by remember { mutableStateOf(VFSBackend.MOCK) }
-    var channel by remember { mutableStateOf(CommChannel.SYSFS) }
+    var channel by remember { mutableStateOf<CommChannel?>(null) }
     var moduleVersion by remember { mutableStateOf<Int?>(null) }
 
     // Local policy form state
@@ -191,7 +191,7 @@ fun VFSDebugScreen(navigator: DestinationsNavigator) {
             stats = VFSDebugUtil.getVFSStats()
             policy = VFSDebugUtil.getVFSPolicy()
             moduleVersion = try { VFSKernelInterface.getVersion() } catch (_: Exception) { null }
-            channel = try { VFSKernelInterface.detectBestChannel() } catch (_: Exception) { CommChannel.SYSFS }
+            channel = try { VFSKernelInterface.detectBestChannel() } catch (_: Exception) { null }
 
             localEnabled = policy.enabled
             localLogLevel = policy.logLevel
@@ -559,7 +559,7 @@ private fun DashboardTab(
     stats: VFSStats,
     policy: VFSPolicy,
     backend: VFSBackend,
-    channel: CommChannel,
+    channel: CommChannel?,
     moduleVersion: Int?,
     hookTargets: List<VFSHookTarget>,
     rules: List<VFSRule>,
@@ -590,7 +590,7 @@ private fun DashboardTab(
 }
 
 @Composable
-private fun BackendStatusCard(backend: VFSBackend, channel: CommChannel, moduleVersion: Int?) {
+private fun BackendStatusCard(backend: VFSBackend, channel: CommChannel?, moduleVersion: Int?) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -606,43 +606,54 @@ private fun BackendStatusCard(backend: VFSBackend, channel: CommChannel, moduleV
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                AssistChip(
-                    onClick = {},
-                    label = { Text(getBackendName(backend)) },
-                    leadingIcon = {
-                        Icon(
-                            Icons.Filled.RadioButtonChecked,
-                            contentDescription = null,
-                            modifier = Modifier.size(12.dp),
-                            tint = getBackendColor(backend)
-                        )
-                    }
+                Text(
+                    text = getBackendName(backend),
+                    style = MaterialTheme.typography.labelSmall,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(getBackendColor(backend).copy(alpha = 0.15f))
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                    color = getBackendColor(backend)
                 )
-                AssistChip(
-                    onClick = {},
-                    label = { Text(getChannelName(channel)) },
-                    leadingIcon = {
-                        Icon(
-                            Icons.Filled.RadioButtonChecked,
-                            contentDescription = null,
-                            modifier = Modifier.size(12.dp),
-                            tint = getChannelColor(channel)
-                        )
-                    }
-                )
-                if (moduleVersion != null) {
-                    AssistChip(
-                        onClick = {},
-                        label = { Text("v${moduleVersion}") },
-                        leadingIcon = {
-                            Icon(Icons.Filled.Security, contentDescription = null, modifier = Modifier.size(12.dp))
-                        }
+                if (channel != null) {
+                    Text(
+                        text = getChannelName(channel),
+                        style = MaterialTheme.typography.labelSmall,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(getChannelColor(channel).copy(alpha = 0.15f))
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                        color = getChannelColor(channel)
                     )
                 } else {
-                    AssistChip(
-                        onClick = {},
-                        label = { Text(stringResource(R.string.vfs_module_not_loaded)) },
-                        colors = AssistChipDefaults.assistChipColors(containerColor = RED.copy(alpha = 0.1f))
+                    Text(
+                        text = stringResource(R.string.vfs_disconnected),
+                        style = MaterialTheme.typography.labelSmall,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(RED.copy(alpha = 0.15f))
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                        color = RED
+                    )
+                }
+                if (moduleVersion != null) {
+                    Text(
+                        text = "v${moduleVersion}",
+                        style = MaterialTheme.typography.labelSmall,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(MaterialTheme.colorScheme.secondaryContainer)
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                } else {
+                    Text(
+                        text = stringResource(R.string.vfs_module_not_loaded),
+                        style = MaterialTheme.typography.labelSmall,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(RED.copy(alpha = 0.1f))
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                        color = RED
                     )
                 }
             }
@@ -1712,7 +1723,7 @@ private fun EventItem(event: VFSEvent) {
 @Composable
 private fun ProtocolTab(
     events: List<VFSEvent>,
-    channel: CommChannel,
+    channel: CommChannel?,
     moduleVersion: Int?,
     onNavigateToProtocol: () -> Unit
 ) {
@@ -1722,9 +1733,8 @@ private fun ProtocolTab(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
-            // TODO: vfs_protocol_title
             Text(
-                text = "协议调试器",
+                text = stringResource(R.string.vfs_protocol_title),
                 style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                 modifier = Modifier.padding(bottom = 4.dp)
             )
@@ -1741,7 +1751,7 @@ private fun ProtocolTab(
 
 @Composable
 private fun ProtocolDebugCard(
-    channel: CommChannel,
+    channel: CommChannel?,
     moduleVersion: Int?,
     onNavigateToProtocol: () -> Unit
 ) {
@@ -1754,9 +1764,8 @@ private fun ProtocolDebugCard(
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Icon(Icons.Filled.Description, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                // TODO: vfs_protocol_channel_info
                 Text(
-                    text = "协议调试",
+                    text = stringResource(R.string.vfs_protocol_channel_info),
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
                 )
             }
@@ -1766,24 +1775,34 @@ private fun ProtocolDebugCard(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                AssistChip(
-                    onClick = {},
-                    label = { Text(getChannelName(channel)) },
-                    leadingIcon = {
-                        Icon(
-                            Icons.Filled.RadioButtonChecked,
-                            contentDescription = null,
-                            modifier = Modifier.size(12.dp),
-                            tint = getChannelColor(channel)
-                        )
-                    }
-                )
-                AssistChip(
-                    onClick = {},
-                    label = { Text("协议 v${moduleVersion ?: "?"}") },
-                    leadingIcon = {
-                        Icon(Icons.Filled.Security, contentDescription = null, modifier = Modifier.size(12.dp))
-                    }
+                if (channel != null) {
+                    Text(
+                        text = getChannelName(channel),
+                        style = MaterialTheme.typography.labelSmall,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(getChannelColor(channel).copy(alpha = 0.15f))
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                        color = getChannelColor(channel)
+                    )
+                } else {
+                    Text(
+                        text = stringResource(R.string.vfs_disconnected),
+                        style = MaterialTheme.typography.labelSmall,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(RED.copy(alpha = 0.15f))
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                        color = RED
+                    )
+                }
+                Text(
+                    text = "${stringResource(R.string.vfs_protocol_title)} v${moduleVersion ?: "?"}",
+                    style = MaterialTheme.typography.labelSmall,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(MaterialTheme.colorScheme.secondaryContainer)
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
                 )
             }
             Button(
@@ -1792,8 +1811,7 @@ private fun ProtocolDebugCard(
             ) {
                 Icon(Icons.Filled.Description, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
-                // TODO: vfs_protocol_title
-                Text("打开协议调试器")
+                Text(stringResource(R.string.vfs_protocol_goto))
             }
         }
     }
@@ -1803,7 +1821,6 @@ private fun ProtocolDebugCard(
 
 @Composable
 private fun RuleTranslatorSection() {
-    // TODO: vfs_protocol_rule_translator
     var ruleInput by remember { mutableStateOf("") }
     var hexInput by remember { mutableStateOf("") }
     var forwardResult by remember { mutableStateOf<String?>(null) }
@@ -1816,7 +1833,7 @@ private fun RuleTranslatorSection() {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Icon(Icons.Filled.Security, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 Text(
-                    text = "规则翻译器", // TODO: vfs_protocol_rule_translator
+                    text = stringResource(R.string.vfs_protocol_rule_translator),
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
                 )
             }
@@ -1824,7 +1841,7 @@ private fun RuleTranslatorSection() {
 
             // Forward translation: rule string -> binary
             Text(
-                text = "规则字符串 -> 二进制", // TODO: vfs_protocol_binary_preview
+                text = stringResource(R.string.vfs_protocol_binary_preview),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -1835,15 +1852,15 @@ private fun RuleTranslatorSection() {
                     val result = VFSProtocolTranslator.validateRuleString(it)
                     validationStatus = result.valid to result.error
                 },
-                label = { Text("输入规则字符串...") }, // TODO: vfs_protocol_input_hint
+                label = { Text(stringResource(R.string.vfs_protocol_input_hint)) },
                 placeholder = { Text("deny:/system/**:rw") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 supportingText = {
                     if (ruleInput.isNotEmpty()) {
                         Text(
-                            text = if (validationStatus.first) "格式验证通过" // TODO: vfs_protocol_validation_ok
-                            else "格式错误: ${validationStatus.second}", // TODO: vfs_protocol_validation_error
+                            text = if (validationStatus.first) stringResource(R.string.vfs_protocol_validation_ok)
+                            else "${stringResource(R.string.vfs_protocol_validation_error)}: ${validationStatus.second}",
                             color = if (validationStatus.first) GREEN else RED
                         )
                     }
@@ -1865,13 +1882,13 @@ private fun RuleTranslatorSection() {
                     enabled = ruleInput.isNotEmpty() && validationStatus.first,
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text("翻译") // TODO: vfs_protocol_translate
+                    Text(stringResource(R.string.vfs_protocol_translate))
                 }
             }
 
             if (forwardResult != null) {
                 Text(
-                    text = "Hex 转储", // TODO: vfs_protocol_hex_dump
+                    text = stringResource(R.string.vfs_protocol_hex_dump),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -1892,7 +1909,7 @@ private fun RuleTranslatorSection() {
 
             if (forwardParsed != null) {
                 Text(
-                    text = "解析字段", // TODO: vfs_protocol_parsed_fields
+                    text = stringResource(R.string.vfs_protocol_parsed_fields),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -1915,14 +1932,14 @@ private fun RuleTranslatorSection() {
 
             // Reverse translation: hex -> rule string
             Text(
-                text = "二进制 -> 规则字符串", // TODO: vfs_protocol_string_preview
+                text = stringResource(R.string.vfs_protocol_string_preview),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             OutlinedTextField(
                 value = hexInput,
                 onValueChange = { hexInput = it },
-                label = { Text("输入 Hex 数据 (如: 01 0a 2f 73 79 73 74 65 6d)") },
+                label = { Text(stringResource(R.string.vfs_protocol_hex_input_hint)) },
                 placeholder = { Text("01 0a 2f 73 79 73 74 65 6d") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
@@ -1933,13 +1950,13 @@ private fun RuleTranslatorSection() {
                         val bytes = hexInput.trim().split(Regex("\\s+")).map { it.toInt(16).toByte() }.toByteArray()
                         reverseResult = VFSProtocolTranslator.ruleToString(bytes)
                     } catch (_: Exception) {
-                        reverseResult = "无效的 Hex 数据"
+                        reverseResult = stringResource(R.string.vfs_protocol_validation_error)
                     }
                 },
                 enabled = hexInput.isNotEmpty(),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("反向翻译") // TODO: vfs_protocol_reverse
+                Text(stringResource(R.string.vfs_protocol_reverse))
             }
 
             if (reverseResult != null) {
@@ -1965,7 +1982,6 @@ private fun RuleTranslatorSection() {
 
 @Composable
 private fun PolicyTranslatorSection() {
-    // TODO: vfs_protocol_policy_translator
     var enabled by remember { mutableStateOf(true) }
     var logLevel by remember { mutableStateOf(0) }
     var defaultAction by remember { mutableStateOf("allow") }
@@ -1985,7 +2001,7 @@ private fun PolicyTranslatorSection() {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Icon(Icons.Filled.Settings, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 Text(
-                    text = "策略翻译器", // TODO: vfs_protocol_policy_translator
+                    text = stringResource(R.string.vfs_protocol_policy_translator),
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
                 )
             }
@@ -1997,7 +2013,7 @@ private fun PolicyTranslatorSection() {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Text("启用:", style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(R.string.vfs_protocol_field_enabled) + ":", style = MaterialTheme.typography.bodyMedium)
                 Switch(checked = enabled, onCheckedChange = { enabled = it })
             }
             Row(
@@ -2005,7 +2021,7 @@ private fun PolicyTranslatorSection() {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Text("日志级别:", style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(R.string.vfs_protocol_field_log_level) + ":", style = MaterialTheme.typography.bodyMedium)
                 LogLevelSelector(currentLevel = logLevel, onLevelChange = { logLevel = it })
             }
             Row(
@@ -2013,14 +2029,14 @@ private fun PolicyTranslatorSection() {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Text("默认动作:", style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(R.string.vfs_protocol_field_default_action) + ":", style = MaterialTheme.typography.bodyMedium)
                 ActionSelector(currentAction = defaultAction, onActionChange = { defaultAction = it })
             }
 
             // Hex dump display
             if (hexDump != null) {
                 Text(
-                    text = "Hex 转储 (4 字节)", // TODO: vfs_protocol_hex_dump
+                    text = stringResource(R.string.vfs_protocol_hex_dump) + " (4 ${stringResource(R.string.vfs_protocol_bytes)})",
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -2042,7 +2058,7 @@ private fun PolicyTranslatorSection() {
             // Field breakdown
             if (fieldBreakdown != null) {
                 Text(
-                    text = "解析字段", // TODO: vfs_protocol_parsed_fields
+                    text = stringResource(R.string.vfs_protocol_parsed_fields),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -2068,7 +2084,6 @@ private fun PolicyTranslatorSection() {
 
 @Composable
 private fun HookCommandTranslatorSection() {
-    // TODO: vfs_protocol_hook_translator
     var commandInput by remember { mutableStateOf("") }
     var hexInput by remember { mutableStateOf("") }
     var forwardHex by remember { mutableStateOf<String?>(null) }
@@ -2081,7 +2096,7 @@ private fun HookCommandTranslatorSection() {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Icon(Icons.Filled.ToggleOn, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 Text(
-                    text = "Hook 命令翻译器", // TODO: vfs_protocol_hook_translator
+                    text = stringResource(R.string.vfs_protocol_hook_translator),
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
                 )
             }
@@ -2089,7 +2104,7 @@ private fun HookCommandTranslatorSection() {
 
             // Forward translation
             Text(
-                text = "命令字符串 -> 二进制", // TODO: vfs_protocol_binary_preview
+                text = stringResource(R.string.vfs_protocol_binary_preview),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -2100,15 +2115,15 @@ private fun HookCommandTranslatorSection() {
                     val result = VFSProtocolTranslator.validateHookCommand(it)
                     validationStatus = result.valid to result.error
                 },
-                label = { Text("输入 Hook 命令...") },
+                label = { Text(stringResource(R.string.vfs_protocol_hook_input_hint)) },
                 placeholder = { Text("add:PID:12345:10086:INTERCEPT_ALL") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 supportingText = {
                     if (commandInput.isNotEmpty()) {
                         Text(
-                            text = if (validationStatus.first) "格式验证通过" // TODO: vfs_protocol_validation_ok
-                            else "格式错误: ${validationStatus.second}", // TODO: vfs_protocol_validation_error
+                            text = if (validationStatus.first) stringResource(R.string.vfs_protocol_validation_ok)
+                            else "${stringResource(R.string.vfs_protocol_validation_error)}: ${validationStatus.second}",
                             color = if (validationStatus.first) GREEN else RED
                         )
                     }
@@ -2129,12 +2144,12 @@ private fun HookCommandTranslatorSection() {
                 enabled = commandInput.isNotEmpty() && validationStatus.first,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("翻译") // TODO: vfs_protocol_translate
+                Text(stringResource(R.string.vfs_protocol_translate))
             }
 
             if (forwardHex != null) {
                 Text(
-                    text = "Hex 转储", // TODO: vfs_protocol_hex_dump
+                    text = stringResource(R.string.vfs_protocol_hex_dump),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -2155,7 +2170,7 @@ private fun HookCommandTranslatorSection() {
 
             if (forwardParsed != null) {
                 Text(
-                    text = "解析字段", // TODO: vfs_protocol_parsed_fields
+                    text = stringResource(R.string.vfs_protocol_parsed_fields),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -2178,14 +2193,14 @@ private fun HookCommandTranslatorSection() {
 
             // Reverse translation
             Text(
-                text = "二进制 -> 命令字符串", // TODO: vfs_protocol_string_preview
+                text = stringResource(R.string.vfs_protocol_string_preview),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             OutlinedTextField(
                 value = hexInput,
                 onValueChange = { hexInput = it },
-                label = { Text("输入 Hex 数据") },
+                label = { Text(stringResource(R.string.vfs_protocol_hex_input_hint)) },
                 placeholder = { Text("01 04 50 49 44 ...") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
@@ -2196,13 +2211,13 @@ private fun HookCommandTranslatorSection() {
                         val bytes = hexInput.trim().split(Regex("\\s+")).map { it.toInt(16).toByte() }.toByteArray()
                         reverseResult = VFSProtocolTranslator.hookBinaryToCommand(bytes)
                     } catch (_: Exception) {
-                        reverseResult = "无效的 Hex 数据"
+                        reverseResult = stringResource(R.string.vfs_protocol_validation_error)
                     }
                 },
                 enabled = hexInput.isNotEmpty(),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("反向翻译") // TODO: vfs_protocol_reverse
+                Text(stringResource(R.string.vfs_protocol_reverse))
             }
 
             if (reverseResult != null) {
@@ -2228,7 +2243,6 @@ private fun HookCommandTranslatorSection() {
 
 @Composable
 private fun LiveEventInspectorSection(events: List<VFSEvent>) {
-    // TODO: vfs_protocol_event_inspector
     val lastEvent = events.lastOrNull()
 
     Card(modifier = Modifier.fillMaxWidth()) {
@@ -2236,57 +2250,23 @@ private fun LiveEventInspectorSection(events: List<VFSEvent>) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Icon(Icons.Filled.Analytics, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 Text(
-                    text = "事件检查器", // TODO: vfs_protocol_event_inspector
+                    text = stringResource(R.string.vfs_protocol_event_inspector),
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
                 )
                 if (lastEvent != null) {
                     Badge(
                         containerColor = GREEN
                     ) {
-                        Text("LIVE", style = MaterialTheme.typography.labelSmall)
+                        Text(stringResource(R.string.vfs_protocol_live_event), style = MaterialTheme.typography.labelSmall)
                     }
                 }
             }
             HorizontalDivider()
 
             if (lastEvent != null) {
-                // Build a simulated binary representation for display
-                // In a real scenario, the raw binary would come from the netlink socket
-                val rawBytes = byteArrayOf(
-                    0x5F.toByte(), // magic byte placeholder ('V' = 0x56, 'F' = 0x46; use 0x5F as generic magic)
-                    lastEvent.eventType.toByte(),
-                    (lastEvent.pid shr 8).toByte(),
-                    lastEvent.pid.toByte(),
-                    (lastEvent.uid shr 8).toByte(),
-                    lastEvent.uid.toByte(),
-                    lastEvent.result.toByte(),
-                    0x00 // reserved
-                )
-                val rawHexDump = VFSProtocolTranslator.hexDump(rawBytes)
-
-                // Raw binary hex dump
+                // Show parsed fields from real event data (no simulated binary)
                 Text(
-                    text = "Hex 转储", // TODO: vfs_protocol_hex_dump
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                ) {
-                    Text(
-                        text = rawHexDump,
-                        modifier = Modifier.padding(12.dp).horizontalScroll(rememberScrollState()),
-                        fontFamily = FontFamily.Monospace,
-                        fontSize = MaterialTheme.typography.bodySmall.fontSize,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-
-                // Parsed fields display
-                Text(
-                    text = "解析字段", // TODO: vfs_protocol_parsed_fields
+                    text = stringResource(R.string.vfs_protocol_parsed_fields),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -2296,18 +2276,18 @@ private fun LiveEventInspectorSection(events: List<VFSEvent>) {
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
                 ) {
                     Column(modifier = Modifier.padding(12.dp)) {
-                        EventFieldRow("event_type", getEventTypeName(lastEvent.eventType))
-                        EventFieldRow("pid", lastEvent.pid.toString())
-                        EventFieldRow("uid", lastEvent.uid.toString())
-                        EventFieldRow("path", lastEvent.path)
-                        EventFieldRow("timestamp", formatTimestamp(lastEvent.timestamp))
-                        EventFieldRow("result", if (lastEvent.result == 0) "ALLOW" else "DENY")
+                        EventFieldRow(stringResource(R.string.vfs_protocol_field_event_type), getEventTypeName(lastEvent.eventType))
+                        EventFieldRow(stringResource(R.string.vfs_protocol_field_pid), lastEvent.pid.toString())
+                        EventFieldRow(stringResource(R.string.vfs_protocol_field_uid), lastEvent.uid.toString())
+                        EventFieldRow(stringResource(R.string.vfs_protocol_field_path), lastEvent.path)
+                        EventFieldRow(stringResource(R.string.vfs_protocol_field_timestamp), formatTimestamp(lastEvent.timestamp))
+                        EventFieldRow(stringResource(R.string.vfs_protocol_field_result), if (lastEvent.result == 0) stringResource(R.string.vfs_event_result_allow) else stringResource(R.string.vfs_event_result_deny))
                     }
                 }
 
                 // Human-readable string
                 Text(
-                    text = "字符串预览", // TODO: vfs_protocol_string_preview
+                    text = stringResource(R.string.vfs_protocol_string_preview),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -2317,7 +2297,7 @@ private fun LiveEventInspectorSection(events: List<VFSEvent>) {
                     color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
                 ) {
                     Text(
-                        text = "[${getEventTypeName(lastEvent.eventType)}] pid=${lastEvent.pid} uid=${lastEvent.uid} path=\"${lastEvent.path}\" -> ${if (lastEvent.result == 0) "ALLOW" else "DENY"}",
+                        text = "[${getEventTypeName(lastEvent.eventType)}] pid=${lastEvent.pid} uid=${lastEvent.uid} path=\"${lastEvent.path}\" -> ${if (lastEvent.result == 0) stringResource(R.string.vfs_event_result_allow) else stringResource(R.string.vfs_event_result_deny)}",
                         modifier = Modifier.padding(12.dp).horizontalScroll(rememberScrollState()),
                         fontFamily = FontFamily.Monospace,
                         fontSize = MaterialTheme.typography.bodySmall.fontSize,
@@ -2325,9 +2305,8 @@ private fun LiveEventInspectorSection(events: List<VFSEvent>) {
                     )
                 }
             } else {
-                // TODO: vfs_protocol_no_event
                 Text(
-                    text = "暂无事件数据",
+                    text = stringResource(R.string.vfs_protocol_no_event),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(vertical = 16.dp)
