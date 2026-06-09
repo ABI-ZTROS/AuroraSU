@@ -19,13 +19,11 @@ private const val VFS_SYSFS_PATH = "/sys/kernel/ztrosu/vfs"
  */
 object VFSKernelInterface {
 
-    companion object {
-        /**
-         * Reset the cached channel detection, forcing re-detection on next call.
-         */
-        fun resetChannelCache() {
-            cachedChannel = null
-        }
+    /**
+     * Reset the cached channel detection, forcing re-detection on next call.
+     */
+    fun resetChannelCache() {
+        cachedChannel = null
     }
 
     // ==================== 通讯通道管理 ====================
