@@ -13,6 +13,60 @@ import kotlin.concurrent.thread
 
 private const val TAG = "VFSSysfsEventListener"
 
+// ==================== 事件类型常量 ====================
+
+const val EVENT_VFS_OPEN = 1
+const val EVENT_VFS_READ = 2
+const val EVENT_VFS_WRITE = 3
+const val EVENT_VFS_CLOSE = 4
+const val EVENT_VFS_DENY = 5
+const val EVENT_HOOK_ADDED = 10
+const val EVENT_HOOK_REMOVED = 11
+const val EVENT_RULE_CHANGED = 12
+
+// ==================== 数据类 ====================
+
+/**
+ * VFS事件数据结构
+ */
+data class VFSEvent(
+    val eventType: Int,
+    val pid: Int,
+    val uid: Int,
+    val path: String,
+    val timestamp: Long,
+    val result: Int  // 0=allow, 1=deny
+) {
+    /**
+     * 获取事件类型的人类可读名称
+     */
+    fun getEventTypeName(): String {
+        return when (eventType) {
+            EVENT_VFS_OPEN -> "OPEN"
+            EVENT_VFS_READ -> "READ"
+            EVENT_VFS_WRITE -> "WRITE"
+            EVENT_VFS_CLOSE -> "CLOSE"
+            EVENT_VFS_DENY -> "DENY"
+            EVENT_HOOK_ADDED -> "HOOK_ADDED"
+            EVENT_HOOK_REMOVED -> "HOOK_REMOVED"
+            EVENT_RULE_CHANGED -> "RULE_CHANGED"
+            else -> "UNKNOWN($eventType)"
+        }
+    }
+
+    /**
+     * 获取结果的人类可读名称
+     */
+    fun getResultName(): String {
+        return if (result == 0) "ALLOW" else "DENY"
+    }
+
+    override fun toString(): String {
+        return "VFSEvent(type=${getEventTypeName()}, pid=$pid, uid=$uid, " +
+                "path=$path, ts=$timestamp, result=${getResultName()})"
+    }
+}
+
 /**
  * VFS Sysfs事件监听器
  *
@@ -32,65 +86,11 @@ private const val TAG = "VFSSysfsEventListener"
  */
 object VFSSysfsEventListener {
 
-    // ==================== 事件类型常量 ====================
-
-    const val EVENT_VFS_OPEN = 1
-    const val EVENT_VFS_READ = 2
-    const val EVENT_VFS_WRITE = 3
-    const val EVENT_VFS_CLOSE = 4
-    const val EVENT_VFS_DENY = 5
-    const val EVENT_HOOK_ADDED = 10
-    const val EVENT_HOOK_REMOVED = 11
-    const val EVENT_RULE_CHANGED = 12
-
     // 协议头大小: 5 * UInt32 + 1 * UInt64 = 28 bytes (不含Path)
     private const val EVENT_HEADER_SIZE = 28
 
     // 事件Magic
     private const val EVENT_MAGIC: Int = 0xAF5F
-
-    // ==================== 数据类 ====================
-
-    /**
-     * VFS事件数据结构
-     */
-    data class VFSEvent(
-        val eventType: Int,
-        val pid: Int,
-        val uid: Int,
-        val path: String,
-        val timestamp: Long,
-        val result: Int  // 0=allow, 1=deny
-    ) {
-        /**
-         * 获取事件类型的人类可读名称
-         */
-        fun getEventTypeName(): String {
-            return when (eventType) {
-                EVENT_VFS_OPEN -> "OPEN"
-                EVENT_VFS_READ -> "READ"
-                EVENT_VFS_WRITE -> "WRITE"
-                EVENT_VFS_CLOSE -> "CLOSE"
-                EVENT_VFS_DENY -> "DENY"
-                EVENT_HOOK_ADDED -> "HOOK_ADDED"
-                EVENT_HOOK_REMOVED -> "HOOK_REMOVED"
-                EVENT_RULE_CHANGED -> "RULE_CHANGED"
-                else -> "UNKNOWN($eventType)"
-            }
-        }
-
-        /**
-         * 获取结果的人类可读名称
-         */
-        fun getResultName(): String {
-            return if (result == 0) "ALLOW" else "DENY"
-        }
-
-        override fun toString(): String {
-            return "VFSEvent(type=${getEventTypeName()}, pid=$pid, uid=$uid, " +
-                    "path=$path, ts=$timestamp, result=${getResultName()})"
-        }
-    }
 
     // ==================== 监听状态 ====================
 

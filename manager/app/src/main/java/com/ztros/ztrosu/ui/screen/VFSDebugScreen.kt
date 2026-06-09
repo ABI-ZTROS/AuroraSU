@@ -122,7 +122,7 @@ import com.ztros.ztrosu.ui.util.VFSPolicy
 import com.ztros.ztrosu.ui.util.VFSTemplate
 import com.ztros.ztrosu.ui.util.VFSTemplateManager
 import com.ztros.ztrosu.ui.util.VFSProtocolTranslator
-import com.ztros.ztrosu.ui.util.VFSNetlinkListener.VFSEvent
+import com.ztros.ztrosu.ui.util.VFSEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
