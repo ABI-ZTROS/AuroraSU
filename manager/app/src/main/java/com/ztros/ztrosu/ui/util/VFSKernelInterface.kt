@@ -3,6 +3,7 @@ package com.ztros.ztrosu.ui.util
 import android.util.Log
 import com.topjohnwu.superuser.Shell
 import com.topjohnwu.superuser.io.SuFile
+import java.io.File
 import com.ztros.ztrosu.ui.util.VFSEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -306,10 +307,16 @@ object VFSKernelInterface {
     // ==================== 工具函数 ====================
 
     private fun readFile(path: String): String {
+        // Try java.io.File first (sysfs files are world-readable)
+        val file = File(path)
+        if (file.exists() && file.canRead()) {
+            return runCatching { file.readText() }.getOrDefault("")
+        }
+        // Fallback to SuFile for restricted paths
         return runCatching {
-            val file = SuFile.open(path)
-            if (file.exists() && file.canRead()) {
-                file.readText()
+            val suFile = SuFile.open(path)
+            if (suFile.exists() && suFile.canRead()) {
+                suFile.readText()
             } else {
                 ""
             }
@@ -317,10 +324,19 @@ object VFSKernelInterface {
     }
 
     private fun writeFile(path: String, content: String): Boolean {
-        return runCatching {
-            val file = SuFile.open(path)
-            if (file.exists() && file.canWrite()) {
+        // Try java.io.File first
+        val file = File(path)
+        if (file.exists() && file.canWrite()) {
+            return runCatching {
                 file.writeText(content)
+                true
+            }.getOrDefault(false)
+        }
+        // Fallback to SuFile for restricted paths
+        return runCatching {
+            val suFile = SuFile.open(path)
+            if (suFile.exists() && suFile.canWrite()) {
+                suFile.writeText(content)
                 true
             } else {
                 false
@@ -329,11 +345,21 @@ object VFSKernelInterface {
     }
 
     private fun appendFile(path: String, content: String): Boolean {
-        return runCatching {
-            val file = SuFile.open(path)
-            if (file.exists() && file.canWrite()) {
+        // Try java.io.File first
+        val file = File(path)
+        if (file.exists() && file.canWrite()) {
+            return runCatching {
                 val current = file.readText()
                 file.writeText(if (current.isBlank()) content else "$current\n$content")
+                true
+            }.getOrDefault(false)
+        }
+        // Fallback to SuFile for restricted paths
+        return runCatching {
+            val suFile = SuFile.open(path)
+            if (suFile.exists() && suFile.canWrite()) {
+                val current = suFile.readText()
+                suFile.writeText(if (current.isBlank()) content else "$current\n$content")
                 true
             } else {
                 false
