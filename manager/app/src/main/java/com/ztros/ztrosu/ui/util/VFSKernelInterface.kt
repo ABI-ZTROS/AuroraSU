@@ -289,6 +289,11 @@ object VFSKernelInterface {
         val isV2 = isV2Supported()
 
         if (isV2) {
+            // v2: rules_store是ADDITIVE语义，先清空再写入
+            val cleared = clearRules()
+            if (!cleared) {
+                Log.w(TAG, "Failed to clear rules before batch add")
+            }
             // v2: 支持多行批量写入
             val content = rules.joinToString("\n")
             writeFile("$VFS_SYSFS_PATH/rules", content)

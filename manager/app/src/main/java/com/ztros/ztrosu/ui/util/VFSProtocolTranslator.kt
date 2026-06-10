@@ -971,14 +971,14 @@ object VFSProtocolTranslator {
      */
     private fun eventTypeName(eventType: Int): String {
         return when (eventType) {
-            0 -> "OPEN"
-            1 -> "READ"
-            2 -> "WRITE"
-            3 -> "CLOSE"
-            4 -> "CREATE"
-            5 -> "DELETE"
-            6 -> "RENAME"
-            7 -> "ATTR"
+            1 -> "OPEN"
+            2 -> "READ"
+            3 -> "WRITE"
+            4 -> "CLOSE"
+            5 -> "DENY"
+            10 -> "HOOK_ADDED"
+            11 -> "HOOK_REMOVED"
+            12 -> "RULE_CHANGED"
             else -> "EVENT($eventType)"
         }
     }

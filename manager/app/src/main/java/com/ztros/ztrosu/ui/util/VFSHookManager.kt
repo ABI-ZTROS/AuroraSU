@@ -720,7 +720,8 @@ object VFSHookManager {
             if (hookFile.exists()) {
                 // Format: add:<type>:<identifier>:<uid>:<mode>
                 val command = "add:${target.type.name}:${target.identifier}:${target.uid}:${target.mode.name}"
-                hookFile.appendText("$command\n")
+                // 内核hook_targets_store每次write只解析一条命令，必须用writeText(覆盖)而非appendText
+                hookFile.writeText(command)
                 Log.i(TAG, "Applied hook to kernel via SYSFS: $command")
                 true
             } else {
@@ -751,7 +752,8 @@ object VFSHookManager {
             if (hookFile.exists()) {
                 // Format: remove:<type>:<identifier>
                 val command = "remove:${target.type.name}:${target.identifier}"
-                hookFile.appendText("$command\n")
+                // 内核hook_targets_store每次write只解析一条命令，必须用writeText(覆盖)而非appendText
+                hookFile.writeText(command)
                 Log.i(TAG, "Removed hook from kernel: $command")
                 true
             } else {

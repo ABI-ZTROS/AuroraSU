@@ -86,8 +86,11 @@ data class VFSEvent(
  */
 object VFSSysfsEventListener {
 
-    // 协议头大小: 5 * UInt32 + 1 * UInt64 = 28 bytes (不含Path)
-    private const val EVENT_HEADER_SIZE = 28
+    // 协议头大小: 5 * UInt32 = 20 bytes (magic + event_type + pid + uid + path_len, 不含Path)
+    private const val EVENT_HEADER_SIZE = 20
+
+    // 协议尾部大小: UInt64 + UInt32 = 12 bytes (timestamp + result)
+    private const val EVENT_TRAILER_SIZE = 12
 
     // 事件Magic
     private const val EVENT_MAGIC: Int = 0xAF5F
@@ -385,8 +388,8 @@ object VFSSysfsEventListener {
                 )
                 events.add(event)
 
-                // 移动偏移量
-                offset += EVENT_HEADER_SIZE + pathLen
+                // 移动偏移量: 头部(20) + 路径(pathLen) + 尾部(12)
+                offset += EVENT_HEADER_SIZE + pathLen + EVENT_TRAILER_SIZE
 
             } catch (e: Exception) {
                 Log.e(TAG, "Error parsing event at offset $offset", e)

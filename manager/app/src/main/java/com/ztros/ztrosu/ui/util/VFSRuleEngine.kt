@@ -120,14 +120,22 @@ data class VFSRule(
 
     /**
      * 转换为简单规则格式 (兼容旧版)
-     * 格式: action:path:mode
+     * 格式: action:path:mode 或 action:path:mode:uid
+     *
+     * 注意: LOG_ONLY规则无法推送到内核(内核只接受allow/deny)，
+     * 返回null表示应跳过该规则。
      */
-    fun toSimpleFormat(): String {
+    fun toSimpleFormat(): String? {
+        // 内核只接受 allow 或 deny，LOG_ONLY 无法推送
+        if (action == RuleAction.LOG_ONLY) return null
+
         val mode = buildString {
             if (VFSOp.READ in opTypes) append('r')
             if (VFSOp.WRITE in opTypes) append('w')
         }
-        return "${action.name.lowercase()}:$pathPattern:$mode"
+        val base = "${action.name.lowercase()}:$pathPattern:$mode"
+        // 内核 vfs_rule_parse 支持第4字段作为UID过滤
+        return if (uidFilter != null) "$base:$uidFilter" else base
     }
 
     /**
@@ -798,7 +806,7 @@ object VFSRuleEngine {
             enabled = true,
             logLevel = 2,
             defaultAction = "allow",
-            rules = rules.filter { it.enabled }.map { it.toSimpleFormat() }
+            rules = rules.filter { it.enabled }.mapNotNull { it.toSimpleFormat() }
         )
     }
 
