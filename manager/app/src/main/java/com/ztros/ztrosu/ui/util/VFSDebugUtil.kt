@@ -45,28 +45,57 @@ object VFSDebugUtil {
 
     /**
      * Detect which backend is available
+     * Uses java.io.File first (sysfs is world-readable), falls back to SuFile for restricted paths.
      */
     fun detectBackend(): VFSBackend? {
         if (backend != null) {
             return backend!!
         }
 
-        // Check kernel sysfs
-        if (SuFile.open(VFS_SYSFS_PATH).exists()) {
+        // Check kernel sysfs using java.io.File first
+        // sysfs directories are typically world-readable (0755), files are 0444/0644
+        val sysfsFile = File(VFS_SYSFS_PATH)
+        Log.d(TAG, "detectBackend: checking $VFS_SYSFS_PATH, exists=${sysfsFile.exists()}, canRead=${sysfsFile.canRead()}")
+        if (sysfsFile.exists() && sysfsFile.canRead()) {
             backend = VFSBackend.KERNEL_SYSFS
-            Log.i(TAG, "Using kernel sysfs backend")
+            Log.i(TAG, "Using kernel sysfs backend (File)")
             return backend!!
         }
 
+        // Fallback: try SuFile (for paths that require root)
+        try {
+            val suSysfs = SuFile.open(VFS_SYSFS_PATH)
+            Log.d(TAG, "detectBackend: SuFile check $VFS_SYSFS_PATH, exists=${suSysfs.exists()}")
+            if (suSysfs.exists()) {
+                backend = VFSBackend.KERNEL_SYSFS
+                Log.i(TAG, "Using kernel sysfs backend (SuFile)")
+                return backend!!
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "SuFile sysfs check failed: ${e.message}")
+        }
+
         // Check kernel debugfs
-        if (SuFile.open(VFS_DEBUGFS_PATH).exists()) {
+        val debugfsFile = File(VFS_DEBUGFS_PATH)
+        if (debugfsFile.exists() && debugfsFile.canRead()) {
             backend = VFSBackend.KERNEL_DEBUGFS
             Log.i(TAG, "Using kernel debugfs backend")
             return backend!!
         }
 
+        try {
+            val suDebugfs = SuFile.open(VFS_DEBUGFS_PATH)
+            if (suDebugfs.exists()) {
+                backend = VFSBackend.KERNEL_DEBUGFS
+                Log.i(TAG, "Using kernel debugfs backend (SuFile)")
+                return backend!!
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "SuFile debugfs check failed: ${e.message}")
+        }
+
         // No backend available
-        Log.w(TAG, "No VFS backend available")
+        Log.w(TAG, "No VFS backend available (checked File and SuFile for both sysfs and debugfs)")
         return null
     }
 
@@ -86,10 +115,16 @@ object VFSDebugUtil {
 
 
     private fun readFile(path: String): String {
+        // Try java.io.File first (sysfs files are world-readable)
+        val file = File(path)
+        if (file.exists() && file.canRead()) {
+            return runCatching { file.readText() }.getOrDefault("")
+        }
+        // Fallback to SuFile for restricted paths
         return runCatching {
-            val file = SuFile.open(path)
-            if (file.exists() && file.canRead()) {
-                file.readText()
+            val suFile = SuFile.open(path)
+            if (suFile.exists() && suFile.canRead()) {
+                suFile.readText()
             } else {
                 ""
             }
@@ -97,10 +132,19 @@ object VFSDebugUtil {
     }
 
     private fun writeFile(path: String, content: String): Boolean {
-        return runCatching {
-            val file = SuFile.open(path)
-            if (file.exists() && file.canWrite()) {
+        // Try java.io.File first
+        val file = File(path)
+        if (file.exists() && file.canWrite()) {
+            return runCatching {
                 file.writeText(content)
+                true
+            }.getOrDefault(false)
+        }
+        // Fallback to SuFile for restricted paths
+        return runCatching {
+            val suFile = SuFile.open(path)
+            if (suFile.exists() && suFile.canWrite()) {
+                suFile.writeText(content)
                 true
             } else {
                 false
