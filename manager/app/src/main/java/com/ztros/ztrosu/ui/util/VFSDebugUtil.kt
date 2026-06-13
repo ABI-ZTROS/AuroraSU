@@ -54,9 +54,10 @@ object VFSDebugUtil {
 
         // Check kernel sysfs using java.io.File first
         // sysfs directories are typically world-readable (0755), files are 0444/0644
+        // Note: canRead() may return false in Android sandbox even if file is readable
         val sysfsFile = File(VFS_SYSFS_PATH)
         Log.d(TAG, "detectBackend: checking $VFS_SYSFS_PATH, exists=${sysfsFile.exists()}, canRead=${sysfsFile.canRead()}")
-        if (sysfsFile.exists() && sysfsFile.canRead()) {
+        if (sysfsFile.exists()) {
             backend = VFSBackend.KERNEL_SYSFS
             Log.i(TAG, "Using kernel sysfs backend (File)")
             return backend!!
@@ -116,14 +117,18 @@ object VFSDebugUtil {
 
     private fun readFile(path: String): String {
         // Try java.io.File first (sysfs files are world-readable)
+        // Note: canRead() may return false in Android sandbox even if file is readable
         val file = File(path)
-        if (file.exists() && file.canRead()) {
-            return runCatching { file.readText() }.getOrDefault("")
+        if (file.exists()) {
+            val content = runCatching { file.readText() }.getOrDefault("")
+            if (content.isNotEmpty()) {
+                return content
+            }
         }
         // Fallback to SuFile for restricted paths
         return runCatching {
             val suFile = SuFile.open(path)
-            if (suFile.exists() && suFile.canRead()) {
+            if (suFile.exists()) {
                 suFile.readText()
             } else {
                 ""
@@ -133,17 +138,19 @@ object VFSDebugUtil {
 
     private fun writeFile(path: String, content: String): Boolean {
         // Try java.io.File first
+        // Note: canWrite() may return false in Android sandbox even if file is writable
         val file = File(path)
-        if (file.exists() && file.canWrite()) {
-            return runCatching {
+        if (file.exists()) {
+            val ok = runCatching {
                 file.writeText(content)
                 true
             }.getOrDefault(false)
+            if (ok) return true
         }
         // Fallback to SuFile for restricted paths
         return runCatching {
             val suFile = SuFile.open(path)
-            if (suFile.exists() && suFile.canWrite()) {
+            if (suFile.exists()) {
                 suFile.writeText(content)
                 true
             } else {

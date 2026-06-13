@@ -322,14 +322,18 @@ object VFSKernelInterface {
 
     private fun readFile(path: String): String {
         // Try java.io.File first (sysfs files are world-readable)
+        // Note: canRead() may return false in Android sandbox even if file is readable
         val file = File(path)
-        if (file.exists() && file.canRead()) {
-            return runCatching { file.readText() }.getOrDefault("")
+        if (file.exists()) {
+            val content = runCatching { file.readText() }.getOrDefault("")
+            if (content.isNotEmpty()) {
+                return content
+            }
         }
         // Fallback to SuFile for restricted paths
         return runCatching {
             val suFile = SuFile.open(path)
-            if (suFile.exists() && suFile.canRead()) {
+            if (suFile.exists()) {
                 suFile.readText()
             } else {
                 ""
