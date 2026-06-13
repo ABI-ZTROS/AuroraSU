@@ -108,8 +108,17 @@ object VFSKernelInterface {
      * @return 版本号 (1或2)，失败返回null
      */
     suspend fun getVersion(): Int? = withContext(Dispatchers.IO) {
-        val content = readFile("$VFS_SYSFS_PATH/version")
-        content.trim().toIntOrNull()
+        val path = "$VFS_SYSFS_PATH/version"
+        val content = readFile(path)
+        Log.d(TAG, "getVersion: path=$path, content='$content', length=${content.length}")
+        val version = content.trim().toIntOrNull()
+        if (version == null) {
+            Log.w(TAG, "getVersion: failed to parse version from '$content'")
+            // Debug: check if file exists and what's happening
+            val f = File(path)
+            Log.d(TAG, "getVersion: File.exists=${f.exists()}, canRead=${f.canRead()}, length=${f.length()}")
+        }
+        version
     }
 
     /**

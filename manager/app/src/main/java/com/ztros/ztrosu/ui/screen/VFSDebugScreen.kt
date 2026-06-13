@@ -196,11 +196,15 @@ fun VFSDebugScreen(navigator: DestinationsNavigator) {
             VFSDebugUtil.resetBackend()
             VFSKernelInterface.resetChannelCache()
 
+            Log.d("VFSDebug", "refreshData: starting detection...")
             backend = VFSDebugUtil.detectBackend()
+            Log.d("VFSDebug", "refreshData: backend=$backend")
             stats = VFSDebugUtil.getVFSStats()
             policy = VFSDebugUtil.getVFSPolicy()
-            moduleVersion = try { VFSKernelInterface.getVersion() } catch (_: Exception) { null }
+            moduleVersion = try { VFSKernelInterface.getVersion() } catch (e: Exception) { Log.e("VFSDebug", "getVersion failed", e); null }
+            Log.d("VFSDebug", "refreshData: moduleVersion=$moduleVersion")
             channel = try { VFSKernelInterface.detectBestChannel() } catch (_: Exception) { null }
+            Log.d("VFSDebug", "refreshData: channel=$channel")
 
             localEnabled = policy?.enabled ?: false
             localLogLevel = policy?.logLevel ?: 0
