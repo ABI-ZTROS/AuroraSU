@@ -46,6 +46,7 @@ fun ResponsiveLayout(
  * Returns responsive padding based on window size class.
  * Compact: 16dp, Medium: 24dp, Expanded: 32dp
  */
+@Composable
 fun responsiveHorizontalPadding(): Dp = when (LocalWindowSizeClass.current) {
     WindowSizeClass.COMPACT -> 16.dp
     WindowSizeClass.MEDIUM -> 24.dp
@@ -55,6 +56,7 @@ fun responsiveHorizontalPadding(): Dp = when (LocalWindowSizeClass.current) {
 /**
  * Returns responsive card arrangement spacing based on window size.
  */
+@Composable
 fun responsiveSpacing(): Dp = when (LocalWindowSizeClass.current) {
     WindowSizeClass.COMPACT -> 12.dp
     WindowSizeClass.MEDIUM -> 16.dp
@@ -64,11 +66,13 @@ fun responsiveSpacing(): Dp = when (LocalWindowSizeClass.current) {
 /**
  * Returns whether the current layout should use a two-column grid.
  */
+@Composable
 fun shouldUseTwoColumns(): Boolean = LocalWindowSizeClass.current >= WindowSizeClass.MEDIUM
 
 /**
  * Returns the number of grid columns based on window size.
  */
+@Composable
 fun gridColumns(): Int = when (LocalWindowSizeClass.current) {
     WindowSizeClass.COMPACT -> 1
     WindowSizeClass.MEDIUM -> 2
