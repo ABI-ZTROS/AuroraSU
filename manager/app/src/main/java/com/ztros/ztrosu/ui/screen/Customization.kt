@@ -14,12 +14,16 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AcUnit
+import androidx.compose.material.icons.filled.Animation
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.BlurOn
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.Contrast
 import androidx.compose.material.icons.filled.DarkMode
@@ -28,7 +32,12 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Layers
+import androidx.compose.material.icons.filled.RoundedCorner
+import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material.icons.filled.TextFields
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material.icons.filled.ViewCarousel
@@ -68,6 +77,7 @@ import com.ztros.ztrosu.R
 import com.ztros.ztrosu.ksuApp
 import com.ztros.ztrosu.ui.component.SwitchItem
 import com.ztros.ztrosu.ui.component.rememberCustomDialog
+import com.ztros.ztrosu.ui.component.GlassCard
 import com.ztros.ztrosu.ui.util.refreshActivity
 import com.ztros.ztrosu.ui.util.LocalSnackbarHost
 import com.ztros.ztrosu.ui.util.LocaleHelper
@@ -384,13 +394,13 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
             Text(
                 text = stringResource(R.string.theme_preset_title),
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                modifier = Modifier.padding(horizontal = 16.dp)
+                modifier = Modifier.padding(horizontal = responsiveHorizontalPadding())
             )
             Text(
                 text = stringResource(R.string.theme_preset_summary),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 16.dp)
+                modifier = Modifier.padding(horizontal = responsiveHorizontalPadding())
             )
             Spacer(Modifier.height(8.dp))
 
@@ -399,7 +409,7 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
             FlowRow(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
+                    .padding(horizontal = responsiveHorizontalPadding()),
                 horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.Start),
                 verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.Top)
             ) {
@@ -638,14 +648,14 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
             Text(
                 text = darkModeTitle,
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                modifier = Modifier.padding(horizontal = 16.dp)
+                modifier = Modifier.padding(horizontal = responsiveHorizontalPadding())
             )
             Spacer(Modifier.height(8.dp))
             
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
+                    .padding(horizontal = responsiveHorizontalPadding()),
                 horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.Start),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -777,6 +787,177 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
                 blurEnabled = enabled
             }
 
+            // === Dynamic Color Switch ===
+            var dynamicColorEnabled by rememberSaveable {
+                mutableStateOf(prefs.getBoolean("material_you_dynamic_color", true))
+            }
+            SwitchItem(
+                icon = Icons.Filled.AutoAwesome,
+                title = stringResource(R.string.material_you_dynamic),
+                summary = stringResource(R.string.material_you_dynamic_desc),
+                checked = dynamicColorEnabled
+            ) {
+                prefs.edit { putBoolean("material_you_dynamic_color", it) }
+                dynamicColorEnabled = it
+                (context as? MainActivity)?.setDynamicColor(it)
+                if (it) {
+                    (context as? MainActivity)?.setAccentColor(-1)
+                    prefs.edit {
+                        putLong("material_you_accent_color", -1)
+                        putInt("material_you_accent_color_index", -1)
+                    }
+                }
+            }
+
+            // === Accent Color Selection ===
+            val accentColors = listOf(
+                Color(0xFF6750A4), Color(0xFFE91E63), Color(0xFF2196F3),
+                Color(0xFF4CAF50), Color(0xFFFF9800), Color(0xFF9C27B0),
+                Color(0xFF00BCD4), Color(0xFFFF5722)
+            )
+            var selectedAccentIndex by rememberSaveable {
+                mutableIntStateOf(prefs.getInt("material_you_accent_color_index", 0))
+            }
+
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = stringResource(R.string.material_you_accent),
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                modifier = Modifier.padding(horizontal = responsiveHorizontalPadding())
+            )
+            Text(
+                text = stringResource(R.string.material_you_accent_desc),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = responsiveHorizontalPadding())
+            )
+            Spacer(Modifier.height(8.dp))
+
+            FlowRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = responsiveHorizontalPadding()),
+                horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.Start),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                accentColors.forEachIndexed { index, color ->
+                    val isSelected = selectedAccentIndex == index
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(CircleShape)
+                            .background(color)
+                            .then(
+                                if (isSelected) {
+                                    Modifier.border(3.dp, MaterialTheme.colorScheme.onSurface, CircleShape)
+                                } else {
+                                    Modifier.border(1.dp, Color.Gray.copy(alpha = 0.3f), CircleShape)
+                                }
+                            )
+                            .clickable {
+                                selectedAccentIndex = index
+                                prefs.edit { putInt("material_you_accent_color_index", index) }
+                                prefs.edit { putLong("material_you_accent_color", color.value.toLong()) }
+                                (context as? MainActivity)?.setAccentColor(color.value.toLong())
+                                (context as? MainActivity)?.setDynamicColor(false)
+                                (context as? MainActivity)?.setThemePreset("default")
+                                prefs.edit {
+                                    putBoolean("material_you_dynamic_color", false)
+                                    putString("theme_preset", "default")
+                                }
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (isSelected) {
+                            Icon(Icons.Filled.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
+                        }
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            var fontScale by rememberSaveable {
+                mutableFloatStateOf(prefs.getFloat("material_you_font_scale", 1.0f))
+            }
+
+            GlassCard(modifier = Modifier.fillMaxWidth().padding(horizontal = responsiveHorizontalPadding())) {
+                Column {
+                    ListItem(
+                        leadingContent = { Icon(Icons.Filled.TextFields, contentDescription = null) },
+                        headlineContent = {
+                            Text(
+                                text = stringResource(R.string.material_you_font_scale),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        },
+                        supportingContent = { Text("%.1fx".format(fontScale)) }
+                    )
+                    Slider(
+                        value = fontScale,
+                        onValueChange = {
+                            fontScale = it
+                            prefs.edit { putFloat("material_you_font_scale", it) }
+                            (context as? MainActivity)?.setFontScale(it)
+                        },
+                        valueRange = 0.8f..1.4f,
+                        steps = 5,
+                        modifier = Modifier.padding(horizontal = responsiveHorizontalPadding())
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            var cornerRadius by rememberSaveable {
+                mutableFloatStateOf(prefs.getFloat("material_you_corner_radius", 16f))
+            }
+
+            GlassCard(modifier = Modifier.fillMaxWidth().padding(horizontal = responsiveHorizontalPadding())) {
+                Column {
+                    ListItem(
+                        leadingContent = { Icon(Icons.Filled.RoundedCorner, contentDescription = null) },
+                        headlineContent = {
+                            Text(
+                                text = stringResource(R.string.material_you_shape),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        },
+                        supportingContent = { Text("%.0fdp".format(cornerRadius)) }
+                    )
+                    Slider(
+                        value = cornerRadius,
+                        onValueChange = {
+                            cornerRadius = it
+                            prefs.edit { putFloat("material_you_corner_radius", it) }
+                            (context as? MainActivity)?.setCornerRadius(it)
+                        },
+                        valueRange = 0f..28f,
+                        steps = 13,
+                        modifier = Modifier.padding(horizontal = responsiveHorizontalPadding())
+                    )
+                    // Preview
+                    Surface(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = responsiveHorizontalPadding(), vertical = 8.dp),
+                        shape = RoundedCornerShape(cornerRadius.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer
+                    ) {
+                        Box(
+                            modifier = Modifier.padding(16.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = stringResource(R.string.material_you_rounded),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                    }
+                }
+            }
+
             Spacer(Modifier.height(16.dp))
 
             // === Card Elevation Slider ===
@@ -786,10 +967,10 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
                 )
             }
 
-            Card(
+            GlassCard(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
+                    .padding(horizontal = responsiveHorizontalPadding())
             ) {
                 Column {
                     ListItem(
@@ -815,7 +996,7 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
                         },
                         valueRange = 0f..12f,
                         steps = 12,
-                        modifier = Modifier.padding(horizontal = 16.dp)
+                        modifier = Modifier.padding(horizontal = responsiveHorizontalPadding())
                     )
                 }
             }
@@ -852,10 +1033,10 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
                 )
             }
 
-            Card(
+            GlassCard(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
+                    .padding(horizontal = responsiveHorizontalPadding())
             ) {
                 Column {
                     ListItem(
@@ -881,7 +1062,89 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
                         },
                         valueRange = 0.8f..1.4f,
                         steps = 6,  // 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4
-                        modifier = Modifier.padding(horizontal = 16.dp)
+                        modifier = Modifier.padding(horizontal = responsiveHorizontalPadding())
+                    )
+                }
+            }
+
+            // === Motion Settings Section ===
+            Spacer(Modifier.height(16.dp))
+            Text(
+                text = stringResource(R.string.motion_title),
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                modifier = Modifier.padding(horizontal = responsiveHorizontalPadding())
+            )
+            Spacer(Modifier.height(8.dp))
+
+            var pageTransitionEnabled by rememberSaveable {
+                mutableStateOf(prefs.getBoolean("motion_page_transition", true))
+            }
+            SwitchItem(
+                icon = Icons.Filled.SwapHoriz,
+                title = stringResource(R.string.motion_animation),
+                summary = stringResource(R.string.motion_animation_desc),
+                checked = pageTransitionEnabled
+            ) {
+                prefs.edit { putBoolean("motion_page_transition", it) }
+                pageTransitionEnabled = it
+                (context as? MainActivity)?.setPageTransition(it)
+            }
+
+            var cardAnimationEnabled by rememberSaveable {
+                mutableStateOf(prefs.getBoolean("motion_card_animation", true))
+            }
+            SwitchItem(
+                icon = Icons.Filled.Animation,
+                title = stringResource(R.string.motion_card_animation),
+                summary = stringResource(R.string.motion_card_animation_desc),
+                checked = cardAnimationEnabled
+            ) {
+                prefs.edit { putBoolean("motion_card_animation", it) }
+                cardAnimationEnabled = it
+            }
+
+            var pullToRefreshEnabled by rememberSaveable {
+                mutableStateOf(prefs.getBoolean("motion_pull_to_refresh", true))
+            }
+            SwitchItem(
+                icon = Icons.Filled.Refresh,
+                title = stringResource(R.string.motion_pull_refresh),
+                summary = stringResource(R.string.motion_pull_refresh_desc),
+                checked = pullToRefreshEnabled
+            ) {
+                prefs.edit { putBoolean("motion_pull_to_refresh", it) }
+                pullToRefreshEnabled = it
+            }
+
+            // Animation Speed
+            Spacer(Modifier.height(16.dp))
+            var animSpeed by rememberSaveable {
+                mutableFloatStateOf(prefs.getFloat("motion_animation_speed", 1.0f))
+            }
+
+            GlassCard(modifier = Modifier.fillMaxWidth().padding(horizontal = responsiveHorizontalPadding())) {
+                Column {
+                    ListItem(
+                        leadingContent = { Icon(Icons.Filled.Speed, contentDescription = null) },
+                        headlineContent = {
+                            Text(
+                                text = stringResource(R.string.settings_check_update),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        },
+                        supportingContent = { Text("%.1fx".format(animSpeed)) }
+                    )
+                    Slider(
+                        value = animSpeed,
+                        onValueChange = {
+                            animSpeed = it
+                            prefs.edit { putFloat("motion_animation_speed", it) }
+                            (context as? MainActivity)?.setAnimationSpeed(it)
+                        },
+                        valueRange = 0.5f..2.0f,
+                        steps = 14,
+                        modifier = Modifier.padding(horizontal = responsiveHorizontalPadding())
                     )
                 }
             }

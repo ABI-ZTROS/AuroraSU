@@ -78,6 +78,7 @@ import com.ztros.ztrosu.ui.component.ConfirmResult
 import com.ztros.ztrosu.ui.component.SearchAppBar
 import com.ztros.ztrosu.ui.component.rememberConfirmDialog
 import com.ztros.ztrosu.ui.component.rememberLoadingDialog
+import com.ztros.ztrosu.ui.component.GlassCard
 import com.ztros.ztrosu.ui.component.ShortcutDialog
 import com.ztros.ztrosu.ui.util.module.Shortcut
 import com.ztros.ztrosu.ui.util.*
@@ -850,7 +851,7 @@ fun ModuleItem(
             Dialog(
                 onDismissRequest = { showMenu = false }
             ) {
-                Card(
+                GlassCard(
                     modifier = Modifier.fillMaxWidth(0.95f),
                 ) {
                     Column(modifier = Modifier.padding(24.dp)) {
@@ -934,7 +935,7 @@ fun ModuleItem(
         }
     }
 
-    Card(
+    GlassCard(
         modifier = Modifier
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.medium)

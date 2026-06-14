@@ -147,7 +147,7 @@ fun SettingScreen(navigator: DestinationsNavigator) {
                 .verticalScroll(rememberScrollState())
                 .padding(top = 16.dp)
                 .padding(bottom = navBarPadding)
-                .padding(horizontal = 16.dp),
+                .padding(horizontal = responsiveHorizontalPadding()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // Staggered entrance animation state
@@ -250,7 +250,7 @@ private fun KernelFeaturesCard(
 ) {
     val context = LocalContext.current
 
-    Card(modifier = Modifier.fillMaxWidth()) {
+    GlassCard(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)
@@ -354,7 +354,7 @@ private fun ModuleMountCard(
 
     var showDropdown by remember { mutableStateOf(false) }
 
-    Card(modifier = Modifier.fillMaxWidth()) {
+    GlassCard(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)
@@ -424,7 +424,7 @@ private fun SecurityCard(
     // Detect ZTR_OS kernel by checking version tag
     val isZtrOS = !Natives.getVersionTag().isNullOrBlank()
 
-    Card(modifier = Modifier.fillMaxWidth()) {
+    GlassCard(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)
@@ -600,38 +600,6 @@ private fun SecurityCard(
                 }
             )
 
-            // Material You
-            ListItem(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(8.dp))
-                    .clickable { navigator.navigate(MaterialYouScreenDestination) },
-                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                leadingContent = { Icon(Icons.Filled.AutoAwesome, null) },
-                headlineContent = {
-                    Text(
-                        text = stringResource(R.string.material_you_title),
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-            )
-
-            // Motion Settings
-            ListItem(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(8.dp))
-                    .clickable { navigator.navigate(MotionScreenDestination) },
-                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                leadingContent = { Icon(Icons.Filled.Animation, null) },
-                headlineContent = {
-                    Text(
-                        text = stringResource(R.string.motion_title),
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-            )
-
             // Kernel Module Update
             ListItem(
                 modifier = Modifier
@@ -752,7 +720,7 @@ private fun AppSettingsCard(
     scope: kotlinx.coroutines.CoroutineScope,
     context: android.content.Context
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    GlassCard(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)

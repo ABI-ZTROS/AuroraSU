@@ -76,6 +76,7 @@ import com.ztros.ztrosu.*
 import com.ztros.ztrosu.R
 import com.ztros.ztrosu.ui.component.rememberConfirmDialog
 import com.ztros.ztrosu.ui.component.ConfirmResult
+import com.ztros.ztrosu.ui.component.GlassCard
 import com.ztros.ztrosu.ui.theme.ORANGE
 import com.ztros.ztrosu.ui.util.*
 import com.ztros.ztrosu.ui.util.KernelDetect
@@ -337,10 +338,7 @@ private fun HomeAnimatedCard(
 @Composable
 private fun SuperuserCard(onClick: (() -> Unit)? = null) {
     val count = getSuperuserCount()
-    ElevatedCard(
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer
-        ),
+    GlassCard(
         modifier = Modifier
             .height(IntrinsicSize.Min)
             .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier)
@@ -395,10 +393,7 @@ private fun ModuleCard(onClick: (() -> Unit)? = null) {
         }
     }
 
-    ElevatedCard(
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer
-        ),
+    GlassCard(
         modifier = Modifier
             .height(IntrinsicSize.Min)
             .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier)
@@ -503,7 +498,7 @@ fun UpdateCard() {
         exit = shrinkVertically() + fadeOut()
     ) {
         val updateDialog = rememberConfirmDialog(onConfirm = { uriHandler.openUri(newVersionUrl) })
-        ElevatedCard(
+        GlassCard(
             modifier = Modifier.clickable {
                 if (changelog.isEmpty()) {
                     uriHandler.openUri(newVersionUrl)
@@ -515,10 +510,7 @@ fun UpdateCard() {
                         confirm = updateText
                     )
                 }
-            },
-            colors = CardDefaults.elevatedCardColors(
-                containerColor = MaterialTheme.colorScheme.primary
-            )
+            }
         ) {
             Column(
                 modifier = Modifier
@@ -817,12 +809,7 @@ private fun StatusCard(
 ) {
     val context = LocalContext.current
 
-    ElevatedCard(
-        colors = CardDefaults.elevatedCardColors(containerColor = run {
-            if (ksuVersion != null) MaterialTheme.colorScheme.primary
-            else if (kernelVersion.isGKI()) MaterialTheme.colorScheme.secondaryContainer
-            else MaterialTheme.colorScheme.errorContainer
-        })
+    GlassCard(
     ) {
         Row(
             modifier = Modifier
@@ -980,10 +967,7 @@ private fun StatusCard(
 fun WarningCard(
     message: String, color: Color = MaterialTheme.colorScheme.error, onClick: (() -> Unit)? = null
 ) {
-    ElevatedCard(
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = color
-        )
+    GlassCard(
     ) {
         Row(
             modifier = Modifier
@@ -1739,10 +1723,7 @@ private fun ModuleSummaryCard() {
         .filter { !it.remove }
         .maxByOrNull { it.versionCode }
 
-    ElevatedCard(
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer
-        )
+    GlassCard(
     ) {
         Column(
             modifier = Modifier

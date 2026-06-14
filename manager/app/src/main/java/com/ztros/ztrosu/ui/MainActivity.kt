@@ -68,6 +68,10 @@ import com.ztros.ztrosu.ui.theme.KernelSUTheme
 import com.ztros.ztrosu.ui.util.*
 import com.ztros.ztrosu.ui.viewmodel.ModuleViewModel
 import com.ztros.ztrosu.ui.viewmodel.SuperUserViewModel
+import dev.chrisbanes.haze.HazeState
+import com.ztros.ztrosu.ui.component.GlassSurface
+import com.ztros.ztrosu.ui.component.LocalBlurEnabled
+import com.ztros.ztrosu.ui.component.LocalHazeState
 
 data class ScrollState(
     val isScrollingDown: MutableState<Boolean>,
@@ -170,6 +174,7 @@ class MainActivity : ComponentActivity() {
     var elevationState = mutableStateOf(1f)
     var vibrationEnabledState = mutableStateOf(false)
     var densityScaleState = mutableStateOf(1f)
+    val hazeState = HazeState()
     private val handler = Handler(Looper.getMainLooper())
 
     val moduleViewModel: ModuleViewModel by viewModels()
@@ -259,7 +264,9 @@ class MainActivity : ComponentActivity() {
                 LocalDensity provides Density(
                     density = systemDensity * densityScaleState.value,
                     fontScale = fontScaleState.value
-                )
+                ),
+                LocalBlurEnabled provides blurEnabledState.value,
+                LocalHazeState provides hazeState
             ) {
                 KernelSUTheme(
                     darkTheme = effectiveDarkTheme,
@@ -359,6 +366,7 @@ class MainActivity : ComponentActivity() {
                                 previousScrollOffset = previousScrollOffset
                             )
                         ) {
+                            ResponsiveLayout {
                             DestinationsNavHost(
                                 modifier = Modifier
                                     .padding(innerPadding)
@@ -370,7 +378,6 @@ class MainActivity : ComponentActivity() {
                                         if (!pageTransitionState.value) {
                                             EnterTransition.None
                                         } else {
-                                            val duration = (300 * animationSpeedState.value).toInt().coerceAtLeast(50)
                                             val targetRoute = targetState.destination.route
                                             val initialRoute = initialState.destination.route
 
@@ -381,14 +388,14 @@ class MainActivity : ComponentActivity() {
                                                 // Bottom bar -> bottom bar: slide based on index direction
                                                 targetIndex != -1 && initialIndex != -1 -> {
                                                     val offsetSign = if (targetIndex > initialIndex) 1 else -1
-                                                    slideInHorizontally(initialOffsetX = { it * offsetSign }, animationSpec = tween(duration))
+                                                    slideInHorizontally(initialOffsetX = { it * offsetSign }, animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow))
                                                 }
                                                 // Detail page -> bottom bar: slide in from left
                                                 targetRoute in bottomBarRoutes && initialRoute !in bottomBarRoutes -> {
-                                                    slideInHorizontally(initialOffsetX = { -it }, animationSpec = tween(duration))
+                                                    slideInHorizontally(initialOffsetX = { -it }, animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow))
                                                 }
                                                 // Bottom bar -> detail page: slide in from right
-                                                else -> slideInHorizontally(initialOffsetX = { it }, animationSpec = tween(duration))
+                                                else -> slideInHorizontally(initialOffsetX = { it }, animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow))
                                             }
                                         }
                                     }
@@ -397,7 +404,6 @@ class MainActivity : ComponentActivity() {
                                         if (!pageTransitionState.value) {
                                             ExitTransition.None
                                         } else {
-                                            val duration = (300 * animationSpeedState.value).toInt().coerceAtLeast(50)
                                             val targetRoute = targetState.destination.route
                                             val initialRoute = initialState.destination.route
 
@@ -408,14 +414,14 @@ class MainActivity : ComponentActivity() {
                                                 // Bottom bar -> bottom bar: slide out opposite direction
                                                 targetIndex != -1 && initialIndex != -1 -> {
                                                     val offsetSign = if (targetIndex > initialIndex) -1 else 1
-                                                    slideOutHorizontally(targetOffsetX = { it * offsetSign }, animationSpec = tween(duration))
+                                                    slideOutHorizontally(targetOffsetX = { it * offsetSign }, animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow))
                                                 }
                                                 // Bottom bar -> detail page: slide out to left
                                                 initialRoute in bottomBarRoutes && targetRoute !in bottomBarRoutes -> {
-                                                    slideOutHorizontally(targetOffsetX = { -it }, animationSpec = tween(duration))
+                                                    slideOutHorizontally(targetOffsetX = { -it }, animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow))
                                                 }
                                                 // Default
-                                                else -> slideOutHorizontally(targetOffsetX = { -it }, animationSpec = tween(duration))
+                                                else -> slideOutHorizontally(targetOffsetX = { -it }, animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow))
                                             }
                                         }
                                     }
@@ -424,7 +430,6 @@ class MainActivity : ComponentActivity() {
                                         if (!pageTransitionState.value) {
                                             EnterTransition.None
                                         } else {
-                                            val duration = (300 * animationSpeedState.value).toInt().coerceAtLeast(50)
                                             val targetRoute = targetState.destination.route
                                             val initialRoute = initialState.destination.route
 
@@ -435,13 +440,13 @@ class MainActivity : ComponentActivity() {
                                                 // Bottom bar -> bottom bar pop: mirror of exit
                                                 targetIndex != -1 && initialIndex != -1 -> {
                                                     val offsetSign = if (targetIndex > initialIndex) 1 else -1
-                                                    slideInHorizontally(initialOffsetX = { it * offsetSign }, animationSpec = tween(duration))
+                                                    slideInHorizontally(initialOffsetX = { it * offsetSign }, animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow))
                                                 }
                                                 // Returning from detail -> bottom bar: slide in from left
                                                 targetRoute in bottomBarRoutes -> {
-                                                    slideInHorizontally(initialOffsetX = { -it }, animationSpec = tween(duration))
+                                                    slideInHorizontally(initialOffsetX = { -it }, animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow))
                                                 }
-                                                else -> slideInHorizontally(initialOffsetX = { -it }, animationSpec = tween(duration))
+                                                else -> slideInHorizontally(initialOffsetX = { -it }, animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow))
                                             }
                                         }
                                     }
@@ -450,7 +455,6 @@ class MainActivity : ComponentActivity() {
                                         if (!pageTransitionState.value) {
                                             ExitTransition.None
                                         } else {
-                                            val duration = (300 * animationSpeedState.value).toInt().coerceAtLeast(50)
                                             val targetRoute = targetState.destination.route
                                             val initialRoute = initialState.destination.route
 
@@ -461,18 +465,19 @@ class MainActivity : ComponentActivity() {
                                                 // Bottom bar -> bottom bar pop
                                                 targetIndex != -1 && initialIndex != -1 -> {
                                                     val offsetSign = if (targetIndex > initialIndex) -1 else 1
-                                                    slideOutHorizontally(targetOffsetX = { it * offsetSign }, animationSpec = tween(duration))
+                                                    slideOutHorizontally(targetOffsetX = { it * offsetSign }, animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow))
                                                 }
                                                 // Detail page closing: slide out to right
                                                 initialRoute !in bottomBarRoutes -> {
-                                                    slideOutHorizontally(targetOffsetX = { it }, animationSpec = tween(duration))
+                                                    slideOutHorizontally(targetOffsetX = { it }, animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow))
                                                 }
-                                                else -> slideOutHorizontally(targetOffsetX = { it }, animationSpec = tween(duration))
+                                                else -> slideOutHorizontally(targetOffsetX = { it }, animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow))
                                             }
                                         }
                                     }
                                 }
                             )
+                            }
                         }
                         
                         // Floating Bottom Bar as overlay
@@ -672,10 +677,9 @@ private fun BottomBar(
                 .padding(horizontal = horizontalScreenPadding, vertical = 14.dp),
             contentAlignment = Alignment.Center
         ) {
-            Surface(
+            GlassSurface(
                 modifier = Modifier.wrapContentWidth(),
-                shape = MaterialTheme.shapes.large,
-                tonalElevation = 3.dp
+                shape = MaterialTheme.shapes.large
             ) {
                 val itemSize = 56.dp
                 val itemSpacing = 4.dp

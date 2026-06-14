@@ -43,6 +43,7 @@ import com.ztros.ztrosu.ksuApp
 import com.ztros.ztrosu.Natives
 import com.ztros.ztrosu.R
 import com.ztros.ztrosu.ui.component.SearchAppBar
+import com.ztros.ztrosu.ui.component.GlassCard
 import com.ztros.ztrosu.ui.viewmodel.SuperUserViewModel
 import kotlinx.coroutines.launch
 
@@ -182,7 +183,7 @@ private fun AppItem(
     val prefs = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
     val developerOptionsEnabled = prefs.getBoolean("enable_developer_options", false)
 
-    Card(
+    GlassCard(
         modifier = Modifier
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.medium)

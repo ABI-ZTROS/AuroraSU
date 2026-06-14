@@ -97,6 +97,7 @@ import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ztros.ztrosu.R
 import com.ztros.ztrosu.ui.LocalScrollState
 import com.ztros.ztrosu.ui.component.ConfirmResult
+import com.ztros.ztrosu.ui.component.GlassCard
 import com.ztros.ztrosu.ui.component.SwitchItem
 import com.ztros.ztrosu.ui.component.rememberConfirmDialog
 import com.ztros.ztrosu.ui.component.rememberLoadingDialog
@@ -605,7 +606,7 @@ private fun DashboardTab(
 
 @Composable
 private fun BackendStatusCard(backend: VFSBackend, channel: CommChannel?, moduleVersion: Int?) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    GlassCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Icon(Icons.Filled.Storage, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
@@ -677,7 +678,7 @@ private fun BackendStatusCard(backend: VFSBackend, channel: CommChannel?, module
 
 @Composable
 private fun StatsOverviewCard(stats: VFSStats) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    GlassCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Icon(Icons.Filled.Analytics, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
@@ -742,7 +743,7 @@ private fun QuickSummaryRow(hookTargets: List<VFSHookTarget>, rules: List<VFSRul
 
 @Composable
 private fun QuickSummaryCard(modifier: Modifier, label: String, value: String, color: Color) {
-    Card(modifier = modifier) {
+    GlassCard(modifier = modifier) {
         Column(
             modifier = Modifier.padding(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -764,7 +765,7 @@ private fun QuickConfigCard(
     onLogLevelChange: (Int) -> Unit,
     onDefaultActionChange: (String) -> Unit
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    GlassCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Icon(Icons.Filled.Settings, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
@@ -972,7 +973,7 @@ private fun HooksTab(
 
 @Composable
 private fun HookTargetCard(target: VFSHookTarget, onToggle: () -> Unit, onRemove: () -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    GlassCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -1196,7 +1197,7 @@ private fun RulesTab(
 
 @Composable
 private fun RuleCard(rule: VFSRule, onEdit: () -> Unit, onDelete: () -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    GlassCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -1451,11 +1452,8 @@ private fun TemplateCard(
     onDelete: () -> Unit,
     onToggleExpand: () -> Unit
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isActive) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f) else CardDefaults.cardColors().containerColor
-        )
+    GlassCard(
+        modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             // Header row
@@ -1666,7 +1664,7 @@ private fun EventsTab(
 
 @Composable
 private fun EventItem(event: VFSEvent) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    GlassCard(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1769,11 +1767,8 @@ private fun ProtocolDebugCard(
     moduleVersion: Int?,
     onNavigateToProtocol: () -> Unit
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
-        )
+    GlassCard(
+        modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -1842,7 +1837,7 @@ private fun RuleTranslatorSection() {
     var reverseResult by remember { mutableStateOf<String?>(null) }
     var validationStatus by remember { mutableStateOf<Pair<Boolean, String?>>(true to null) }
 
-    Card(modifier = Modifier.fillMaxWidth()) {
+    GlassCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Icon(Icons.Filled.Security, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
@@ -2010,7 +2005,7 @@ private fun PolicyTranslatorSection() {
         fieldBreakdown = map.entries.joinToString("\n") { "  ${it.key} = ${it.value}" }
     }
 
-    Card(modifier = Modifier.fillMaxWidth()) {
+    GlassCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Icon(Icons.Filled.Settings, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
@@ -2105,7 +2100,7 @@ private fun HookCommandTranslatorSection() {
     var reverseResult by remember { mutableStateOf<String?>(null) }
     var validationStatus by remember { mutableStateOf<Pair<Boolean, String?>>(true to null) }
 
-    Card(modifier = Modifier.fillMaxWidth()) {
+    GlassCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Icon(Icons.Filled.ToggleOn, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
@@ -2259,7 +2254,7 @@ private fun HookCommandTranslatorSection() {
 private fun LiveEventInspectorSection(events: List<VFSEvent>) {
     val lastEvent = events.lastOrNull()
 
-    Card(modifier = Modifier.fillMaxWidth()) {
+    GlassCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Icon(Icons.Filled.Analytics, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
