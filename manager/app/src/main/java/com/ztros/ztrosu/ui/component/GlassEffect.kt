@@ -15,9 +15,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.HazeStyle
-import dev.chrisbanes.haze.haze
-import dev.chrisbanes.haze.hazeChild
+import dev.chrisbanes.haze.HazeTint
+import dev.chrisbanes.haze.hazeEffect
+import dev.chrisbanes.haze.hazeSource
 
 /**
  * Local provider for blur enabled state across the app
@@ -43,7 +43,7 @@ fun HazeBlurSource(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .haze(hazeState)
+                .hazeSource(hazeState)
         ) {
             content()
         }
@@ -78,13 +78,10 @@ fun GlassCard(
             .background(backgroundColor)
             .then(
                 if (blurEnabled) {
-                    Modifier.hazeChild(
-                        state = hazeState,
-                        style = HazeStyle(
-                            blurRadius = blurRadius,
-                            tint = tint,
-                        )
-                    )
+                    Modifier.hazeEffect(state = hazeState) {
+                        this.blurRadius = blurRadius
+                        this.tint = HazeTint(tint.copy(alpha = 0.7f))
+                    }
                 } else {
                     Modifier
                 }
@@ -121,13 +118,10 @@ fun GlassSurface(
             .background(backgroundColor)
             .then(
                 if (blurEnabled) {
-                    Modifier.hazeChild(
-                        state = hazeState,
-                        style = HazeStyle(
-                            blurRadius = blurRadius,
-                            tint = tint,
-                        )
-                    )
+                    Modifier.hazeEffect(state = hazeState) {
+                        this.blurRadius = blurRadius
+                        this.tint = HazeTint(tint.copy(alpha = 0.8f))
+                    }
                 } else {
                     Modifier
                 }
@@ -151,13 +145,10 @@ fun GlassDivider(
         Box(
             modifier = modifier
                 .fillMaxWidth()
-                .hazeChild(
-                    state = hazeState,
-                    style = HazeStyle(
-                        blurRadius = 10.dp,
-                        tint = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
-                    )
-                )
+                .hazeEffect(state = hazeState) {
+                    this.blurRadius = 10.dp
+                    this.tint = HazeTint(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                }
         )
     } else {
         Box(

@@ -176,5 +176,4 @@ dependencies {
     implementation(libs.vico.compose.m3)
 
     implementation(libs.haze)
-    implementation(libs.haze.material3)
 }
