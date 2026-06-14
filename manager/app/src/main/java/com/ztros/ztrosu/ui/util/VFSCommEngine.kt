@@ -499,7 +499,7 @@ object VFSCommEngine {
         }
 
         Log.w(TAG, "writeFallback: all methods failed for path=$path")
-        false
+        return false
     }
 
     // ==================== IOCTL 包装器 (预留) ====================
