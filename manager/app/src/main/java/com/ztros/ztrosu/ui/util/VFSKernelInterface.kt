@@ -16,7 +16,8 @@ private const val VFS_SYSFS_PATH = "/sys/kernel/ztrosu/vfs"
  * VFS Kernel Interface - 与内核模块通讯的完整接口
  * 对应文档: docs/VFS_KERNEL_MODULE_SPEC.md v2.0
  *
- * 通讯通道优先级: PIPE > SYSFS > USERSPACE
+ * 通讯通道: 委托给 VFSCommEngine 统一管理
+ * 优先级: SHELL > PIPE > SYSFS
  */
 object VFSKernelInterface {
 
@@ -24,13 +25,14 @@ object VFSKernelInterface {
      * Reset the cached channel detection, forcing re-detection on next call.
      */
     fun resetChannelCache() {
-        cachedChannel = null
+        VFSCommEngine.resetChannelCache()
     }
 
     // ==================== 通讯通道管理 ====================
 
     /**
      * 通讯通道枚举 - 定义与内核通讯的优先级
+     * @deprecated 使用 VFSCommEngine.Channel 替代
      */
     enum class CommChannel {
         PIPE,       // 优先：一次性pipe（安全、高效）
@@ -40,6 +42,7 @@ object VFSKernelInterface {
 
     /**
      * 当前检测到的最佳通讯通道（缓存）
+     * @deprecated 委托给 VFSCommEngine 管理
      */
     @Volatile
     private var cachedChannel: CommChannel? = null
@@ -47,6 +50,7 @@ object VFSKernelInterface {
     /**
      * 自动检测最佳通讯通道
      * 优先级: PIPE > SYSFS
+     * @deprecated 使用 VFSCommEngine.detectChannel() 替代
      */
     suspend fun detectBestChannel(): CommChannel? = withContext(Dispatchers.IO) {
         cachedChannel?.let { return@withContext it }
@@ -108,16 +112,8 @@ object VFSKernelInterface {
      * @return 版本号 (1或2)，失败返回null
      */
     suspend fun getVersion(): Int? = withContext(Dispatchers.IO) {
-        val path = "$VFS_SYSFS_PATH/version"
-        val content = readFile(path)
-        Log.d(TAG, "getVersion: path=$path, content='$content', length=${content.length}")
-        val version = content.trim().toIntOrNull()
-        if (version == null) {
-            Log.w(TAG, "getVersion: failed to parse version from '$content'")
-            // Debug: check if file exists and what's happening
-            val f = File(path)
-            Log.d(TAG, "getVersion: File.exists=${f.exists()}, canRead=${f.canRead()}, length=${f.length()}")
-        }
+        val version = VFSCommEngine.getVersion()
+        Log.d(TAG, "getVersion: version=$version (via VFSCommEngine)")
         version
     }
 
@@ -173,81 +169,60 @@ object VFSKernelInterface {
     /**
      * 添加Hook目标
      * 协议: add:<type>:<identifier>:<uid>:<mode>
-     * 通讯通道优先级: PIPE > SYSFS
+     * 委托给 VFSCommEngine 处理
      */
     suspend fun addHookTarget(target: HookTarget): Boolean = withContext(Dispatchers.IO) {
-        val channel = detectBestChannel() ?: return@withContext false
-        when (channel) {
-            CommChannel.PIPE -> {
-                VFSPipeComm.addHook(
-                    type = if (target.type == HookType.PID) 0 else 1,
-                    identifier = target.identifier,
-                    uid = target.uid,
-                    mode = target.mode.value
-                ).also { success ->
-                    if (!success) {
-                        Log.w(TAG, "PIPE addHook failed, falling back to SYSFS")
-                        cachedChannel = null
-                        // Fallback到SYSFS
-                        val typeStr = target.type.name
-                        val modeStr = target.mode.name
-                        val command = "add:${typeStr}:${target.identifier}:${target.uid}:${modeStr}"
-                        writeFile("$VFS_SYSFS_PATH/hook_targets", command)
-                    } else {
-                        Log.i(TAG, "Added hook target via PIPE: $target")
-                    }
-                }
+        val commTarget = VFSCommEngine.HookTarget(
+            type = when (target.type) {
+                HookType.PID -> VFSCommEngine.HookType.PID
+                HookType.PACKAGE -> VFSCommEngine.HookType.PACKAGE
+            },
+            identifier = target.identifier,
+            uid = target.uid,
+            mode = target.mode,
+            enabled = target.enabled
+        )
+        VFSCommEngine.addHook(commTarget).also { success ->
+            if (success) {
+                Log.i(TAG, "Added hook target via VFSCommEngine: $target")
+            } else {
+                Log.w(TAG, "Failed to add hook target via VFSCommEngine: $target")
             }
-            CommChannel.SYSFS -> {
-                val typeStr = target.type.name
-                val modeStr = target.mode.name
-                val command = "add:${typeStr}:${target.identifier}:${target.uid}:${modeStr}"
-                writeFile("$VFS_SYSFS_PATH/hook_targets", command)
-            }
-            CommChannel.USERSPACE -> false
         }
     }
 
     /**
      * 移除Hook目标
      * 协议: remove:<type>:<identifier>
+     * 委托给 VFSCommEngine 处理
      */
     suspend fun removeHookTarget(type: HookType, identifier: String): Boolean = withContext(Dispatchers.IO) {
-        val typeStr = type.name
-        val command = "remove:${typeStr}:${identifier}"
-        writeFile("$VFS_SYSFS_PATH/hook_targets", command)
+        val commType = when (type) {
+            HookType.PID -> VFSCommEngine.HookType.PID
+            HookType.PACKAGE -> VFSCommEngine.HookType.PACKAGE
+        }
+        VFSCommEngine.removeHook(commType, identifier)
     }
 
     /**
      * 获取当前Hook目标列表
      * 格式: type:identifier:uid:mode:enabled
+     * 委托给 VFSCommEngine 处理
      */
     suspend fun getHookList(): List<HookTarget> = withContext(Dispatchers.IO) {
-        val content = readFile("$VFS_SYSFS_PATH/hook_list")
-        if (content.isBlank()) {
-            return@withContext emptyList()
+        val commTargets = VFSCommEngine.getHooks()
+        commTargets.map { commTarget ->
+            HookTarget(
+                type = when (commTarget.type) {
+                    VFSCommEngine.HookType.PID -> HookType.PID
+                    VFSCommEngine.HookType.PACKAGE -> HookType.PACKAGE
+                },
+                identifier = commTarget.identifier,
+                uid = commTarget.uid,
+                mode = commTarget.mode,
+                enabled = commTarget.enabled
+            )
         }
-
-        val targets = mutableListOf<HookTarget>()
-        content.lines().forEach { line ->
-            val trimmed = line.trim()
-            if (trimmed.isBlank() || trimmed.startsWith("#")) return@forEach
-
-            val parts = trimmed.split(":")
-            if (parts.size >= 5) {
-                try {
-                    val type = HookType.valueOf(parts[0].uppercase())
-                    val identifier = parts[1]
-                    val uid = parts[2].toIntOrNull() ?: 0
-                    val mode = HookMode.fromString(parts[3])
-                    val enabled = parts[4] == "1" || parts[4].lowercase() == "yes"
-                    targets.add(HookTarget(type, identifier, uid, mode, enabled))
-                } catch (e: Exception) {
-                    Log.w(TAG, "Failed to parse hook target: $line", e)
-                }
-            }
-        }
-        targets
     }
 
     /**
@@ -283,13 +258,15 @@ object VFSKernelInterface {
 
     /**
      * 清空所有规则 (使用rules_clear接口)
+     * 委托给 VFSCommEngine 处理
      */
     suspend fun clearRules(): Boolean = withContext(Dispatchers.IO) {
-        writeFile("$VFS_SYSFS_PATH/rules_clear", "1")
+        VFSCommEngine.clearRules()
     }
 
     /**
      * 批量添加规则 (逐行写入，兼容v1和v2)
+     * 委托给 VFSCommEngine 处理
      */
     suspend fun addRulesBatch(rules: List<String>): Boolean = withContext(Dispatchers.IO) {
         if (rules.isEmpty()) return@withContext true
@@ -299,18 +276,19 @@ object VFSKernelInterface {
 
         if (isV2) {
             // v2: rules_store是ADDITIVE语义，先清空再写入
-            val cleared = clearRules()
+            val cleared = VFSCommEngine.clearRules()
             if (!cleared) {
                 Log.w(TAG, "Failed to clear rules before batch add")
             }
             // v2: 支持多行批量写入
-            val content = rules.joinToString("\n")
-            writeFile("$VFS_SYSFS_PATH/rules", content)
+            VFSCommEngine.setRules(rules)
         } else {
             // v1: 逐条写入 (旧内核兼容性)
             var success = true
             rules.forEach { rule ->
-                if (!appendFile("$VFS_SYSFS_PATH/rules", rule)) {
+                val current = VFSCommEngine.read("$VFS_SYSFS_PATH/rules")
+                val newContent = if (current.isBlank()) rule else "$current\n$rule"
+                if (!VFSCommEngine.write("$VFS_SYSFS_PATH/rules", newContent)) {
                     success = false
                 }
             }
@@ -320,69 +298,20 @@ object VFSKernelInterface {
 
     // ==================== 工具函数 ====================
 
-    private fun readFile(path: String): String {
-        // Try java.io.File first (sysfs files are world-readable)
-        // Note: canRead() may return false in Android sandbox even if file is readable
-        val file = File(path)
-        if (file.exists()) {
-            val content = runCatching { file.readText() }.getOrDefault("")
-            if (content.isNotEmpty()) {
-                return content
-            }
-        }
-        // Fallback to SuFile for restricted paths
-        return runCatching {
-            val suFile = SuFile.open(path)
-            if (suFile.exists()) {
-                suFile.readText()
-            } else {
-                ""
-            }
-        }.getOrDefault("")
+    /**
+     * 读取文件 - 委托给 VFSCommEngine
+     * @deprecated 直接使用 VFSCommEngine.read()
+     */
+    private suspend fun readFile(path: String): String {
+        return VFSCommEngine.read(path)
     }
 
-    private fun writeFile(path: String, content: String): Boolean {
-        // Try java.io.File first
-        val file = File(path)
-        if (file.exists() && file.canWrite()) {
-            return runCatching {
-                file.writeText(content)
-                true
-            }.getOrDefault(false)
-        }
-        // Fallback to SuFile for restricted paths
-        return runCatching {
-            val suFile = SuFile.open(path)
-            if (suFile.exists() && suFile.canWrite()) {
-                suFile.writeText(content)
-                true
-            } else {
-                false
-            }
-        }.getOrDefault(false)
-    }
-
-    private fun appendFile(path: String, content: String): Boolean {
-        // Try java.io.File first
-        val file = File(path)
-        if (file.exists() && file.canWrite()) {
-            return runCatching {
-                val current = file.readText()
-                file.writeText(if (current.isBlank()) content else "$current\n$content")
-                true
-            }.getOrDefault(false)
-        }
-        // Fallback to SuFile for restricted paths
-        return runCatching {
-            val suFile = SuFile.open(path)
-            if (suFile.exists() && suFile.canWrite()) {
-                val current = suFile.readText()
-                suFile.writeText(if (current.isBlank()) content else "$current\n$content")
-                true
-            } else {
-                false
-            }
-        }.getOrDefault(false)
+    /**
+     * 写入文件 - 委托给 VFSCommEngine
+     * @deprecated 直接使用 VFSCommEngine.write()
+     */
+    private suspend fun writeFile(path: String, content: String): Boolean {
+        return VFSCommEngine.write(path, content)
     }
 
     // ==================== 高级接口 ====================

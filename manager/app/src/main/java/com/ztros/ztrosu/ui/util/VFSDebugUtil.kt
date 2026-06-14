@@ -115,140 +115,42 @@ object VFSDebugUtil {
     }
 
 
-    private fun readFile(path: String): String {
-        // Try java.io.File first (sysfs files are world-readable)
-        // Note: canRead() may return false in Android sandbox even if file is readable
-        val file = File(path)
-        if (file.exists()) {
-            val content = runCatching { file.readText() }.getOrDefault("")
-            if (content.isNotEmpty()) {
-                return content
-            }
-        }
-        // Fallback to SuFile for restricted paths
-        return runCatching {
-            val suFile = SuFile.open(path)
-            if (suFile.exists()) {
-                suFile.readText()
-            } else {
-                ""
-            }
-        }.getOrDefault("")
+    /**
+     * 读取文件 - 委托给 VFSCommEngine
+     */
+    private suspend fun readFile(path: String): String {
+        return VFSCommEngine.read(path)
     }
 
-    private fun writeFile(path: String, content: String): Boolean {
-        // Try java.io.File first
-        // Note: canWrite() may return false in Android sandbox even if file is writable
-        val file = File(path)
-        if (file.exists()) {
-            val ok = runCatching {
-                file.writeText(content)
-                true
-            }.getOrDefault(false)
-            if (ok) return true
-        }
-        // Fallback to SuFile for restricted paths
-        return runCatching {
-            val suFile = SuFile.open(path)
-            if (suFile.exists()) {
-                suFile.writeText(content)
-                true
-            } else {
-                false
-            }
-        }.getOrDefault(false)
+    /**
+     * 写入文件 - 委托给 VFSCommEngine
+     */
+    private suspend fun writeFile(path: String, content: String): Boolean {
+        return VFSCommEngine.write(path, content)
     }
 
     /**
      * Get VFS statistics
+     * 委托给 VFSCommEngine 处理
      */
     suspend fun getVFSStats(): VFSStats? = withContext(Dispatchers.IO) {
-        when (detectBackend()) {
-            VFSBackend.KERNEL_SYSFS -> getKernelStats("$VFS_SYSFS_PATH/stats")
-            VFSBackend.KERNEL_DEBUGFS -> getKernelStats("$VFS_DEBUGFS_PATH/stats")
-            VFSBackend.MOCK -> null
-            null -> null
-        }
-    }
-
-    private fun getKernelStats(statsPath: String): VFSStats {
-        var openCount = 0L
-        var readCount = 0L
-        var writeCount = 0L
-        var closeCount = 0L
-        var deniedCount = 0L
-
-        val content = readFile(statsPath)
-
-        content.lines().forEach { line ->
-            val trimmed = line.trim()
-            when {
-                trimmed.startsWith("open:") -> openCount = trimmed.substringAfter(":").trim().toLongOrNull() ?: 0L
-                trimmed.startsWith("read:") -> readCount = trimmed.substringAfter(":").trim().toLongOrNull() ?: 0L
-                trimmed.startsWith("write:") -> writeCount = trimmed.substringAfter(":").trim().toLongOrNull() ?: 0L
-                trimmed.startsWith("close:") -> closeCount = trimmed.substringAfter(":").trim().toLongOrNull() ?: 0L
-                trimmed.startsWith("denied:") -> deniedCount = trimmed.substringAfter(":").trim().toLongOrNull() ?: 0L
-            }
-        }
-
-        return VFSStats(
-            openCount = openCount,
-            readCount = readCount,
-            writeCount = writeCount,
-            closeCount = closeCount,
-            deniedCount = deniedCount
-        )
+        VFSCommEngine.getStats()
     }
 
     /**
      * Get VFS policy
+     * 委托给 VFSCommEngine 处理
      */
     suspend fun getVFSPolicy(): VFSPolicy? = withContext(Dispatchers.IO) {
-        when (detectBackend()) {
-            VFSBackend.KERNEL_SYSFS -> getKernelPolicy(VFS_SYSFS_PATH)
-            VFSBackend.KERNEL_DEBUGFS -> getKernelPolicy(VFS_DEBUGFS_PATH)
-            VFSBackend.MOCK -> null
-            null -> null
-        }
-    }
-
-    private fun getKernelPolicy(basePath: String): VFSPolicy {
-        val enabled = readFile("$basePath/enabled").trim() == "1"
-        val logLevel = readFile("$basePath/log_level").trim().toIntOrNull() ?: 0
-        val defaultAction = readFile("$basePath/default_action").trim().ifEmpty { "allow" }
-        val rules = readFile("$basePath/rules").lines().filter { it.isNotBlank() }
-
-        return VFSPolicy(
-            enabled = enabled,
-            logLevel = logLevel,
-            defaultAction = defaultAction,
-            rules = rules
-        )
+        VFSCommEngine.getPolicy()
     }
 
     /**
      * Set VFS policy
+     * 委托给 VFSCommEngine 处理
      */
     suspend fun setVFSPolicy(policy: VFSPolicy): Boolean = withContext(Dispatchers.IO) {
-        when (detectBackend()) {
-            VFSBackend.KERNEL_SYSFS -> setKernelPolicy(VFS_SYSFS_PATH, policy)
-            VFSBackend.KERNEL_DEBUGFS -> setKernelPolicy(VFS_DEBUGFS_PATH, policy)
-            VFSBackend.MOCK -> false
-            null -> false
-        }
-    }
-
-    private suspend fun setKernelPolicy(basePath: String, policy: VFSPolicy): Boolean {
-        var success = true
-
-        success = success && writeFile("$basePath/enabled", if (policy.enabled) "1" else "0")
-        success = success && writeFile("$basePath/log_level", policy.logLevel.toString())
-        success = success && writeFile("$basePath/default_action", policy.defaultAction)
-        
-        // 使用增强的规则写入逻辑 (支持v1/v2兼容性)
-        success = success && VFSKernelInterface.addRulesBatch(policy.rules)
-
-        return success
+        VFSCommEngine.setPolicy(policy)
     }
 
     /**
@@ -275,14 +177,10 @@ object VFSDebugUtil {
 
     /**
      * Reset statistics
+     * 委托给 VFSCommEngine 处理
      */
     suspend fun resetStats(): Boolean = withContext(Dispatchers.IO) {
-        when (detectBackend()) {
-            VFSBackend.KERNEL_SYSFS -> writeFile("$VFS_SYSFS_PATH/stats_reset", "1")
-            VFSBackend.KERNEL_DEBUGFS -> writeFile("$VFS_DEBUGFS_PATH/stats_reset", "1")
-            VFSBackend.MOCK -> false
-            null -> false
-        }
+        VFSCommEngine.resetStats()
     }
 
     // ==================== 实时事件流 ====================
