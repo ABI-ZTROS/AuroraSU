@@ -24,11 +24,11 @@ apksign {
 
 android {
     namespace = "com.ztros.ztrosu"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 36
         ndk {
             abiFilters += listOf("arm64-v8a", "x86_64")
         }
