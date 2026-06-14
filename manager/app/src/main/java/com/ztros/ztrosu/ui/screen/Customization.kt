@@ -82,6 +82,7 @@ import com.ztros.ztrosu.ui.util.refreshActivity
 import com.ztros.ztrosu.ui.util.LocalSnackbarHost
 import com.ztros.ztrosu.ui.util.LocaleHelper
 import com.ztros.ztrosu.ui.util.VibrationHelper
+import com.ztros.ztrosu.ui.util.responsiveHorizontalPadding
 
 /**
  * @author twj

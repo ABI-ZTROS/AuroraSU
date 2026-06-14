@@ -5,7 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CornerBasedShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.compositionLocalOf
@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
 import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
@@ -58,7 +59,7 @@ fun HazeBlurSource(
 @Composable
 fun GlassCard(
     modifier: Modifier = Modifier,
-    shape: RoundedCornerShape = MaterialTheme.shapes.large,
+    shape: CornerBasedShape = MaterialTheme.shapes.large,
     blurRadius: Dp = 20.dp,
     tint: Color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
     content: @Composable BoxScope.() -> Unit
@@ -78,10 +79,13 @@ fun GlassCard(
             .background(backgroundColor)
             .then(
                 if (blurEnabled) {
-                    Modifier.hazeEffect(state = hazeState) {
-                        this.blurRadius = blurRadius
-                        this.tint = HazeTint(tint.copy(alpha = 0.7f))
-                    }
+                    Modifier.hazeEffect(
+                        state = hazeState,
+                        style = HazeStyle(
+                            blurRadius = blurRadius,
+                            tint = HazeTint(tint.copy(alpha = 0.7f)),
+                        )
+                    )
                 } else {
                     Modifier
                 }
@@ -98,7 +102,7 @@ fun GlassCard(
 @Composable
 fun GlassSurface(
     modifier: Modifier = Modifier,
-    shape: RoundedCornerShape = MaterialTheme.shapes.extraLarge,
+    shape: CornerBasedShape = MaterialTheme.shapes.extraLarge,
     blurRadius: Dp = 30.dp,
     tint: Color = MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = 0.8f),
     content: @Composable BoxScope.() -> Unit
@@ -118,10 +122,13 @@ fun GlassSurface(
             .background(backgroundColor)
             .then(
                 if (blurEnabled) {
-                    Modifier.hazeEffect(state = hazeState) {
-                        this.blurRadius = blurRadius
-                        this.tint = HazeTint(tint.copy(alpha = 0.8f))
-                    }
+                    Modifier.hazeEffect(
+                        state = hazeState,
+                        style = HazeStyle(
+                            blurRadius = blurRadius,
+                            tint = HazeTint(tint.copy(alpha = 0.8f)),
+                        )
+                    )
                 } else {
                     Modifier
                 }
@@ -145,10 +152,13 @@ fun GlassDivider(
         Box(
             modifier = modifier
                 .fillMaxWidth()
-                .hazeEffect(state = hazeState) {
-                    this.blurRadius = 10.dp
-                    this.tint = HazeTint(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-                }
+                .hazeEffect(
+                    state = hazeState,
+                    style = HazeStyle(
+                        blurRadius = 10.dp,
+                        tint = HazeTint(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+                    )
+                )
         )
     } else {
         Box(
