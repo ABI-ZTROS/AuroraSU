@@ -376,8 +376,20 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
                 }
             )
 
-            // === Color Theme Preset (Ice Abyss) ===
-            // 使用 prefs 作为单一数据源，通过 LaunchedEffect 监听变化
+            // Unified color source tracking
+            enum class ColorSource { PRESET, DYNAMIC, ACCENT }
+
+            var colorSource by remember {
+                mutableStateOf(
+                    when {
+                        prefs.getBoolean("material_you_dynamic_color", false) -> ColorSource.DYNAMIC
+                        prefs.getLong("material_you_accent_color", -1) != -1L -> ColorSource.ACCENT
+                        else -> ColorSource.PRESET
+                    }
+                )
+            }
+
+            // === Color Source: Theme Preset ===
             var selectedPreset by remember {
                 mutableStateOf(prefs.getString("theme_preset", "default") ?: "default")
             }
@@ -406,19 +418,26 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
             Spacer(Modifier.height(8.dp))
 
             val isDark = isSystemInDarkTheme()
+            val presetAlpha by animateFloatAsState(
+                targetValue = if (colorSource == ColorSource.PRESET) 1f else 0.4f,
+                animationSpec = tween(300),
+                label = "presetAlpha"
+            )
 
             FlowRow(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = responsiveHorizontalPadding()),
+                    .padding(horizontal = responsiveHorizontalPadding())
+                    .alpha(presetAlpha),
                 horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.Start),
                 verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.Top)
             ) {
                 // Default preset
                 ThemePresetCard(
                     name = "default",
-                    isSelected = selectedPreset == "default",
+                    isSelected = selectedPreset == "default" && colorSource == ColorSource.PRESET,
                     onClick = {
+                        colorSource = ColorSource.PRESET
                         selectedPreset = "default"
                         prefs.edit {
                             putString("theme_preset", "default")
@@ -440,8 +459,9 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
                 // Ice Abyss preset
                 ThemePresetCard(
                     name = "ice_abyss",
-                    isSelected = selectedPreset == "ice_abyss",
+                    isSelected = selectedPreset == "ice_abyss" && colorSource == ColorSource.PRESET,
                     onClick = {
+                        colorSource = ColorSource.PRESET
                         selectedPreset = "ice_abyss"
                         prefs.edit {
                             putString("theme_preset", "ice_abyss")
@@ -463,8 +483,9 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
                 // Blood Moon preset
                 ThemePresetCard(
                     name = "blood_moon",
-                    isSelected = selectedPreset == "blood_moon",
+                    isSelected = selectedPreset == "blood_moon" && colorSource == ColorSource.PRESET,
                     onClick = {
+                        colorSource = ColorSource.PRESET
                         selectedPreset = "blood_moon"
                         prefs.edit {
                             putString("theme_preset", "blood_moon")
@@ -486,8 +507,9 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
                 // Heavenly Palace preset
                 ThemePresetCard(
                     name = "heavenly_palace",
-                    isSelected = selectedPreset == "heavenly_palace",
+                    isSelected = selectedPreset == "heavenly_palace" && colorSource == ColorSource.PRESET,
                     onClick = {
+                        colorSource = ColorSource.PRESET
                         selectedPreset = "heavenly_palace"
                         prefs.edit {
                             putString("theme_preset", "heavenly_palace")
@@ -509,8 +531,9 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
                 // Azure Sky preset
                 ThemePresetCard(
                     name = "azure_sky",
-                    isSelected = selectedPreset == "azure_sky",
+                    isSelected = selectedPreset == "azure_sky" && colorSource == ColorSource.PRESET,
                     onClick = {
+                        colorSource = ColorSource.PRESET
                         selectedPreset = "azure_sky"
                         prefs.edit {
                             putString("theme_preset", "azure_sky")
@@ -532,8 +555,9 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
                 // Fresh Lemon preset
                 ThemePresetCard(
                     name = "fresh_lemon",
-                    isSelected = selectedPreset == "fresh_lemon",
+                    isSelected = selectedPreset == "fresh_lemon" && colorSource == ColorSource.PRESET,
                     onClick = {
+                        colorSource = ColorSource.PRESET
                         selectedPreset = "fresh_lemon"
                         prefs.edit {
                             putString("theme_preset", "fresh_lemon")
@@ -555,8 +579,9 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
                 // Dragon Fruit preset
                 ThemePresetCard(
                     name = "dragon_fruit",
-                    isSelected = selectedPreset == "dragon_fruit",
+                    isSelected = selectedPreset == "dragon_fruit" && colorSource == ColorSource.PRESET,
                     onClick = {
+                        colorSource = ColorSource.PRESET
                         selectedPreset = "dragon_fruit"
                         prefs.edit {
                             putString("theme_preset", "dragon_fruit")
@@ -578,8 +603,9 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
                 // Divine Yellow preset
                 ThemePresetCard(
                     name = "divine_yellow",
-                    isSelected = selectedPreset == "divine_yellow",
+                    isSelected = selectedPreset == "divine_yellow" && colorSource == ColorSource.PRESET,
                     onClick = {
+                        colorSource = ColorSource.PRESET
                         selectedPreset = "divine_yellow"
                         prefs.edit {
                             putString("theme_preset", "divine_yellow")
@@ -623,7 +649,7 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
                     prefs.getBoolean("enable_amoled", false)
                 )
             }
-            AnimatedVisibility(visible = isSystemInDarkTheme()) {
+            AnimatedVisibility(visible = darkMode != "light") {
                 val activity = LocalContext.current as? MainActivity
                 SwitchItem(
                     icon = Icons.Filled.Contrast,
@@ -638,13 +664,13 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
 
             // === Dark Mode Independent Control ===
             Spacer(Modifier.height(16.dp))
-            
+
             var darkMode by rememberSaveable {
                 mutableStateOf(
                     prefs.getString("dark_mode", "system") ?: "system"
                 )
             }
-            
+
             val darkModeTitle = stringResource(R.string.dark_mode_title)
             Text(
                 text = darkModeTitle,
@@ -652,7 +678,7 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
                 modifier = Modifier.padding(horizontal = responsiveHorizontalPadding())
             )
             Spacer(Modifier.height(8.dp))
-            
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -661,7 +687,7 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 val activity = LocalContext.current as? MainActivity
-                
+
                 // Light mode
                 val lightBorderWidth by animateFloatAsState(
                     targetValue = if (darkMode == "light") 2.5f else 1f,
@@ -673,7 +699,7 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
                     animationSpec = tween(300),
                     label = "lightBorderColor"
                 )
-                
+
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.clickable {
@@ -681,6 +707,11 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
                         darkMode = "light"
                         prefs.edit { putString("dark_mode", "light") }
                         activity?.setDarkMode("light")
+                        if (enableAmoled) {
+                            activity?.setAmoledMode(false)
+                            enableAmoled = false
+                            prefs.edit { putBoolean("enable_amoled", false) }
+                        }
                     }
                 ) {
                     Box(
@@ -696,7 +727,7 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
                     Spacer(Modifier.height(6.dp))
                     Text(stringResource(R.string.dark_mode_light), style = MaterialTheme.typography.labelMedium)
                 }
-                
+
                 // Dark mode
                 val darkBorderWidth by animateFloatAsState(
                     targetValue = if (darkMode == "dark") 2.5f else 1f,
@@ -708,7 +739,7 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
                     animationSpec = tween(300),
                     label = "darkBorderColor"
                 )
-                
+
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.clickable {
@@ -731,7 +762,7 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
                     Spacer(Modifier.height(6.dp))
                     Text(stringResource(R.string.dark_mode_dark), style = MaterialTheme.typography.labelMedium)
                 }
-                
+
                 // System (follow system)
                 val systemBorderWidth by animateFloatAsState(
                     targetValue = if (darkMode == "system") 2.5f else 1f,
@@ -743,7 +774,7 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
                     animationSpec = tween(300),
                     label = "systemBorderColor"
                 )
-                
+
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.clickable {
@@ -770,42 +801,100 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
 
             Spacer(Modifier.height(16.dp))
 
-            // === Blur Effect Switch ===
+            // === Blur Effect Switch with Live Preview ===
             var blurEnabled by rememberSaveable {
                 mutableStateOf(
                     prefs.getBoolean("blur_enabled", false)
                 )
             }
-            SwitchItem(
-                icon = Icons.Filled.BlurOn,
-                title = stringResource(R.string.blur_enabled_title),
-                summary = stringResource(R.string.blur_enabled_summary),
-                checked = blurEnabled
-            ) { enabled ->
-                VibrationHelper.vibrate(context, prefs.getBoolean("vibration_enabled", false))
-                prefs.edit { putBoolean("blur_enabled", enabled) }
-                (context as? MainActivity)?.setBlurEnabled(enabled)
-                blurEnabled = enabled
+            GlassCard(modifier = Modifier.fillMaxWidth().padding(horizontal = responsiveHorizontalPadding())) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Filled.BlurOn, contentDescription = null)
+                        Spacer(Modifier.width(16.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = stringResource(R.string.blur_enabled_title),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                text = stringResource(R.string.blur_enabled_summary),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Switch(
+                            checked = blurEnabled,
+                            onCheckedChange = { enabled ->
+                                VibrationHelper.vibrate(context, prefs.getBoolean("vibration_enabled", false))
+                                prefs.edit { putBoolean("blur_enabled", enabled) }
+                                (context as? MainActivity)?.setBlurEnabled(enabled)
+                                blurEnabled = enabled
+                            }
+                        )
+                    }
+                    // Live preview
+                    Spacer(Modifier.height(12.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(60.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(
+                                brush = androidx.compose.ui.graphics.Brush.horizontalGradient(
+                                    colors = listOf(
+                                        MaterialTheme.colorScheme.primary,
+                                        MaterialTheme.colorScheme.secondary,
+                                        MaterialTheme.colorScheme.tertiary
+                                    )
+                                )
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = if (blurEnabled) "毛玻璃效果已开启" else "毛玻璃效果已关闭",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.White
+                        )
+                    }
+                }
             }
 
             // === Dynamic Color Switch ===
             var dynamicColorEnabled by rememberSaveable {
                 mutableStateOf(prefs.getBoolean("material_you_dynamic_color", true))
             }
-            SwitchItem(
-                icon = Icons.Filled.AutoAwesome,
-                title = stringResource(R.string.material_you_dynamic),
-                summary = stringResource(R.string.material_you_dynamic_desc),
-                checked = dynamicColorEnabled
-            ) {
-                prefs.edit { putBoolean("material_you_dynamic_color", it) }
-                dynamicColorEnabled = it
-                (context as? MainActivity)?.setDynamicColor(it)
-                if (it) {
-                    (context as? MainActivity)?.setAccentColor(-1)
-                    prefs.edit {
-                        putLong("material_you_accent_color", -1)
-                        putInt("material_you_accent_color_index", -1)
+            val dynamicAlpha by animateFloatAsState(
+                targetValue = if (colorSource == ColorSource.DYNAMIC) 1f else 0.4f,
+                animationSpec = tween(300),
+                label = "dynamicAlpha"
+            )
+            Box(modifier = Modifier.alpha(dynamicAlpha)) {
+                SwitchItem(
+                    icon = Icons.Filled.AutoAwesome,
+                    title = stringResource(R.string.material_you_dynamic),
+                    summary = stringResource(R.string.material_you_dynamic_desc),
+                    checked = dynamicColorEnabled
+                ) {
+                    val enabled = it
+                    if (enabled) {
+                        colorSource = ColorSource.DYNAMIC
+                    } else {
+                        colorSource = ColorSource.PRESET
+                    }
+                    prefs.edit { putBoolean("material_you_dynamic_color", enabled) }
+                    dynamicColorEnabled = enabled
+                    (context as? MainActivity)?.setDynamicColor(enabled)
+                    if (enabled) {
+                        (context as? MainActivity)?.setAccentColor(-1)
+                        prefs.edit {
+                            putLong("material_you_accent_color", -1)
+                            putInt("material_you_accent_color_index", -1)
+                        }
                     }
                 }
             }
@@ -819,6 +908,12 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
             var selectedAccentIndex by rememberSaveable {
                 mutableIntStateOf(prefs.getInt("material_you_accent_color_index", 0))
             }
+
+            val accentAlpha by animateFloatAsState(
+                targetValue = if (colorSource == ColorSource.ACCENT) 1f else 0.4f,
+                animationSpec = tween(300),
+                label = "accentAlpha"
+            )
 
             Spacer(Modifier.height(8.dp))
             Text(
@@ -837,12 +932,13 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
             FlowRow(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = responsiveHorizontalPadding()),
+                    .padding(horizontal = responsiveHorizontalPadding())
+                    .alpha(accentAlpha),
                 horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.Start),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 accentColors.forEachIndexed { index, color ->
-                    val isSelected = selectedAccentIndex == index
+                    val isSelected = selectedAccentIndex == index && colorSource == ColorSource.ACCENT
                     Box(
                         modifier = Modifier
                             .size(48.dp)
@@ -856,6 +952,7 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
                                 }
                             )
                             .clickable {
+                                colorSource = ColorSource.ACCENT
                                 selectedAccentIndex = index
                                 prefs.edit { putInt("material_you_accent_color_index", index) }
                                 prefs.edit { putLong("material_you_accent_color", color.value.toLong()) }
@@ -901,6 +998,9 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
                             fontScale = it
                             prefs.edit { putFloat("material_you_font_scale", it) }
                             (context as? MainActivity)?.setFontScale(it)
+                            // Keep density scale in sync with font scale for consistent proportions
+                            prefs.edit { putFloat("density_scale", it) }
+                            (context as? MainActivity)?.setDensityScale(it)
                         },
                         valueRange = 0.8f..1.4f,
                         steps = 5,
@@ -1023,49 +1123,6 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
                 prefs.edit { putBoolean("vibration_enabled", enabled) }
                 (context as? MainActivity)?.setVibrationEnabled(enabled)
                 vibrationEnabled = enabled
-            }
-
-            Spacer(Modifier.height(16.dp))
-
-            // === UI Density Scale Slider ===
-            var densityScale by rememberSaveable {
-                mutableStateOf(
-                    prefs.getFloat("density_scale", 1f)
-                )
-            }
-
-            GlassCard(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = responsiveHorizontalPadding())
-            ) {
-                Column {
-                    ListItem(
-                        leadingContent = { Icon(Icons.Filled.ZoomOutMap, contentDescription = null) },
-                        headlineContent = {
-                            Text(
-                                text = stringResource(R.string.density_scale_title),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        },
-                        supportingContent = { Text(String.format("%.1fx", densityScale)) }
-                    )
-                    Slider(
-                        value = densityScale,
-                        onValueChange = {
-                            VibrationHelper.vibrate(context, prefs.getBoolean("vibration_enabled", false))
-                            densityScale = it
-                        },
-                        onValueChangeFinished = {
-                            prefs.edit { putFloat("density_scale", densityScale) }
-                            (context as? MainActivity)?.setDensityScale(densityScale)
-                        },
-                        valueRange = 0.8f..1.4f,
-                        steps = 6,  // 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4
-                        modifier = Modifier.padding(horizontal = responsiveHorizontalPadding())
-                    )
-                }
             }
 
             // === Motion Settings Section ===
