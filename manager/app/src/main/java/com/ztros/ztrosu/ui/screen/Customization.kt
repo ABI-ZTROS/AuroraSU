@@ -49,6 +49,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -83,6 +84,9 @@ import com.ztros.ztrosu.ui.util.LocalSnackbarHost
 import com.ztros.ztrosu.ui.util.LocaleHelper
 import com.ztros.ztrosu.ui.util.VibrationHelper
 import com.ztros.ztrosu.ui.util.responsiveHorizontalPadding
+
+/** Color source mode for mutual exclusion between preset/dynamic/accent */
+enum class ColorSource { PRESET, DYNAMIC, ACCENT }
 
 /**
  * @author twj
@@ -376,9 +380,6 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
                 }
             )
 
-            // Unified color source tracking
-            enum class ColorSource { PRESET, DYNAMIC, ACCENT }
-
             var colorSource by remember {
                 mutableStateOf(
                     when {
@@ -644,6 +645,13 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
                 }
             }
 
+            // === Dark Mode Independent Control ===
+            var darkMode by rememberSaveable {
+                mutableStateOf(
+                    prefs.getString("dark_mode", "system") ?: "system"
+                )
+            }
+
             var enableAmoled by rememberSaveable {
                 mutableStateOf(
                     prefs.getBoolean("enable_amoled", false)
@@ -662,14 +670,7 @@ fun CustomizationScreen(navigator: DestinationsNavigator) {
                 }
             }
 
-            // === Dark Mode Independent Control ===
             Spacer(Modifier.height(16.dp))
-
-            var darkMode by rememberSaveable {
-                mutableStateOf(
-                    prefs.getString("dark_mode", "system") ?: "system"
-                )
-            }
 
             val darkModeTitle = stringResource(R.string.dark_mode_title)
             Text(
