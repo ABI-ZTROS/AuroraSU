@@ -362,7 +362,13 @@ bool is_manager_apk(char *path)
 	if (strncmp(pkg, KSU_MANAGER_PACKAGE, sizeof(KSU_MANAGER_PACKAGE))) {
 		return false;
 	}
+
+#ifdef CONFIG_KSU_ALLOW_PACKAGE_ONLY
+	pr_info("Package-only manager check passed for: %s\n", path);
+	return true;
 #endif
+#endif
+
 	if (check_v2_signature(path, EXPECTED_SIZE, EXPECTED_HASH)) {
 		return true;
 	}

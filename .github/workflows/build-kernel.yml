@@ -82,10 +82,23 @@ jobs:
           cd "$GITHUB_WORKSPACE/android-kernel"
           bash <(curl -LSs "https://raw.githubusercontent.com/ZTR-OS/AuroraSU/dev/kernel/setup.sh") -p "$KSU_BRANCH"
 
+      - name: Overlay local ZTR_OS SU kernel code
+        run: |
+          set -euxo pipefail
+          # Copy local kernel code to override the downloaded one
+          KERNEL_DIR="$GITHUB_WORKSPACE/android-kernel/ZTR_OS_SU/kernel"
+          if [ -d "$KERNEL_DIR" ]; then
+            cp -rf "$GITHUB_WORKSPACE/kernel/"* "$KERNEL_DIR/"
+            echo "Local kernel code overlaid successfully"
+          else
+            echo "Warning: ZTR_OS_SU/kernel directory not found, skipping overlay"
+          fi
+
       - name: Write KSU fragment
         run: |
           cat > "$GITHUB_WORKSPACE/android-kernel/wild_gki.fragment" << 'EOF'
           CONFIG_KSU=y
+          CONFIG_KSU_ALLOW_PACKAGE_ONLY=y
           EOF
 
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then

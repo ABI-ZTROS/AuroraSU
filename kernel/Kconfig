@@ -17,12 +17,23 @@ config KSU_DEBUG
 			Enable KernelSU debug mode.
 
 config KSU_VFS_DEBUG
-		bool "KernelSU VFS debug monitoring"
-		depends on KSU
-		default n
-		help
-			Enable VFS operation monitoring and access control.
-			Creates /sys/kernel/ztrosu/vfs interface for statistics,
-			policy configuration, and access rules.
+	bool "KernelSU VFS debug monitoring"
+	depends on KSU
+	default n
+	help
+		Enable VFS operation monitoring and access control.
+		Creates /sys/kernel/ztrosu/vfs interface for statistics,
+		policy configuration, and access rules.
+
+config KSU_ALLOW_PACKAGE_ONLY
+	bool "Allow manager verification by package name only"
+	depends on KSU
+	default n
+	help
+		Allow the manager app to be verified by package name only,
+		without checking the APK signature. This is useful for
+		custom builds where the signing certificate differs from
+		the official KernelSU manager.
+		Requires KSU_MANAGER_PACKAGE to be set.
 
 endmenu

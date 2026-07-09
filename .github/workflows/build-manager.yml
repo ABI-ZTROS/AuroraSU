@@ -164,6 +164,20 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew clean assembleRelease
 
+      - name: Calculate APK signature hash
+        run: |
+          APK=$(find ./app/build/outputs/apk/release -name "*.apk" | head -1)
+          echo "APK path: $APK"
+          if [ -f "$APK" ]; then
+            # Use keytool to get certificate fingerprint
+            unzip -p "$APK" META-INF/*.RSA | keytool -printcert -v 2>/dev/null || true
+            
+            # Also try to get SHA-256 using apksigner if available
+            if command -v apksigner &> /dev/null; then
+              apksigner verify --print-certs "$APK" 2>/dev/null || true
+            fi
+          fi
+
       - name: Upload build artifact
         uses: actions/upload-artifact@v5
         if: ${{ ( github.event_name != 'pull_request' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/stable' || github.ref == 'refs/heads/master') ) || github.ref_type == 'tag' }}
